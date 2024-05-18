@@ -139,7 +139,7 @@ const stylesheet = createStyleSheet(({
   },
 }))
 
-type LessonsCardProps = {
+type AssignmentsCardProps = {
   backgroundColor: string;
   title: string,
   suptitle?: string,
@@ -162,8 +162,8 @@ const AssignmentsCard = ({
   loading,
   layoutAnimationDuration,
   bdageAnimationDuration = 125,
-}: LessonsCardProps) => {
-  const { styles } = useStyles(lessonsCardStyles)
+}: AssignmentsCardProps) => {
+  const { styles } = useStyles(assignmentsCardStylesheet)
   const enteringAnimation = useMemo(() => ZoomIn.duration(bdageAnimationDuration), [bdageAnimationDuration]);
   const exitingAnimation = useMemo(() => ZoomOut.duration(bdageAnimationDuration), [bdageAnimationDuration]);
   const layoutAnimation = useMemo(() => SequencedTransition.duration(layoutAnimationDuration), [layoutAnimationDuration]);
@@ -186,16 +186,17 @@ const AssignmentsCard = ({
       </View>
       <View style={{ height: 16 }} />
       <Text style={styles.text}>{message}</Text>
-      <View style={{ height: 8 }} />
+      <View style={{ height: 12 }} />
       {assignmentsCount > 0 && actions}
     </Animated.View>
     // </LoadingIndicator>
   );
 };
 
-const lessonsCardStyles = createStyleSheet(({
+const assignmentsCardStylesheet = createStyleSheet(({
   view: {
-    padding: 40,
+    padding: 20,
+    borderRadius: 4,
   },
   text: {
     ...(typography.body),
