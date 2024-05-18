@@ -5,19 +5,19 @@ import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import typography from "@/src/constants/typography";
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
-import { fetchLessonsAndReviews } from "@/src/redux/lessonsSlice";
 import Animated, { LightSpeedInLeft, LightSpeedInRight, LightSpeedOutLeft, LightSpeedOutRight, SequencedTransition, ZoomIn, ZoomOut, } from "react-native-reanimated";
 import { ErrorWithRetry } from "@/src/components/ErrorWithRetry";
 import { appStyles } from "@/src/constants/styles";
 import { RefreshControl } from "react-native-gesture-handler";
+import { fetchLessonsAndReviews, selectError, selectLessonsCount, selectReviewsCount, selectStatus } from "@/src/redux/assignmentsSlice";
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
-  const status = useAppSelector(state => state.lessonsReducer.status)
-  const lessonsCount = useAppSelector(state => state.lessonsReducer.lessons.length)
-  const reviewsCount = useAppSelector(state => state.lessonsReducer.reviews.length)
-  const error = useAppSelector(state => state.lessonsReducer.error)
+  const status = useAppSelector(selectStatus)
+  const lessonsCount = useAppSelector(selectLessonsCount)
+  const reviewsCount = useAppSelector(selectReviewsCount)
+  const error = useAppSelector(selectError)
 
   const refresh = () => {
     dispatch(fetchLessonsAndReviews())

@@ -1,23 +1,25 @@
 import { SerializedError, createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { Assignment } from "../types/assignment"
 import { WaniKaniApi } from "../api/wanikani"
+import { AppState } from "react-native"
+import { RootState } from "./store"
 
 // TODO: restrict number of lessons by the value from the user account settings
 // to match the website behavior
-export interface LessonSlice {
+export interface AssignmentsSlice {
   lessons: Assignment[],
   reviews: Assignment[],
   status: 'idle' | 'loading' | 'failed',
   error?: SerializedError,
 }
 
-const initialState: LessonSlice = {
+const initialState: AssignmentsSlice = {
   lessons: [],
   reviews: [],
   status: 'idle',
 }
 
-export const lessonsSlice = createSlice({
+export const assignmentsSlice = createSlice({
   name: 'lesson',
   initialState,
   // https://redux.js.org/tutorials/typescript-quick-start#define-slice-state-and-action-types
@@ -56,4 +58,9 @@ export const fetchLessonsAndReviews = createAsyncThunk('lessons/fetchLessonsAndR
 // Other code such as selectors can use the imported `RootState` type
 // export const selectCount = (state: RootState) => state.counter.value
 
-export default lessonsSlice.reducer
+export const selectStatus = (state: RootState) => state.assignmentsSlice.status
+export const selectLessonsCount = (state: RootState) => state.assignmentsSlice.lessons.length
+export const selectReviewsCount = (state: RootState) => state.assignmentsSlice.reviews.length
+export const selectError = (state: RootState) => state.assignmentsSlice.error
+
+export default assignmentsSlice.reducer
