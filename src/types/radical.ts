@@ -6,6 +6,8 @@ import { CharacterImage } from './characterImage';
  * A radical is a component used to build kanji characters.
  */
 export interface Radical extends Subject {
+  type: 'radical';
+
   /**
    * An array of numeric identifiers for the kanji that have the radical as a component.
    */

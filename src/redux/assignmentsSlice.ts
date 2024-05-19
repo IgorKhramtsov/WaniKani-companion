@@ -1,4 +1,4 @@
-import { SerializedError, createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { SerializedError, createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit"
 import { Assignment } from "../types/assignment"
 import { WaniKaniApi } from "../api/wanikani"
 import { AppState } from "react-native"
@@ -20,7 +20,7 @@ const initialState: AssignmentsSlice = {
 }
 
 export const assignmentsSlice = createSlice({
-  name: 'lesson',
+  name: 'assignments',
   initialState,
   // https://redux.js.org/tutorials/typescript-quick-start#define-slice-state-and-action-types
   reducers: {
@@ -62,5 +62,8 @@ export const selectStatus = (state: RootState) => state.assignmentsSlice.status
 export const selectLessonsCount = (state: RootState) => state.assignmentsSlice.lessons.length
 export const selectReviewsCount = (state: RootState) => state.assignmentsSlice.reviews.length
 export const selectError = (state: RootState) => state.assignmentsSlice.error
+const selectLessons = (state: RootState) => state.assignmentsSlice.lessons
+// TODO: batch size setting
+export const selectLessonsBatch = createSelector(selectLessons, (lessons) => lessons.slice(0, 5).map(el => el.subject_id))
 
 export default assignmentsSlice.reducer

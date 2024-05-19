@@ -6,6 +6,8 @@ import { Reading } from './reading';
  * Kanji are characters used in the Japanese writing system.
  */
 export interface Kanji extends Subject {
+  type: 'kanji';
+
   /**
    * An array of numeric identifiers for the vocabulary that have the kanji as a component.
    */

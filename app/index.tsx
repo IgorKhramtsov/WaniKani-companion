@@ -1,15 +1,31 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import React, { useEffect, useMemo } from 'react';
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import typography from "@/src/constants/typography";
-import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
-import Animated, { LightSpeedInLeft, LightSpeedInRight, LightSpeedOutLeft, LightSpeedOutRight, SequencedTransition, ZoomIn, ZoomOut, } from "react-native-reanimated";
-import { ErrorWithRetry } from "@/src/components/ErrorWithRetry";
-import { appStyles } from "@/src/constants/styles";
-import { RefreshControl } from "react-native-gesture-handler";
-import { fetchLessonsAndReviews, selectError, selectLessonsCount, selectReviewsCount, selectStatus } from "@/src/redux/assignmentsSlice";
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import { Link } from 'expo-router'
+import typography from '@/src/constants/typography'
+import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
+import Animated, {
+  LightSpeedInLeft,
+  LightSpeedInRight,
+  LightSpeedOutLeft,
+  LightSpeedOutRight,
+  SequencedTransition,
+  ZoomIn,
+  ZoomOut,
+} from 'react-native-reanimated'
+import { ErrorWithRetry } from '@/src/components/ErrorWithRetry'
+import { appStyles } from '@/src/constants/styles'
+import { RefreshControl } from 'react-native-gesture-handler'
+import {
+  fetchLessonsAndReviews,
+  selectError,
+  selectLessonsBatch,
+  selectLessonsCount,
+  selectReviewsCount,
+  selectStatus,
+} from '@/src/redux/assignmentsSlice'
+import { Colors } from '@/src/constants/Colors'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -18,53 +34,91 @@ export default function Index() {
   const lessonsCount = useAppSelector(selectLessonsCount)
   const reviewsCount = useAppSelector(selectReviewsCount)
   const error = useAppSelector(selectError)
+  const batch = useAppSelector(selectLessonsBatch)
+  const testBatchWithKanji = [494]
 
-  const refresh = () => {
-    dispatch(fetchLessonsAndReviews())
-  }
+  const refresh = useCallback(
+    () => dispatch(fetchLessonsAndReviews()),
+    [dispatch],
+  )
 
   useEffect(() => {
     refresh()
-  }, [dispatch])
+  }, [dispatch, refresh])
 
-  const duration = 600;
-  const enteringAnimationLeft = useMemo(() => LightSpeedInLeft.duration(duration), []);
-  const enteringAnimationRight = useMemo(() => LightSpeedInRight.duration(duration), []);
-  const exitingAnimationLeft = useMemo(() => LightSpeedOutLeft.duration(duration), []);
-  const exitingAnimationRight = useMemo(() => LightSpeedOutRight.duration(duration), []);
+  const duration = 600
+  const enteringAnimationLeft = useMemo(
+    () => LightSpeedInLeft.duration(duration),
+    [],
+  )
+  const enteringAnimationRight = useMemo(
+    () => LightSpeedInRight.duration(duration),
+    [],
+  )
+  const exitingAnimationLeft = useMemo(
+    () => LightSpeedOutLeft.duration(duration),
+    [],
+  )
+  const exitingAnimationRight = useMemo(
+    () => LightSpeedOutRight.duration(duration),
+    [],
+  )
 
   return (
-    <ErrorWithRetry error={error?.message} onRetry={refresh} >
+    <ErrorWithRetry error={error?.message} onRetry={refresh}>
       <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={status === 'loading'} onRefresh={refresh} />}
-      >
+        refreshControl={
+          <RefreshControl
+            refreshing={status === 'loading'}
+            onRefresh={refresh}
+          />
+        }>
         <AssignmentsCard
-          backgroundColor="#FF00AA"
+          backgroundColor={Colors.pink}
           layoutAnimationDuration={duration * 0.6}
-          loading={status == 'loading'}
+          loading={status === 'loading'}
           title='Lessons'
           suptitle="Today's"
           assignmentsCount={lessonsCount}
-          message="We cooked up these lessons just for you."
+          message='We cooked up these lessons just for you.'
           actions={
             <View>
-              <Animated.View key={'start'} entering={enteringAnimationLeft} exiting={exitingAnimationRight}>
-                <Link href='/lessons' asChild>
+              <Animated.View
+                key={'start'}
+                entering={enteringAnimationLeft}
+                exiting={exitingAnimationRight}>
+                <Link
+                  href={{ pathname: '/lessons', params: { subjects: batch } }}
+                  asChild>
                   <Pressable style={styles.startButton}>
                     <View style={appStyles.row}>
-                      <Text style={[styles.startButtonText, { color: '#FF00AA' }]}>Start Lessons</Text>
+                      <Text
+                        style={[styles.startButtonText, { color: '#FF00AA' }]}>
+                        Start Lessons
+                      </Text>
                       <View style={{ width: 4 }} />
-                      <AntDesign name="right" size={typography.body.fontSize} color="#FF00AA" />
+                      <AntDesign
+                        name='right'
+                        size={typography.body.fontSize}
+                        color='#FF00AA'
+                      />
                     </View>
                   </Pressable>
                 </Link>
               </Animated.View>
               <View key={'spacer'} style={{ height: 16 }} />
-              <Animated.View key={'advanced'} entering={enteringAnimationRight} exiting={exitingAnimationLeft}>
+              <Animated.View
+                key={'advanced'}
+                entering={enteringAnimationRight}
+                exiting={exitingAnimationLeft}>
                 <Pressable style={styles.advancedButton}>
                   <View style={appStyles.row}>
-                    <MaterialIcons name="smart-toy" size={typography.body.fontSize} color="white" />
+                    <MaterialIcons
+                      name='smart-toy'
+                      size={typography.body.fontSize}
+                      color='white'
+                    />
                     <View style={{ width: 4 }} />
                     <Text style={styles.advancedButtonText}>Advanced</Text>
                   </View>
@@ -75,19 +129,27 @@ export default function Index() {
         />
         <View style={{ height: 16 }} />
         <AssignmentsCard
-          backgroundColor="#00AAFF"
+          backgroundColor={Colors.blue}
           layoutAnimationDuration={duration * 0.6}
           loading={false}
-          title="Reviews"
+          title='Reviews'
           assignmentsCount={reviewsCount}
-          message="Review these items to level them up!"
+          message='Review these items to level them up!'
           actions={
-            <Animated.View entering={enteringAnimationLeft} exiting={exitingAnimationRight}>
+            <Animated.View
+              entering={enteringAnimationLeft}
+              exiting={exitingAnimationRight}>
               <Pressable style={styles.startButton}>
                 <View style={appStyles.row}>
-                  <Text style={[styles.startButtonText, { color: '#00AAFF' }]}>Start Reviews</Text>
+                  <Text style={[styles.startButtonText, { color: '#00AAFF' }]}>
+                    Start Reviews
+                  </Text>
                   <View style={{ width: 4 }} />
-                  <AntDesign name="right" size={typography.body.fontSize} color="#00AAFF" />
+                  <AntDesign
+                    name='right'
+                    size={typography.body.fontSize}
+                    color='#00AAFF'
+                  />
                 </View>
               </Pressable>
             </Animated.View>
@@ -95,31 +157,31 @@ export default function Index() {
         />
       </ScrollView>
     </ErrorWithRetry>
-  );
+  )
 }
 
-const stylesheet = createStyleSheet(({
+const stylesheet = createStyleSheet({
   scrollView: {
     padding: 20,
     height: '100%',
   },
   text: {
-    ...(typography.body),
-    color: "white",
+    ...typography.body,
+    color: 'white',
   },
   button: {
-    color: "transparent",
-    backgroundColor: "white",
+    color: 'transparent',
+    backgroundColor: 'white',
   },
   startButton: {
     backgroundColor: 'white',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 3,
-    alignItems: "center",
+    alignItems: 'center',
   },
   startButtonText: {
-    color: "#FF00AA",
+    color: '#FF00AA',
     fontSize: typography.body.fontSize,
     lineHeight: typography.body.fontSize * 1.1,
   },
@@ -130,26 +192,25 @@ const stylesheet = createStyleSheet(({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 3,
-    alignItems: "center",
+    alignItems: 'center',
   },
   advancedButtonText: {
-    color: "white",
+    color: 'white',
     fontSize: typography.body.fontSize,
     lineHeight: typography.body.fontSize * 1.1,
   },
-}))
+})
 
 type AssignmentsCardProps = {
-  backgroundColor: string;
-  title: string,
-  suptitle?: string,
-  assignmentsCount: number,
-  message: string,
-  actions: React.ReactNode,
-  loading: boolean,
-  layoutAnimationDuration: number,
-  bdageAnimationDuration?: number,
-
+  backgroundColor: string
+  title: string
+  suptitle?: string
+  assignmentsCount: number
+  message: string
+  actions: React.ReactNode
+  loading: boolean
+  layoutAnimationDuration: number
+  bdageAnimationDuration?: number
 }
 
 const AssignmentsCard = ({
@@ -164,24 +225,39 @@ const AssignmentsCard = ({
   bdageAnimationDuration = 125,
 }: AssignmentsCardProps) => {
   const { styles } = useStyles(assignmentsCardStylesheet)
-  const enteringAnimation = useMemo(() => ZoomIn.duration(bdageAnimationDuration), [bdageAnimationDuration]);
-  const exitingAnimation = useMemo(() => ZoomOut.duration(bdageAnimationDuration), [bdageAnimationDuration]);
-  const layoutAnimation = useMemo(() => SequencedTransition.duration(layoutAnimationDuration), [layoutAnimationDuration]);
+  const enteringAnimation = useMemo(
+    () => ZoomIn.duration(bdageAnimationDuration),
+    [bdageAnimationDuration],
+  )
+  const exitingAnimation = useMemo(
+    () => ZoomOut.duration(bdageAnimationDuration),
+    [bdageAnimationDuration],
+  )
+  const layoutAnimation = useMemo(
+    () => SequencedTransition.duration(layoutAnimationDuration),
+    [layoutAnimationDuration],
+  )
 
   return (
     // <LoadingIndicator loading={loading}>
-    <Animated.View style={[styles.view, { backgroundColor }]} layout={layoutAnimation} >
+    <Animated.View
+      style={[styles.view, { backgroundColor }]}
+      layout={layoutAnimation}>
       <View>
         {suptitle && <Text style={styles.text}>{suptitle}</Text>}
         <View style={appStyles.row}>
           <Text style={styles.textHeading}>{title}</Text>
           <View style={{ width: 8 }} />
-          {assignmentsCount > 0 && <Animated.View style={styles.badge} entering={enteringAnimation} exiting={exitingAnimation}>
-            <Text style={[styles.badgeText, { color: backgroundColor }]}>
-              {assignmentsCount}
-            </Text>
-          </Animated.View>
-          }
+          {assignmentsCount > 0 && (
+            <Animated.View
+              style={styles.badge}
+              entering={enteringAnimation}
+              exiting={exitingAnimation}>
+              <Text style={[styles.badgeText, { color: backgroundColor }]}>
+                {assignmentsCount}
+              </Text>
+            </Animated.View>
+          )}
         </View>
       </View>
       <View style={{ height: 16 }} />
@@ -190,22 +266,22 @@ const AssignmentsCard = ({
       {assignmentsCount > 0 && actions}
     </Animated.View>
     // </LoadingIndicator>
-  );
-};
+  )
+}
 
-const assignmentsCardStylesheet = createStyleSheet(({
+const assignmentsCardStylesheet = createStyleSheet({
   view: {
     padding: 20,
     borderRadius: 4,
   },
   text: {
-    ...(typography.body),
-    color: "white",
+    ...typography.body,
+    color: 'white',
     lineHeight: typography.body.fontSize * 1.15,
   },
   textHeading: {
-    ...(typography.titleC),
-    color: "white",
+    ...typography.titleC,
+    color: 'white',
   },
   badge: {
     backgroundColor: 'white',
@@ -216,8 +292,7 @@ const assignmentsCardStylesheet = createStyleSheet(({
     marginTop: 2.5,
   },
   badgeText: {
-    ...(typography.label),
+    ...typography.label,
     lineHeight: typography.label.fontSize * 1.2,
   },
-}))
-
+})

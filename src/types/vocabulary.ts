@@ -8,6 +8,7 @@ import { PronunciationAudio } from './pronunciationAudio';
  * Vocabulary items are words made up of kanji and kana.
  */
 export interface Vocabulary extends Subject {
+  type: 'vocabulary';
   /**
    * An array of numeric identifiers for the kanji that make up this vocabulary.
    * These are the subjects that must have passed assignments in order to unlock this subject's assignment.

@@ -18,28 +18,54 @@ const options = {
 }
 
 const fetchLessons = async (): Promise<Assignment[]> => {
-  const response = await axios.get<ApiResponse<Assignment[]>>(
+  const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
     options
   )
-  return response.data.data
+  return response.data.data.map(el => el.data)
 }
 
 const fetchReviews = async (): Promise<Assignment[]> => {
-  const response = await axios.get<ApiResponse<Assignment[]>>(
+  const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
     options
   )
-  return response.data.data
+  return response.data.data.map(el => el.data)
 }
 
-const fetchSubject = async (id: number): Promise<SubjectType> => {
+const fetchSubject = async (id: number): Promise<SubjectWithId> => {
   const response = await axios.get<ApiResponse<SubjectType>>(
     `${API_BASE_URL}/subjects/${id}`,
     options
   )
-  return response.data.data
+  const type = response.data.object
+  if (isValidSubjectType(type)) {
+    return { id: response.data.id, subject: { ...response.data.data, type } as SubjectType }
+  }
+
+  throw `object field used for determining type of subject is wrong. object: ${type}`
 }
+
+const fetchSubjects = async (ids: number[]): Promise<SubjectWithId[]> => {
+  const response = await axios.get<ApiResponse<ApiResponse<SubjectType>[]>>(
+    `${API_BASE_URL}/subjects/`,
+    {
+      ...options,
+      params: { ids: ids.join(',') },
+    },
+  )
+
+  return response.data.data.map(el => {
+    const type = el.object
+    if (isValidSubjectType(type)) {
+      return { id: el.id, subject: { ...el.data, type } as SubjectType }
+    }
+    else {
+      return undefined
+    }
+  }).filter((el): el is SubjectWithId => el !== undefined)
+}
+
 
 const startAssignment = async (id: number): Promise<Assignment> => {
   const response = await axios.put<ApiResponse<Assignment>>(
@@ -58,12 +84,28 @@ const createReview = async (params: CreateReviewParams): Promise<[Review, Create
   return [response.data.data, response.data.resources_updated]
 }
 
+/**
+ * Checks if a given type is a valid SubjectType.
+ * 
+ * @param type - The type to check.
+ * @returns True if the type is one of 'radical', 'kanji', 'vocabulary', or 'kana_vocabulary'.
+ */
+function isValidSubjectType(type: string): type is 'radical' | 'kanji' | 'vocabulary' | 'kana_vocabulary' {
+  return ['radical', 'kanji', 'vocabulary', 'kana_vocabulary'].includes(type);
+}
+
 export const WaniKaniApi = {
   fetchLessons: fetchLessons,
   fetchSubject: fetchSubject,
+  fetchSubjects: fetchSubjects,
   startAssignment: startAssignment,
   createReview: createReview,
   fetchReviews: fetchReviews,
+}
+
+interface SubjectWithId {
+  id: number
+  subject: SubjectType
 }
 
 interface ApiResponse<T> {
