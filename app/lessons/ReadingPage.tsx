@@ -1,18 +1,20 @@
 import { Kanji } from '@/src/types/kanji'
 import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
-import { Text, View } from 'react-native'
+import { FlatList, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
 import typography from '@/src/constants/typography'
 import { Hint } from './Hint'
+import { ReadingView } from './ReadingView'
+import { Reading } from '@/src/types/reading'
 
 type Props = {
   subject: Vocabulary | Kanji
 }
 
-export const MeaningPage = ({ subject }: Props) => {
+export const ReadingPage = ({ subject }: Props) => {
   return SubjectUtils.isKanji(subject)
     ? KanjiPage({ subject })
     : VocabularyPage({ subject })
@@ -25,23 +27,34 @@ type VocabularyProps = {
 export const VocabularyPage = ({ subject }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
-  const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
-    el => el.meaning,
-  )
+  console.log('\n\nPRONON', subject.pronunciation_audios)
+  const getAudio = (reading: Reading) =>
+    SubjectUtils.getPrononciationAudioForReading(subject, reading)
+
+  console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
 
   return (
     <Page>
-      <PageSection title='Other meanings'>
-        <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
+      <PageSection title='Vocab Reading'>
+        <FlatList
+          scrollEnabled={false}
+          style={styles.flatList}
+          data={subject.readings}
+          renderItem={el => (
+            <ReadingView
+              reading={el.item}
+              pronunciation_audios={getAudio(el.item)}
+            />
+          )}
+          ItemSeparatorComponent={() => (
+            <View style={styles.flatListSeparator} />
+          )}
+        />
       </PageSection>
       <View style={{ height: 16 }} />
-      <PageSection title='Word Type'>
-        <Text style={typography.body}>{subject.parts_of_speech}</Text>
-      </PageSection>
-      <View style={{ height: 16 }} />
-      <PageSection title='Meaning Explanation'>
-        <CustomTagRenderer style={styles.meaningExplanation}>
-          {subject.meaning_mnemonic}
+      <PageSection title='Reading Explanation'>
+        <CustomTagRenderer style={styles.explanation}>
+          {subject.reading_mnemonic}
         </CustomTagRenderer>
       </PageSection>
     </Page>
@@ -58,7 +71,7 @@ export const KanjiPage = ({ subject }: KanjiProps) => {
   return (
     <Page>
       <PageSection title='Meaning Mnemonic'>
-        <CustomTagRenderer style={styles.meaningExplanation}>
+        <CustomTagRenderer style={styles.explanation}>
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
         <View style={{ height: 16 }} />
@@ -75,7 +88,7 @@ const stylesheet = createStyleSheet({
   flatListSeparator: {
     width: 24,
   },
-  meaningExplanation: {
+  explanation: {
     ...typography.body,
     lineHeight: typography.body.fontSize * 1.4,
   },

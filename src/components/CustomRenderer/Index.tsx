@@ -51,6 +51,20 @@ const parseStringToElements = (input: string): ParsedElement[] => {
       currentText += input[currentIndex]
       pushText()
       currentIndex += 1
+    } else if (input[currentIndex] === '\r') {
+      if (input[currentIndex + 1] === '\n') {
+        currentText += '\n'
+        pushText()
+        currentIndex += 2
+      } else {
+        currentText += input[currentIndex]
+        pushText()
+        currentIndex += 1
+      }
+    } else if (input[currentIndex] === '\n') {
+      currentText += input[currentIndex]
+      pushText()
+      currentIndex += 1
     } else {
       currentText += input[currentIndex]
       currentIndex += 1
@@ -69,6 +83,10 @@ const renderElements = (
   return elements.map((element, index) => {
     const key = `${keyPrefix}-${index}`
     if (element.type === 'text') {
+      if (element.content === '\r' || element.content === '\n') {
+        // make a new line
+        return <View style={{ width: '100%' }} key={key} />
+      }
       return (
         <Text style={style} key={key}>
           {element.content}

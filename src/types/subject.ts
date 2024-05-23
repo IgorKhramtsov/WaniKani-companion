@@ -3,6 +3,7 @@ import { AuxiliaryMeaning } from './auxiliaryMeaning'
 import { KanaVocabulary } from './kanaVocabulary'
 import { Kanji } from './kanji'
 import { Meaning } from './meaning'
+import { PronunciationAudio } from './pronunciationAudio'
 import { Radical } from './radical'
 import { Reading } from './reading'
 import { Vocabulary } from './vocabulary'
@@ -87,6 +88,14 @@ export namespace SubjectUtils {
   export const getPrimaryReading = (
     subject: Kanji | Vocabulary,
   ): Reading | undefined => subject.readings.find(el => el.primary)
+
+  export const getPrononciationAudioForReading = (
+    subject: Vocabulary | KanaVocabulary,
+    reading: Reading,
+  ): PronunciationAudio[] =>
+    subject.pronunciation_audios.filter(
+      el => el.metadata.pronunciation === reading.reading,
+    )
 
   export function isRadical(subject: SubjectType): subject is Radical {
     return subject.type === 'radical'

@@ -48,3 +48,11 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Check out user scripts
+https://community.wanikani.com/t/my-journey-of-368-days-the-ultimate-guide-for-wk/31318/2
+
+## TODO
+1. Patterns of use (context) is not in the API yet. I need to scrap it someway.
+   Possible solution - scrap data manually using the cookies and upload it to
+   github grouped by level. Add an action to update it periodically.

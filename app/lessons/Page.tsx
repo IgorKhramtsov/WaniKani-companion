@@ -1,7 +1,7 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { PropsWithChildren } from 'react'
-import { Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 /**
@@ -10,7 +10,7 @@ import { createStyleSheet, useStyles } from 'react-native-unistyles'
 export const Page = ({ children }: PropsWithChildren) => {
   const { styles } = useStyles(pageStylesheet)
 
-  return <View style={styles.pageView}>{children}</View>
+  return <ScrollView style={styles.pageView}>{children}</ScrollView>
 }
 
 type PageSectionProps = PropsWithChildren<{

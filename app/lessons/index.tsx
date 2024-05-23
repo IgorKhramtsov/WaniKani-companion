@@ -9,6 +9,8 @@ import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CompositionPage } from './CompositionPage'
 import { MeaningPage } from './MeaningPage'
+import { ReadingPage } from './ReadingPage'
+import { ContextPage } from './ContextPage'
 
 export default function Index() {
   const dispatch = useAppDispatch()
@@ -61,6 +63,17 @@ export default function Index() {
           SubjectUtils.isKanji(subject)) && (
           <View key='MeaningPage'>
             <MeaningPage subject={subject} />
+          </View>
+        )}
+        {(SubjectUtils.isVocabulary(subject) ||
+          SubjectUtils.isKanji(subject)) && (
+          <View key='ReadingPage'>
+            <ReadingPage subject={subject} />
+          </View>
+        )}
+        {SubjectUtils.isVocabulary(subject) && (
+          <View key='ContextPage'>
+            <ContextPage subject={subject} />
           </View>
         )}
       </PagerView>

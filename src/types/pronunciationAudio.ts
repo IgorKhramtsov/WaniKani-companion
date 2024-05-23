@@ -10,7 +10,7 @@ export interface PronunciationAudio {
   /**
    * The content type of the audio. Currently the API delivers audio/mpeg and audio/ogg.
    */
-  content_type: 'audio/mpeg' | 'audio/ogg';
+  content_type: 'audio/mpeg' | 'audio/ogg' | 'audio/webm';
   
   /**
    * Details about the pronunciation audio.
@@ -19,7 +19,7 @@ export interface PronunciationAudio {
     /**
      * The gender of the voice actor.
      */
-    gender: string;
+    gender: 'male' | 'female';
     
     /**
      * A unique ID shared between the same source pronunciation audio.

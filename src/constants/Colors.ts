@@ -11,14 +11,14 @@ const tintColorDark = '#fff'
 const pink = '#FF00AA'
 const purple = '#9F01ED'
 const blue = '#00AAFF'
+const gray = '#555555'
 
 export const Colors = {
   pink,
   blue,
   purple,
-  getBottomBorderColor: (baseColor: string) =>
-    tinycolor(baseColor).darken(12).toString(),
-  gray: '#EAEAEA',
+  gray,
+  generalGray: '#EAEAEA',
   /*
    * Can be used for borders
    */
@@ -39,4 +39,6 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  getBottomBorderColor: (baseColor: string) =>
+    tinycolor(baseColor).darken(12).toString(),
 }

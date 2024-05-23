@@ -23,7 +23,7 @@ export const Hint = ({ children }: PropsWithChildren) => {
 
 const stylesheet = createStyleSheet({
   container: {
-    backgroundColor: Colors.gray,
+    backgroundColor: Colors.generalGray,
     padding: 16,
   },
   hintTitle: {
