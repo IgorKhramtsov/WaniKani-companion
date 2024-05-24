@@ -19,6 +19,9 @@ export const Colors = {
   purple,
   gray,
   generalGray: '#EAEAEA',
+  generalDarkGray: '#DADADA',
+  correctGreen: '#88CC01',
+  incorrectRed: '#DC3545',
   /*
    * Can be used for borders
    */

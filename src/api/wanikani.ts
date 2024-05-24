@@ -1,16 +1,16 @@
-import axios from "axios"
-import { Assignment } from "../types/assignment"
-import { SubjectType } from "../types/subject"
-import { Review } from "../types/review"
-import { CreateReviewParams } from "../types/createReviewParams"
-import { ReviewStatistic } from "../types/reviewStatistic"
+import axios from 'axios'
+import { Assignment } from '../types/assignment'
+import { SubjectType } from '../types/subject'
+import { Review } from '../types/review'
+import { CreateReviewParams } from '../types/createReviewParams'
+import { ReviewStatistic } from '../types/reviewStatistic'
 import { API_TOKEN } from '../../config'
 
 const API_BASE_URL = 'https://api.wanikani.com/v2'
 
 const authHeaders = {
-  'Authorization': `Bearer ${API_TOKEN}`,
-  'Wanikani-Revision': '20170710'
+  Authorization: `Bearer ${API_TOKEN}`,
+  'Wanikani-Revision': '20170710',
 }
 
 const options = {
@@ -20,7 +20,7 @@ const options = {
 const fetchLessons = async (): Promise<Assignment[]> => {
   const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
-    options
+    options,
   )
   return response.data.data.map(el => el.data)
 }
@@ -28,25 +28,29 @@ const fetchLessons = async (): Promise<Assignment[]> => {
 const fetchReviews = async (): Promise<Assignment[]> => {
   const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
-    options
+    options,
   )
   return response.data.data.map(el => el.data)
 }
 
-const fetchSubject = async (id: number): Promise<SubjectWithId> => {
+const fetchSubject = async (id: number): Promise<SubjectType> => {
   const response = await axios.get<ApiResponse<SubjectType>>(
     `${API_BASE_URL}/subjects/${id}`,
-    options
+    options,
   )
   const type = response.data.object
   if (isValidSubjectType(type)) {
-    return { id: response.data.id, subject: { ...response.data.data, type } as SubjectType }
+    return {
+      ...response.data.data,
+      id: response.data.id,
+      type,
+    } as SubjectType
   }
 
   throw `object field used for determining type of subject is wrong. object: ${type}`
 }
 
-const fetchSubjects = async (ids: number[]): Promise<SubjectWithId[]> => {
+const fetchSubjects = async (ids: number[]): Promise<SubjectType[]> => {
   const response = await axios.get<ApiResponse<ApiResponse<SubjectType>[]>>(
     `${API_BASE_URL}/subjects/`,
     {
@@ -55,43 +59,48 @@ const fetchSubjects = async (ids: number[]): Promise<SubjectWithId[]> => {
     },
   )
 
-  return response.data.data.map(el => {
-    const type = el.object
-    if (isValidSubjectType(type)) {
-      return { id: el.id, subject: { ...el.data, type } as SubjectType }
-    }
-    else {
-      return undefined
-    }
-  }).filter((el): el is SubjectWithId => el !== undefined)
+  return response.data.data
+    .map(el => {
+      const type = el.object
+      if (isValidSubjectType(type)) {
+        return { ...el.data, id: el.id, type } as SubjectType
+      } else {
+        console.error('Unknown subject type: ', type)
+        return undefined
+      }
+    })
+    .filter((el): el is SubjectType => el !== undefined)
 }
-
 
 const startAssignment = async (id: number): Promise<Assignment> => {
   const response = await axios.put<ApiResponse<Assignment>>(
     `${API_BASE_URL}/assignments/${id}/start`,
-    options
+    options,
   )
   return response.data.data
 }
 
-const createReview = async (params: CreateReviewParams): Promise<[Review, CreateReviewResourcesUpdated]> => {
+const createReview = async (
+  params: CreateReviewParams,
+): Promise<[Review, CreateReviewResourcesUpdated]> => {
   const response = await axios.post<CreateReviewApiResponse>(
     `${API_BASE_URL}/reviews`,
     params,
-    options
+    options,
   )
   return [response.data.data, response.data.resources_updated]
 }
 
 /**
  * Checks if a given type is a valid SubjectType.
- * 
+ *
  * @param type - The type to check.
  * @returns True if the type is one of 'radical', 'kanji', 'vocabulary', or 'kana_vocabulary'.
  */
-function isValidSubjectType(type: string): type is 'radical' | 'kanji' | 'vocabulary' | 'kana_vocabulary' {
-  return ['radical', 'kanji', 'vocabulary', 'kana_vocabulary'].includes(type);
+function isValidSubjectType(
+  type: string,
+): type is 'radical' | 'kanji' | 'vocabulary' | 'kana_vocabulary' {
+  return ['radical', 'kanji', 'vocabulary', 'kana_vocabulary'].includes(type)
 }
 
 export const WaniKaniApi = {
@@ -103,14 +112,9 @@ export const WaniKaniApi = {
   fetchReviews: fetchReviews,
 }
 
-interface SubjectWithId {
-  id: number
-  subject: SubjectType
-}
-
 interface ApiResponse<T> {
   id: number
-  object: 'assignment' | string,
+  object: 'assignment' | string
   url: string
   data_updated_at: Date | null
   data: T
@@ -118,15 +122,14 @@ interface ApiResponse<T> {
 
 interface CreateReviewApiResponse {
   id: number
-  object: 'assignment' | string,
+  object: 'assignment' | string
   url: string
   data_updated_at: Date | null
-  data: Review,
+  data: Review
   resources_updated: CreateReviewResourcesUpdated
 }
 
 interface CreateReviewResourcesUpdated {
-  assignment: Assignment,
+  assignment: Assignment
   review_statistic: ReviewStatistic
 }
-

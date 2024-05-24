@@ -1,13 +1,12 @@
 import {
   SerializedError,
   createAsyncThunk,
+  createSelector,
   createSlice,
 } from '@reduxjs/toolkit'
-import { Assignment } from '../types/assignment'
 import { WaniKaniApi } from '../api/wanikani'
-import { AppState } from 'react-native'
 import { RootState } from './store'
-import { Subject, SubjectType } from '../types/subject'
+import { SubjectType } from '../types/subject'
 
 export interface SubjectsSlice {
   subjects: Record<number, SubjectType>
@@ -32,7 +31,7 @@ export const subjectsSlice = createSlice({
       })
       .addCase(fetchSubject.fulfilled, (state, action) => {
         state.status = 'idle'
-        state.subjects[action.payload.id] = action.payload.subject
+        state.subjects[action.payload.id] = action.payload
       })
       .addCase(fetchSubject.rejected, (state, action) => {
         state.status = 'failed'
@@ -45,8 +44,8 @@ export const subjectsSlice = createSlice({
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
         state.status = 'idle'
-        for (const { id, subject } of action.payload) {
-          state.subjects[id] = subject
+        for (const subject of action.payload) {
+          state.subjects[subject.id] = subject
         }
       })
       .addCase(fetchSubjects.rejected, (state, action) => {
@@ -70,7 +69,7 @@ export const fetchSubjects = createAsyncThunk(
     const state = getState() as RootState
     const existingIds = Object.keys(state.subjectsSlice.subjects)
     const missingids = subjectIds.filter(
-      (el) => !existingIds.includes(el.toString()),
+      el => !existingIds.includes(el.toString()),
     )
     if (missingids.length === 0) {
       console.log('Nothing to fetch. Returning []')
@@ -85,5 +84,25 @@ export const selectSubject = (id?: number) => (state: RootState) => {
   if (!id) return undefined
   return state.subjectsSlice.subjects[id]
 }
+export const selectSubjects = (ids?: number[]) =>
+  createSelector(
+    (state: RootState) => state.subjectsSlice.subjects,
+    subjects => {
+      if (!ids) return []
+      if (Object.keys(subjects).length === 0) return []
+      const selectedSubjects = ids.map(id => subjects[id])
+      const definedSubjects = selectedSubjects.filter(el => el !== undefined)
+      if (definedSubjects.length !== selectedSubjects.length) {
+        const undefinedSubjects = selectedSubjects.filter(
+          el => el === undefined,
+        )
+        console.error(
+          'Undefined subjects found during selection. Number of undefined elements: ',
+          undefinedSubjects.length,
+        )
+      }
+      return definedSubjects
+    },
+  )
 
 export default subjectsSlice.reducer

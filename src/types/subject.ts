@@ -1,4 +1,5 @@
 import { Colors } from '../constants/Colors'
+import { StringUtils } from '../utils/stringUtils'
 import { AuxiliaryMeaning } from './auxiliaryMeaning'
 import { KanaVocabulary } from './kanaVocabulary'
 import { Kanji } from './kanji'
@@ -15,6 +16,12 @@ export type SubjectType = Radical | Kanji | Vocabulary | KanaVocabulary
  */
 export interface Subject {
   type: string
+
+  /**
+   * The id of the subject. Assigned manually in the WaniKani API
+   * implementation
+   */
+  id: number
 
   /**
    * Collection of auxiliary meanings.
@@ -96,6 +103,9 @@ export namespace SubjectUtils {
     subject.pronunciation_audios.filter(
       el => el.metadata.pronunciation === reading.reading,
     )
+
+  export const getSubjectName = (subject: SubjectType) =>
+    StringUtils.capitalizeFirstLetter(subject.type.toString()).split('_')[0]
 
   export function isRadical(subject: SubjectType): subject is Radical {
     return subject.type === 'radical'

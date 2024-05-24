@@ -22,6 +22,7 @@ import {
   selectError,
   selectLessonsBatch,
   selectLessonsCount,
+  selectReviewsBatch,
   selectReviewsCount,
   selectStatus,
 } from '@/src/redux/assignmentsSlice'
@@ -35,7 +36,9 @@ export default function Index() {
   const reviewsCount = useAppSelector(selectReviewsCount)
   const error = useAppSelector(selectError)
   const batch = useAppSelector(selectLessonsBatch)
+  const reviewBatch = useAppSelector(selectReviewsBatch)
   const testBatchWithKanji = [494]
+  console.log('review', reviewBatch)
 
   const refresh = useCallback(
     () => dispatch(fetchLessonsAndReviews()),
@@ -139,19 +142,27 @@ export default function Index() {
             <Animated.View
               entering={enteringAnimationLeft}
               exiting={exitingAnimationRight}>
-              <Pressable style={styles.startButton}>
-                <View style={appStyles.row}>
-                  <Text style={[styles.startButtonText, { color: '#00AAFF' }]}>
-                    Start Reviews
-                  </Text>
-                  <View style={{ width: 4 }} />
-                  <AntDesign
-                    name='right'
-                    size={typography.body.fontSize}
-                    color='#00AAFF'
-                  />
-                </View>
-              </Pressable>
+              <Link
+                href={{
+                  pathname: 'review',
+                  params: { subjects: reviewBatch },
+                }}
+                asChild>
+                <Pressable style={styles.startButton}>
+                  <View style={appStyles.row}>
+                    <Text
+                      style={[styles.startButtonText, { color: '#00AAFF' }]}>
+                      Start Reviews
+                    </Text>
+                    <View style={{ width: 4 }} />
+                    <AntDesign
+                      name='right'
+                      size={typography.body.fontSize}
+                      color='#00AAFF'
+                    />
+                  </View>
+                </Pressable>
+              </Link>
             </Animated.View>
           }
         />
