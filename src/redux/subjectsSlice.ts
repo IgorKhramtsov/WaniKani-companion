@@ -84,7 +84,7 @@ export const selectSubject = (id?: number) => (state: RootState) => {
   if (!id) return undefined
   return state.subjectsSlice.subjects[id]
 }
-export const selectSubjects = createSelector(
+const innerSelectSubjects = createSelector(
   (state: RootState) => state.subjectsSlice.subjects,
   (_: RootState, ids?: number[]) => ids,
   (subjects, ids) => {
@@ -102,5 +102,8 @@ export const selectSubjects = createSelector(
     return definedSubjects
   },
 )
+export const selectSubjects =
+  (subjectIds: number[] | undefined) => (state: RootState) =>
+    innerSelectSubjects(state, subjectIds)
 
 export default subjectsSlice.reducer

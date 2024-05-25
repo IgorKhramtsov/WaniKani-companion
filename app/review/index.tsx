@@ -53,9 +53,7 @@ export default function Index() {
       // .slice(0, 2)
   }, [params])
   console.log('SUBJECTS', subjectIds)
-  const subjectsData = useAppSelector(state =>
-    selectSubjects(state, subjectIds),
-  )
+  const subjectsData = useAppSelector(selectSubjects(subjectIds))
   const reviewSliceStatus = useAppSelector(selectStatus)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
