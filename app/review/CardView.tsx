@@ -1,6 +1,6 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
-import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
+import { useAppDispatch } from '@/src/hooks/redux'
 import {
   ReviewTask,
   ReviewTaskUtils,
@@ -9,9 +9,16 @@ import {
 } from '@/src/redux/reviewSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
@@ -26,9 +33,33 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
 
-  // const textInputRef = useRef<TextInput>(null)
   const [input, setInput] = useState('')
   const [taskState, setTaskState] = useState<TaskState>('notAnswered')
+
+  const shakeAnimation = useSharedValue(0)
+
+  const shakeInput = useCallback(
+    () =>
+      (shakeAnimation.value = withRepeat(
+        withSequence(
+          withTiming(15, { duration: 65 }),
+          withTiming(0, { duration: 65 }),
+        ),
+        2,
+      )),
+    [shakeAnimation],
+  )
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeAnimation.value }],
+  }))
+
+  useEffect(() => {
+    // TODO: add confetti animation of emojis for correct answer
+    // https://shopify.engineering/building-arrives-confetti-in-react-native-with-reanimated
+    if (taskState === 'incorrect') {
+      shakeInput()
+    }
+  }, [shakeInput, taskState])
 
   const submit = useCallback(
     (input: string) => {
@@ -105,10 +136,9 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           </Text>
         </View>
         <View style={{ height: 20 }} />
-        <View style={styles.textInputBox}>
+        <Animated.View style={[styles.textInputBox, animatedStyle]}>
           <TextInput
             ref={textInputRef}
-            // onLayout={() => textInputRef?.current?.focus()}
             style={[
               styles.textInput,
               {
@@ -127,7 +157,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
             // TODO: can not set semi-transparent color of placeholder text
             // (although it looks like the default color is semi-transparent)
           />
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </View>
   )
@@ -163,5 +193,6 @@ const stylesheet = createStyleSheet({
     ...typography.titleC,
     height: 48,
     minWidth: '80%',
+    borderRadius: 8,
   },
 })
