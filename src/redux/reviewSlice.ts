@@ -26,7 +26,7 @@ interface ReviewMeaningTask extends BaseReviewTask {
   type: 'meaning'
 }
 
-type ReviewTask = ReviewReadingTask | ReviewMeaningTask
+export type ReviewTask = ReviewReadingTask | ReviewMeaningTask
 
 export namespace ReviewTaskUtils {
   export function isMeaningTask(task: ReviewTask): task is ReviewMeaningTask {

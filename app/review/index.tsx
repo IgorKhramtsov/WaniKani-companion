@@ -1,7 +1,9 @@
+import { RollInLeft, RollOutRight } from '@/src/animations/roll'
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
+  ReviewTask,
   ReviewTaskUtils,
   answeredCorrectly,
   answeredIncorrectly,
@@ -9,10 +11,10 @@ import {
   subjectsFetched,
 } from '@/src/redux/reviewSlice'
 import { fetchSubjects, selectSubjects } from '@/src/redux/subjectsSlice'
-import { SubjectUtils } from '@/src/types/subject'
+import { SubjectType, SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { useLocalSearchParams } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -24,6 +26,7 @@ import {
   TextInput,
   TouchableWithoutFeedback,
 } from 'react-native-gesture-handler'
+import Animated from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
@@ -36,56 +39,6 @@ export default function Index() {
   const { styles } = useStyles(stylesheet)
   const subjectsData = useAppSelector(selectSubjects(subjects))
   const currentTask = useAppSelector(selectCurrentTask)
-  const [input, setInput] = useState('')
-  const [taskState, setTaskState] = useState<TaskState>('notAnswered')
-
-  useEffect(() => {
-    setTaskState('notAnswered')
-    setInput('')
-  }, [currentTask])
-
-  const submit = useCallback(() => {
-    // Second submit will actually submit the task and move to the next (the
-    //  same as web app works)
-    if (taskState !== 'notAnswered') {
-      const args = {
-        id: currentTask.subject.id,
-        type: currentTask.type,
-      }
-      if (taskState === 'incorrect') {
-        dispatch(answeredIncorrectly(args))
-      } else {
-        dispatch(answeredCorrectly(args))
-      }
-      return
-    }
-
-    if (input.length === 0) return
-    if (ReviewTaskUtils.isReadingTask(currentTask)) {
-      // TODO: implement error threshold
-      //  reading: wrong type used (oniyomi/kyniyomi)
-      //  reading: 1 symbol derivation (or 1 symbol length difference)
-      const subject = currentTask.subject
-      const matchedReading = subject.readings.find(el => el.reading === input)
-      if (matchedReading === undefined) {
-        setTaskState('incorrect')
-      } else if (!matchedReading.accepted_answer) {
-        setTaskState('incorrect')
-      } else {
-        setTaskState('correct')
-      }
-    } else {
-      const subject = currentTask.subject
-      const matchedMeaning = subject.meanings.find(el => el.meaning === input)
-      if (matchedMeaning === undefined) {
-        setTaskState('incorrect')
-      } else if (!matchedMeaning.accepted_answer) {
-        setTaskState('incorrect')
-      } else {
-        setTaskState('correct')
-      }
-    }
-  }, [dispatch, currentTask, input, taskState])
 
   useEffect(() => {
     if (subjects !== undefined) {
@@ -105,18 +58,6 @@ export default function Index() {
     return <Text>Current task undefined</Text>
   }
 
-  const subject = currentTask.subject
-  const subjectColor = SubjectUtils.getAssociatedColor(subject)
-  const subjectName = SubjectUtils.getSubjectName(subject)
-  const task = StringUtils.capitalizeFirstLetter(currentTask.type.toString())
-  const taskStateColor =
-    taskState === 'correct'
-      ? Colors.correctGreen
-      : taskState === 'incorrect'
-        ? Colors.incorrectRed
-        : undefined
-  const taskStateTextColor = taskState === 'notAnswered' ? undefined : 'white'
-
   // TODO: rewrite this page to show stack of cards with each card is colored
   // appropriately
   //
@@ -124,85 +65,175 @@ export default function Index() {
   // place. To fix that custom placeholder should be implemented
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
-        <TouchableWithoutFeedback
-          style={{ height: '100%' }}
-          onPress={Keyboard.dismiss}
-          accessible={false}>
-          <View
-            style={[
-              styles.glyphDisplayView,
-              { backgroundColor: subjectColor },
-            ]}>
-            <Text style={styles.glyphText}>{subject.characters}</Text>
-          </View>
-          <View style={styles.taskContainer}>
-            <Text style={styles.taskText}>
-              {subjectName}{' '}
-              <Text style={[styles.taskText, { fontWeight: '500' }]}>
-                {task}
-              </Text>
-            </Text>
-          </View>
-          <View style={styles.textInputBox}>
-            <TextInput
-              style={[
-                styles.textInput,
-                { backgroundColor: taskStateColor, color: taskStateTextColor },
-              ]}
-              textAlign={'center'}
-              onChangeText={setInput}
-              onSubmitEditing={submit}
-              value={input}
-              blurOnSubmit={false}
-              placeholder='Your Response'
-            />
-          </View>
-        </TouchableWithoutFeedback>
+    <TouchableWithoutFeedback
+      style={{ height: '100%' }}
+      onPress={Keyboard.dismiss}
+      accessible={false}>
+      <View style={styles.pageContainer}>
+        <Animated.View
+          key={currentTask.subject.id + currentTask.type}
+          exiting={RollOutRight.duration(500)}
+          // entering={RollInLeft.duration(800)}
+        >
+          <CardView task={currentTask} />
+        </Animated.View>
       </View>
-    </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   )
 }
 
 const stylesheet = createStyleSheet({
-  scrollView: {
-    padding: 20,
+  pageContainer: {
+    flex: 1,
+    margin: 30,
+    justifyContent: 'center',
   },
   glyphText: {
     ...typography.display1,
     color: 'white',
   },
-  glyphName: {
-    ...typography.titleB,
-    color: 'white',
-    fontWeight: '300',
-  },
-  glyphDisplayView: {
-    height: 200,
+  card: {
+    // TODO: make responsive
+    height: '80%',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 16,
   },
-  taskContainer: {
+  cardTextContainer: {
     alignItems: 'center',
   },
   taskText: {
     ...typography.titleB,
     fontWeight: '400',
+    color: 'white',
   },
   textInputBox: {
-    flex: 1,
     padding: 20,
-    alignContent: 'center',
-    justifyContent: 'center',
   },
   textInput: {
     ...typography.titleC,
-    textAlign: 'center',
     height: 48,
+    minWidth: '80%',
     borderColor: Colors.generalDarkGray,
     borderBottomWidth: 2,
   },
 })
+
+type CardProps = {
+  task: ReviewTask
+}
+
+const CardView = ({ task }: CardProps) => {
+  const { styles } = useStyles(stylesheet)
+  const dispatch = useAppDispatch()
+
+  const textInputRef = useRef<TextInput>(null)
+  const [input, setInput] = useState('')
+  const [taskState, setTaskState] = useState<TaskState>('notAnswered')
+
+  // useEffect(() => {
+  //   setTaskState('notAnswered')
+  //   console.log('new task fetched')
+  // }, [task])
+
+  const submit = useCallback(
+    (input: string) => {
+      // Second submit will actually submit the task and move to the next (the
+      //  same as web app works)
+      if (taskState !== 'notAnswered') {
+        const args = {
+          id: task.subject.id,
+          type: task.type,
+        }
+        if (taskState === 'incorrect') {
+          dispatch(answeredIncorrectly(args))
+        } else {
+          dispatch(answeredCorrectly(args))
+        }
+        return
+      }
+
+      if (input.length === 0) return
+      if (ReviewTaskUtils.isReadingTask(task)) {
+        // TODO: implement error threshold
+        //  reading: wrong type used (oniyomi/kuniyomi)
+        //  reading: 1 symbol derivation (or 1 symbol length difference)
+        const subject = task.subject
+        const matchedReading = subject.readings.find(el => el.reading === input)
+        if (matchedReading === undefined) {
+          setTaskState('incorrect')
+        } else if (!matchedReading.accepted_answer) {
+          setTaskState('incorrect')
+        } else {
+          setTaskState('correct')
+        }
+      } else {
+        const subject = task.subject
+        const matchedMeaning = subject.meanings.find(el => el.meaning === input)
+        if (matchedMeaning === undefined) {
+          setTaskState('incorrect')
+        } else if (!matchedMeaning.accepted_answer) {
+          setTaskState('incorrect')
+        } else {
+          setTaskState('correct')
+        }
+      }
+    },
+    [dispatch, task, taskState],
+  )
+
+  const subject = task.subject
+  const subjectColor = SubjectUtils.getAssociatedColor(subject)
+  const subjectName = SubjectUtils.getSubjectName(subject)
+  const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
+  const taskStateColor =
+    taskState === 'correct'
+      ? Colors.correctGreen
+      : taskState === 'incorrect'
+        ? Colors.incorrectRed
+        : undefined
+  // const taskStateTextColor = taskState === 'notAnswered' ? undefined : 'white'
+  const taskStateTextColor = 'white'
+
+  return (
+    <View style={[styles.card, { backgroundColor: subjectColor }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 0 }}>
+        <View style={styles.cardTextContainer}>
+          <Text style={styles.glyphText}>{subject.characters}</Text>
+          <Text style={styles.taskText}>
+            {subjectName}{' '}
+            <Text style={[styles.taskText, { fontWeight: '500' }]}>
+              {taskName}
+            </Text>
+          </Text>
+        </View>
+        <View style={{ height: 20 }} />
+        <View style={styles.textInputBox}>
+          <TextInput
+            ref={textInputRef}
+            onLayout={() => textInputRef?.current?.focus()}
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: taskStateColor,
+                color: taskStateTextColor,
+              },
+            ]}
+            textAlign={'center'}
+            onChangeText={setInput}
+            onSubmitEditing={_ => submit(input)}
+            value={input}
+            blurOnSubmit={false}
+            placeholder='Your Response'
+            autoCorrect={false}
+            autoComplete={'off'}
+            // TODO: can not set semi-transparent color of placeholder text
+            // (although it looks like the default color is semi-transparent)
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  )
+}

@@ -4,6 +4,11 @@ import subjectsSlice from './subjectsSlice'
 import reviewSlice from './reviewSlice'
 
 export const store = configureStore({
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({
+      serializableCheck: { warnAfter: 300 },
+      immutableCheck: { warnAfter: 300 },
+    }),
   reducer: {
     assignmentsSlice,
     subjectsSlice,
