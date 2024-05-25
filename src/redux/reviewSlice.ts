@@ -128,6 +128,16 @@ export const { reset, init, answeredCorrectly, answeredIncorrectly } =
   reviewSlice.actions
 
 export const selectStatus = (state: RootState) => state.reviewSlice.status
+export const selectProgress = createSelector(
+  (state: RootState) => state.reviewSlice.tasks,
+  tasks => {
+    const completed = tasks.filter(task => task.completed).length
+    const total = tasks.length
+    if (total === 0) return 0
+
+    return Math.floor((completed / total) * 100)
+  },
+)
 export const selectCurrentTask = createSelector(
   (state: RootState) => state.reviewSlice.index,
   (state: RootState) => state.reviewSlice.tasks,

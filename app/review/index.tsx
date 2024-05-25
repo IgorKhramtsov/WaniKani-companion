@@ -7,6 +7,7 @@ import {
   reset,
   selectCurrentTask,
   selectNextTask,
+  selectProgress,
   selectStatus,
 } from '@/src/redux/reviewSlice'
 import { fetchSubjects, selectSubjects } from '@/src/redux/subjectsSlice'
@@ -20,7 +21,11 @@ import {
   View,
 } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
-import Animated from 'react-native-reanimated'
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CardView } from './CardView'
 import {
@@ -45,6 +50,7 @@ export default function Index() {
     return params
       ?.split(',')
       .map(el => parseInt(el))
+      // .slice(0, 2)
   }, [params])
   console.log('SUBJECTS', subjectIds)
   const subjectsData = useAppSelector(state =>
@@ -53,6 +59,20 @@ export default function Index() {
   const reviewSliceStatus = useAppSelector(selectStatus)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
+  const progress = useAppSelector(selectProgress)
+  const progressValue = useSharedValue(0)
+
+  useEffect(() => {
+    progressValue.value = withSpring(progress, {
+      duration: 300,
+      dampingRatio: 1.5,
+      stiffness: 300,
+    })
+  }, [progress, progressValue])
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value}%`,
+  }))
 
   useEffect(() => {
     dispatch(reset())
@@ -108,6 +128,12 @@ export default function Index() {
       style={{ height: '100%' }}
       onPress={Keyboard.dismiss}
       accessible={false}>
+      <View style={styles.progressIndicatorContainer}>
+        <Animated.View
+          style={[styles.progressIndicator, progressAnimatedStyle]}>
+          <Animated.View style={[styles.progressIndicatorHighlight]} />
+        </Animated.View>
+      </View>
       <View style={styles.pageContainer}>
         {nextTask && (
           <Animated.View
@@ -161,6 +187,25 @@ export default function Index() {
 }
 
 const stylesheet = createStyleSheet({
+  progressIndicatorContainer: {
+    height: 20,
+    backgroundColor: Colors.generalDarkGray,
+    borderRadius: 10,
+    marginHorizontal: 8,
+    marginTop: 8,
+  },
+  progressIndicator: {
+    height: 20,
+    backgroundColor: Colors.correctGreen,
+    borderRadius: 10,
+  },
+  progressIndicatorHighlight: {
+    marginTop: 4,
+    marginHorizontal: 10,
+    height: 8,
+    backgroundColor: Colors.getLighter(Colors.correctGreen, 5),
+    borderRadius: 16,
+  },
   pageContainer: {
     flex: 1,
     margin: 30,

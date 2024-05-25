@@ -15,7 +15,8 @@ const gray = '#555555'
 
 const getDarker = (baseColor: string, strength: number) =>
   tinycolor(baseColor).darken(strength).toString()
-
+const getLighter = (baseColor: string, strength: number) =>
+  tinycolor(baseColor).lighten(strength).toString()
 export const Colors = {
   pink,
   blue,
@@ -46,5 +47,6 @@ export const Colors = {
     tabIconSelected: tintColorDark,
   },
   getDarker,
+  getLighter,
   getBottomBorderColor: (baseColor: string) => getDarker(baseColor, 12),
 }
