@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
+  StretchInY,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -20,6 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { isMeaningCorrect, isReadingCorrect } from './utils'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
 
@@ -35,6 +37,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const [input, setInput] = useState('')
   const [taskState, setTaskState] = useState<TaskState>('notAnswered')
+  const [hint, setHint] = useState<string | undefined>(undefined)
 
   const shakeAnimation = useSharedValue(0)
 
@@ -80,29 +83,18 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       }
 
       if (input.length === 0) return
-      if (ReviewTaskUtils.isReadingTask(task)) {
-        // TODO: implement error threshold
-        //  reading: wrong type used (oniyomi/kuniyomi)
-        //  reading: 1 symbol derivation (or 1 symbol length difference)
-        const subject = task.subject
-        const matchedReading = subject.readings.find(el => el.reading === input)
-        if (matchedReading === undefined) {
-          setTaskState('incorrect')
-        } else if (!matchedReading.accepted_answer) {
-          setTaskState('incorrect')
-        } else {
-          setTaskState('correct')
-        }
-      } else {
-        const subject = task.subject
-        const matchedMeaning = subject.meanings.find(el => el.meaning === input)
-        if (matchedMeaning === undefined) {
-          setTaskState('incorrect')
-        } else if (!matchedMeaning.accepted_answer) {
-          setTaskState('incorrect')
-        } else {
-          setTaskState('correct')
-        }
+      const result = ReviewTaskUtils.isReadingTask(task)
+        ? isReadingCorrect(input, task.subject)
+        : isMeaningCorrect(input, task.subject)
+      if (result.status === 'correct') {
+        setTaskState('correct')
+      } else if (result.status === 'correctWithHint') {
+        setTaskState('correct')
+        setHint(result.hint)
+      } else if (result.status === 'incorrect') {
+        setTaskState('incorrect')
+      } else if (result.status === 'hint') {
+        setHint(result.hint)
       }
     },
     [dispatch, task, taskState, onSubmit],
@@ -136,6 +128,13 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           </Text>
         </View>
         <View style={{ height: 20 }} />
+        {hint && (
+          <Animated.View
+            style={styles.hintContainer}
+            entering={StretchInY.duration(200)}>
+            <Text style={styles.hintText}>{hint}</Text>
+          </Animated.View>
+        )}
         <Animated.View style={[styles.textInputBox, animatedStyle]}>
           <TextInput
             ref={textInputRef}
@@ -185,6 +184,14 @@ const stylesheet = createStyleSheet({
     ...typography.titleB,
     fontWeight: '400',
     color: 'white',
+  },
+  hintContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  hintText: {
+    ...typography.subheading,
+    color: Colors.generalGray,
   },
   textInputBox: {
     padding: 20,
