@@ -52,7 +52,6 @@ const createMeaningTask = (subject: SubjectType): ReviewTask => ({
 })
 
 export interface ReviewSlice {
-  subjects: SubjectType[]
   tasks: ReviewTask[]
   index: number
   status: 'idle' | 'loading' | 'failed'
@@ -60,19 +59,26 @@ export interface ReviewSlice {
 }
 
 const initialState: ReviewSlice = {
-  subjects: [],
   tasks: [],
   index: 0,
-  status: 'idle',
+  status: 'loading',
 }
 
 export const reviewSlice = createSlice({
   name: 'subjects',
   initialState,
   reducers: {
-    subjectsFetched(state, action: PayloadAction<SubjectType[]>) {
-      state.subjects = action.payload
-      for (const subject of state.subjects) {
+    reset(state) {
+      state.tasks = []
+      state.index = 0
+      state.status = 'loading'
+      console.log('RESET')
+    },
+    init(state, action: PayloadAction<SubjectType[]>) {
+      console.log('INIT', action.payload.length)
+      if (action.payload.length === 0) return
+
+      for (const subject of action.payload) {
         if (
           SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)
@@ -81,6 +87,7 @@ export const reviewSlice = createSlice({
         }
         state.tasks.push(createMeaningTask(subject))
       }
+      state.status = 'idle'
     },
     answeredCorrectly(
       state,
@@ -117,12 +124,27 @@ export const reviewSlice = createSlice({
   },
 })
 
-export const { subjectsFetched, answeredCorrectly, answeredIncorrectly } =
+export const { reset, init, answeredCorrectly, answeredIncorrectly } =
   reviewSlice.actions
 
+export const selectStatus = (state: RootState) => state.reviewSlice.status
 export const selectCurrentTask = createSelector(
   (state: RootState) => state.reviewSlice.index,
   (state: RootState) => state.reviewSlice.tasks,
-  (index, tasks) => tasks[index],
+  (index, tasks) => {
+    console.log(
+      'Selecting current task. index: ',
+      index,
+      ' tasks: ',
+      tasks.length,
+    )
+    return tasks[index]
+  },
 )
+export const selectNextTask = createSelector(
+  (state: RootState) => state.reviewSlice.index,
+  (state: RootState) => state.reviewSlice.tasks,
+  (index, tasks): ReviewTask | undefined => tasks[index + 1],
+)
+
 export default reviewSlice.reducer

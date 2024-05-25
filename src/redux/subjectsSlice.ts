@@ -84,25 +84,23 @@ export const selectSubject = (id?: number) => (state: RootState) => {
   if (!id) return undefined
   return state.subjectsSlice.subjects[id]
 }
-export const selectSubjects = (ids?: number[]) =>
-  createSelector(
-    (state: RootState) => state.subjectsSlice.subjects,
-    subjects => {
-      if (!ids) return []
-      if (Object.keys(subjects).length === 0) return []
-      const selectedSubjects = ids.map(id => subjects[id])
-      const definedSubjects = selectedSubjects.filter(el => el !== undefined)
-      if (definedSubjects.length !== selectedSubjects.length) {
-        const undefinedSubjects = selectedSubjects.filter(
-          el => el === undefined,
-        )
-        console.error(
-          'Undefined subjects found during selection. Number of undefined elements: ',
-          undefinedSubjects.length,
-        )
-      }
-      return definedSubjects
-    },
-  )
+export const selectSubjects = createSelector(
+  (state: RootState) => state.subjectsSlice.subjects,
+  (_: RootState, ids?: number[]) => ids,
+  (subjects, ids) => {
+    if (!ids) return []
+    if (Object.keys(subjects).length === 0) return []
+    const selectedSubjects = ids.map(id => subjects[id])
+    const definedSubjects = selectedSubjects.filter(el => el !== undefined)
+    if (definedSubjects.length !== selectedSubjects.length) {
+      const undefinedSubjects = selectedSubjects.filter(el => el === undefined)
+      console.error(
+        'Undefined subjects found during selection. Number of undefined elements: ',
+        undefinedSubjects.length,
+      )
+    }
+    return definedSubjects
+  },
+)
 
 export default subjectsSlice.reducer

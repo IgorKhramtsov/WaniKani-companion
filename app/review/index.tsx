@@ -1,84 +1,162 @@
-import { RollInLeft, RollOutRight } from '@/src/animations/roll'
+import { RollOutRight } from '@/src/animations/roll'
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
-  ReviewTask,
-  ReviewTaskUtils,
-  answeredCorrectly,
-  answeredIncorrectly,
+  init,
+  reset,
   selectCurrentTask,
-  subjectsFetched,
+  selectNextTask,
+  selectStatus,
 } from '@/src/redux/reviewSlice'
 import { fetchSubjects, selectSubjects } from '@/src/redux/subjectsSlice'
-import { SubjectType, SubjectUtils } from '@/src/types/subject'
-import { StringUtils } from '@/src/utils/stringUtils'
-import { useLocalSearchParams } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocalSearchParams } from 'expo-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  ActivityIndicator,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
+  Pressable,
   Text,
   View,
 } from 'react-native'
-import {
-  TextInput,
-  TouchableWithoutFeedback,
-} from 'react-native-gesture-handler'
+import { TextInput } from 'react-native-gesture-handler'
 import Animated from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-
-type TaskState = 'correct' | 'incorrect' | 'notAnswered'
+import { CardView } from './CardView'
+import {
+  completionCopywritings,
+  completionTitleCopywritings,
+  getRandomCopywritings,
+} from './utils'
 
 export default function Index() {
   const dispatch = useAppDispatch()
-  const subjects = useLocalSearchParams<{ subjects: string }>()
-    .subjects?.split(',')
-    .map(el => parseInt(el))
+  const params = useLocalSearchParams<{ subjects: string }>().subjects
   const { styles } = useStyles(stylesheet)
-  const subjectsData = useAppSelector(selectSubjects(subjects))
+  const currentInputRef = useRef<TextInput>(null)
+  const nextInputRef = useRef<TextInput>(null)
+  const [currentCopywritings, setCurrentCopywritings] = useState<{
+    title: string
+    copy: string
+  }>({ title: completionTitleCopywritings[0], copy: completionCopywritings[0] })
+
+  const subjectIds = useMemo(() => {
+    console.log('Processing params: ', params)
+    return params
+      ?.split(',')
+      .map(el => parseInt(el))
+  }, [params])
+  console.log('SUBJECTS', subjectIds)
+  const subjectsData = useAppSelector(state =>
+    selectSubjects(state, subjectIds),
+  )
+  const reviewSliceStatus = useAppSelector(selectStatus)
   const currentTask = useAppSelector(selectCurrentTask)
+  const nextTask = useAppSelector(selectNextTask)
 
   useEffect(() => {
-    if (subjects !== undefined) {
-      dispatch(fetchSubjects(subjects))
+    dispatch(reset())
+  }, [dispatch])
+
+  useEffect(() => {
+    const randomCopywriting = getRandomCopywritings()
+    setCurrentCopywritings(randomCopywriting)
+  }, [])
+
+  useEffect(() => {
+    if (subjectIds !== undefined) {
+      console.log('Sending fetchSubjects action with ', subjectIds.length)
+      dispatch(fetchSubjects(subjectIds))
     }
-  }, [subjects, dispatch])
+  }, [subjectIds, dispatch])
 
   useEffect(() => {
-    dispatch(subjectsFetched(subjectsData))
+    console.log('Sending SubjectsFetched action with ', subjectsData.length)
+    dispatch(init(subjectsData))
   }, [subjectsData, dispatch])
 
-  if (subjects === undefined) {
+  // Show keyboard after a timeout to avoid a bug with the keyboard being shown
+  // during the page entering animation.
+  useEffect(() => {
+    if (currentTask !== undefined) {
+      // Adjust the delay time to match the duration of your animation
+      const timeoutId = setTimeout(() => {
+        currentInputRef.current?.focus()
+      }, 500)
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [currentTask, currentInputRef])
+
+  if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
   }
 
-  if (currentTask === undefined) {
-    return <Text>Current task undefined</Text>
-  }
-
-  // TODO: rewrite this page to show stack of cards with each card is colored
-  // appropriately
-  //
   // TODO: The cursor for TextInput is not in the middle when placeholder is in
   // place. To fix that custom placeholder should be implemented
 
+  if (reviewSliceStatus === 'loading') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size='large' />
+      </View>
+    )
+  }
+
   return (
-    <TouchableWithoutFeedback
+    <Pressable
       style={{ height: '100%' }}
       onPress={Keyboard.dismiss}
       accessible={false}>
       <View style={styles.pageContainer}>
-        <Animated.View
-          key={currentTask.subject.id + currentTask.type}
-          exiting={RollOutRight.duration(500)}
-          // entering={RollInLeft.duration(800)}
-        >
-          <CardView task={currentTask} />
-        </Animated.View>
+        {nextTask && (
+          <Animated.View
+            style={{
+              height: '100%',
+              width: '100%',
+              zIndex: 0,
+              position: 'absolute',
+              transform: [{ translateY: -4 }, { translateX: 3 }],
+            }}
+            key={nextTask.subject.id + nextTask.type}>
+            <CardView task={nextTask} textInputRef={nextInputRef} />
+          </Animated.View>
+        )}
+        {currentTask && (
+          <Animated.View
+            style={{
+              height: '100%',
+              width: '100%',
+              position: 'absolute',
+            }}
+            key={currentTask.subject.id + currentTask.type}
+            exiting={RollOutRight.duration(500)}>
+            <CardView
+              task={currentTask}
+              textInputRef={currentInputRef}
+              onSubmit={() => nextInputRef.current?.focus()}
+            />
+          </Animated.View>
+        )}
+        {!currentTask && (
+          <View style={styles.completionCard}>
+            <Text style={styles.completionTextTitle}>
+              {currentCopywritings.title}
+            </Text>
+            <View style={{ height: 16 }} />
+            <Text style={styles.completionText}>
+              {currentCopywritings.copy}
+            </Text>
+            <View style={{ height: 32 }} />
+            <Link href='..' asChild>
+              <Pressable style={styles.completionButton}>
+                <Text style={styles.completionButtonText}>Done</Text>
+              </Pressable>
+            </Link>
+          </View>
+        )}
       </View>
-    </TouchableWithoutFeedback>
+    </Pressable>
   )
 }
 
@@ -88,152 +166,29 @@ const stylesheet = createStyleSheet({
     margin: 30,
     justifyContent: 'center',
   },
-  glyphText: {
-    ...typography.display1,
+  completionCard: {
+    backgroundColor: Colors.blue,
+    padding: 30,
+    borderRadius: 8,
+  },
+  completionTextTitle: {
+    ...typography.heading,
     color: 'white',
   },
-  card: {
-    // TODO: make responsive
-    height: '80%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-  },
-  cardTextContainer: {
-    alignItems: 'center',
-  },
-  taskText: {
-    ...typography.titleB,
-    fontWeight: '400',
+  completionText: {
+    ...typography.body,
+    lineHeight: typography.body.fontSize * 1.22,
     color: 'white',
   },
-  textInputBox: {
-    padding: 20,
+  completionButton: {
+    backgroundColor: 'white',
+    alignItems: 'center',
+    borderRadius: 3,
+    padding: 8,
+    marginHorizontal: 16,
   },
-  textInput: {
-    ...typography.titleC,
-    height: 48,
-    minWidth: '80%',
-    borderColor: Colors.generalDarkGray,
-    borderBottomWidth: 2,
+  completionButtonText: {
+    ...typography.body,
+    color: Colors.blue,
   },
 })
-
-type CardProps = {
-  task: ReviewTask
-}
-
-const CardView = ({ task }: CardProps) => {
-  const { styles } = useStyles(stylesheet)
-  const dispatch = useAppDispatch()
-
-  const textInputRef = useRef<TextInput>(null)
-  const [input, setInput] = useState('')
-  const [taskState, setTaskState] = useState<TaskState>('notAnswered')
-
-  // useEffect(() => {
-  //   setTaskState('notAnswered')
-  //   console.log('new task fetched')
-  // }, [task])
-
-  const submit = useCallback(
-    (input: string) => {
-      // Second submit will actually submit the task and move to the next (the
-      //  same as web app works)
-      if (taskState !== 'notAnswered') {
-        const args = {
-          id: task.subject.id,
-          type: task.type,
-        }
-        if (taskState === 'incorrect') {
-          dispatch(answeredIncorrectly(args))
-        } else {
-          dispatch(answeredCorrectly(args))
-        }
-        return
-      }
-
-      if (input.length === 0) return
-      if (ReviewTaskUtils.isReadingTask(task)) {
-        // TODO: implement error threshold
-        //  reading: wrong type used (oniyomi/kuniyomi)
-        //  reading: 1 symbol derivation (or 1 symbol length difference)
-        const subject = task.subject
-        const matchedReading = subject.readings.find(el => el.reading === input)
-        if (matchedReading === undefined) {
-          setTaskState('incorrect')
-        } else if (!matchedReading.accepted_answer) {
-          setTaskState('incorrect')
-        } else {
-          setTaskState('correct')
-        }
-      } else {
-        const subject = task.subject
-        const matchedMeaning = subject.meanings.find(el => el.meaning === input)
-        if (matchedMeaning === undefined) {
-          setTaskState('incorrect')
-        } else if (!matchedMeaning.accepted_answer) {
-          setTaskState('incorrect')
-        } else {
-          setTaskState('correct')
-        }
-      }
-    },
-    [dispatch, task, taskState],
-  )
-
-  const subject = task.subject
-  const subjectColor = SubjectUtils.getAssociatedColor(subject)
-  const subjectName = SubjectUtils.getSubjectName(subject)
-  const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
-  const taskStateColor =
-    taskState === 'correct'
-      ? Colors.correctGreen
-      : taskState === 'incorrect'
-        ? Colors.incorrectRed
-        : undefined
-  // const taskStateTextColor = taskState === 'notAnswered' ? undefined : 'white'
-  const taskStateTextColor = 'white'
-
-  return (
-    <View style={[styles.card, { backgroundColor: subjectColor }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 0 }}>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.glyphText}>{subject.characters}</Text>
-          <Text style={styles.taskText}>
-            {subjectName}{' '}
-            <Text style={[styles.taskText, { fontWeight: '500' }]}>
-              {taskName}
-            </Text>
-          </Text>
-        </View>
-        <View style={{ height: 20 }} />
-        <View style={styles.textInputBox}>
-          <TextInput
-            ref={textInputRef}
-            onLayout={() => textInputRef?.current?.focus()}
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: taskStateColor,
-                color: taskStateTextColor,
-              },
-            ]}
-            textAlign={'center'}
-            onChangeText={setInput}
-            onSubmitEditing={_ => submit(input)}
-            value={input}
-            blurOnSubmit={false}
-            placeholder='Your Response'
-            autoCorrect={false}
-            autoComplete={'off'}
-            // TODO: can not set semi-transparent color of placeholder text
-            // (although it looks like the default color is semi-transparent)
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </View>
-  )
-}
