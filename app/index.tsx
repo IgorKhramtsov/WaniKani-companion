@@ -2,7 +2,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
-import { Link } from 'expo-router'
+import { Link, useFocusEffect } from 'expo-router'
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import Animated, {
@@ -37,17 +37,17 @@ export default function Index() {
   const error = useAppSelector(selectError)
   const batch = useAppSelector(selectLessonsBatch)
   const reviewBatch = useAppSelector(selectReviewsBatch)
-  const testBatchWithKanji = [494]
-  console.log('review', reviewBatch)
 
   const refresh = useCallback(
     () => dispatch(fetchLessonsAndReviews()),
     [dispatch],
   )
 
-  useEffect(() => {
-    refresh()
-  }, [dispatch, refresh])
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh]),
+  )
 
   const duration = 600
   const enteringAnimationLeft = useMemo(
