@@ -121,11 +121,13 @@ export const reviewSlice = createSlice({
       task.numberOfErrors++
 
       // Remove task and push it to the end of the queue
-      // TODO: don't push it to the end, push it few positions forward instead
       const index = state.tasks.indexOf(task)
       if (index > -1) {
         state.tasks.splice(index, 1)
-        state.tasks.push(task)
+        // Push failed item 1...5 positions forward
+        const randomNumber = 1 + Math.floor(Math.random() * 4)
+        const newPos = Math.min(index + randomNumber, state.tasks.length)
+        state.tasks.splice(newPos, 0, task)
       }
     },
   },
