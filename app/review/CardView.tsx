@@ -9,8 +9,14 @@ import {
 } from '@/src/redux/reviewSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
-import { useCallback, useEffect, useState } from 'react'
-import { KeyboardAvoidingView, Platform, Text, View } from 'react-native'
+import { Fragment, useCallback, useEffect, useState } from 'react'
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   StretchInY,
@@ -22,8 +28,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { isMeaningCorrect, isReadingCorrect } from './utils'
+import { AntDesign, FontAwesome } from '@expo/vector-icons'
+import { MeaningPage } from '../lessons/MeaningPage'
+import { ReadingPage } from '../lessons/ReadingPage'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
+type CardState = 'input' | 'viewInfo'
 
 type CardProps = {
   task: ReviewTask
@@ -31,38 +41,65 @@ type CardProps = {
   onSubmit?: () => void
 }
 
+const flipCardAnimationDuration = 500
+
 export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
 
-  const [input, setInput] = useState('')
   const [taskState, setTaskState] = useState<TaskState>('notAnswered')
   const [hint, setHint] = useState<string | undefined>(undefined)
+  const [cardState, setCardState] = useState<CardState>('input')
+  const rotateY = useSharedValue(0)
+
+  const frontAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotateY: `${rotateY.value}deg` }, { perspective: 1200 }],
+      opacity: rotateY.value < 90 ? 1 : 0,
+    }
+  })
+
+  const backAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { rotateY: `${rotateY.value + 180}deg` },
+        { perspective: 1200 },
+      ],
+      opacity: rotateY.value > 90 ? 1 : 0,
+    }
+  })
+
+  useEffect(() => {
+    if (cardState === 'viewInfo') {
+      rotateY.value = withTiming(180, { duration: flipCardAnimationDuration })
+    } else {
+      rotateY.value = withTiming(0, { duration: flipCardAnimationDuration })
+    }
+  }, [cardState, rotateY])
 
   const shakeAnimation = useSharedValue(0)
 
-  const shakeInput = useCallback(
+  const waveInfoButton = useCallback(
     () =>
       (shakeAnimation.value = withRepeat(
         withSequence(
-          withTiming(15, { duration: 65 }),
+          withTiming(-10, { duration: 65 }),
+          withTiming(10, { duration: 65 }),
           withTiming(0, { duration: 65 }),
         ),
         2,
       )),
     [shakeAnimation],
   )
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeAnimation.value }],
+  const animatedInfoButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ rotateZ: `${shakeAnimation.value}deg` }],
   }))
 
   useEffect(() => {
-    // TODO: add confetti animation of emojis for correct answer
-    // https://shopify.engineering/building-arrives-confetti-in-react-native-with-reanimated
     if (taskState === 'incorrect') {
-      shakeInput()
+      waveInfoButton()
     }
-  }, [shakeInput, taskState])
+  }, [taskState, waveInfoButton])
 
   const submit = useCallback(
     (input: string) => {
@@ -100,8 +137,129 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     [dispatch, task, taskState, onSubmit],
   )
 
+  const switchCard = useCallback(() => {
+    console.log('switchCard')
+    setCardState(cardState === 'input' ? 'viewInfo' : 'input')
+  }, [cardState])
+
   const subject = task.subject
   const subjectColor = SubjectUtils.getAssociatedColor(subject)
+  const infoButtonVisible = taskState !== 'notAnswered'
+
+  const turnBackButton = (
+    <View style={styles.cardViewActionContainerBack}>
+      <Pressable
+        style={{ alignItems: 'center', zIndex: 31 }}
+        onPress={switchCard}>
+        <View style={{ transform: [{ rotateZ: '180deg' }] }}>
+          <FontAwesome name='share' size={32} color='black' />
+        </View>
+      </Pressable>
+    </View>
+  )
+
+  return (
+    <View style={{ flexGrow: 1 }}>
+      <Animated.View
+        pointerEvents={cardState === 'input' ? 'auto' : 'none'}
+        style={[
+          frontAnimatedStyle,
+          styles.card,
+          { backgroundColor: subjectColor },
+        ]}>
+        <Animated.View
+          style={[animatedInfoButtonStyle, styles.cardViewActionContainer]}>
+          {infoButtonVisible && (
+            <Pressable
+              style={{ alignItems: 'center', zIndex: 31 }}
+              onPress={switchCard}>
+              <AntDesign name='eyeo' size={32} color='white' />
+              <Text style={[styles.hintText, { color: 'white' }]}>
+                show info
+              </Text>
+            </Pressable>
+          )}
+        </Animated.View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 0 }}>
+          <CardInputVariant
+            task={task}
+            submit={submit}
+            taskState={taskState}
+            textInputRef={textInputRef}
+            hint={hint}
+          />
+        </KeyboardAvoidingView>
+      </Animated.View>
+      <Animated.View
+        pointerEvents={cardState === 'viewInfo' ? 'auto' : 'none'}
+        style={[backAnimatedStyle, styles.card, { backgroundColor: 'white' }]}>
+        <View style={styles.viewInfoContainer}>
+          {task.type === 'reading' && (
+            <ReadingPage
+              topContent={turnBackButton}
+              bottomContent={<View style={{ height: 24 }} />}
+              subject={task.subject}
+            />
+          )}
+          {task.type === 'meaning' && (
+            <MeaningPage
+              topContent={turnBackButton}
+              bottomContent={<View style={{ height: 24 }} />}
+              subject={task.subject}
+            />
+          )}
+        </View>
+      </Animated.View>
+    </View>
+  )
+}
+
+type CardInputVariantProps = {
+  textInputRef: React.RefObject<TextInput>
+  submit: (input: string) => void
+  taskState: TaskState
+  task: ReviewTask
+  hint: string | undefined
+}
+
+export const CardInputVariant = ({
+  textInputRef,
+  submit,
+  taskState,
+  task,
+  hint,
+}: CardInputVariantProps) => {
+  const { styles } = useStyles(stylesheet)
+  const [input, setInput] = useState('')
+
+  const shakeAnimation = useSharedValue(0)
+
+  const shakeInput = useCallback(
+    () =>
+      (shakeAnimation.value = withRepeat(
+        withSequence(
+          withTiming(15, { duration: 65 }),
+          withTiming(0, { duration: 65 }),
+        ),
+        2,
+      )),
+    [shakeAnimation],
+  )
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeAnimation.value }],
+  }))
+
+  useEffect(() => {
+    // TODO: add confetti animation of emojis for correct answer
+    // https://shopify.engineering/building-arrives-confetti-in-react-native-with-reanimated
+    if (taskState === 'incorrect') {
+      shakeInput()
+    }
+  }, [shakeInput, taskState])
+
+  const subject = task.subject
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
   const taskStateColor =
@@ -114,51 +272,47 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const taskStateTextColor = 'white'
 
   return (
-    <View style={[styles.card, { backgroundColor: subjectColor }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 0 }}>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.glyphText}>{subject.characters}</Text>
-          <Text style={styles.taskText}>
-            {subjectName}{' '}
-            <Text style={[styles.taskText, { fontWeight: '500' }]}>
-              {taskName}
-            </Text>
+    <Fragment>
+      <View style={styles.cardTextContainer}>
+        <Text style={styles.glyphText}>{subject.characters}</Text>
+        <Text style={styles.taskText}>
+          {subjectName}{' '}
+          <Text style={[styles.taskText, { fontWeight: '500' }]}>
+            {taskName}
           </Text>
-        </View>
-        <View style={{ height: 20 }} />
-        {hint && (
-          <Animated.View
-            style={styles.hintContainer}
-            entering={StretchInY.duration(200)}>
-            <Text style={styles.hintText}>{hint}</Text>
-          </Animated.View>
-        )}
-        <Animated.View style={[styles.textInputBox, animatedStyle]}>
-          <TextInput
-            ref={textInputRef}
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: taskStateColor,
-                color: taskStateTextColor,
-              },
-            ]}
-            textAlign={'center'}
-            onChangeText={setInput}
-            onSubmitEditing={_ => submit(input)}
-            value={input}
-            blurOnSubmit={false}
-            placeholder='Your Response'
-            autoCorrect={false}
-            autoComplete={'off'}
-            // TODO: can not set semi-transparent color of placeholder text
-            // (although it looks like the default color is semi-transparent)
-          />
+        </Text>
+      </View>
+      <View style={{ height: 20 }} />
+      {hint && (
+        <Animated.View
+          style={styles.hintContainer}
+          entering={StretchInY.duration(200)}>
+          <Text style={styles.hintText}>{hint}</Text>
         </Animated.View>
-      </KeyboardAvoidingView>
-    </View>
+      )}
+      <Animated.View style={[styles.textInputBox, animatedStyle]}>
+        <TextInput
+          ref={textInputRef}
+          style={[
+            styles.textInput,
+            {
+              backgroundColor: taskStateColor,
+              color: taskStateTextColor,
+            },
+          ]}
+          textAlign={'center'}
+          onChangeText={setInput}
+          onSubmitEditing={_ => submit(input)}
+          value={input}
+          blurOnSubmit={false}
+          placeholder='Your Response'
+          autoCorrect={false}
+          autoComplete={'off'}
+          // TODO: can not set semi-transparent color of placeholder text
+          // (although it looks like the default color is semi-transparent)
+        />
+      </Animated.View>
+    </Fragment>
   )
 }
 
@@ -169,6 +323,11 @@ const stylesheet = createStyleSheet({
   },
   card: {
     // TODO: make responsive
+    // flexGrow: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
     height: '80%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -176,6 +335,22 @@ const stylesheet = createStyleSheet({
     shadowColor: 'black',
     shadowRadius: 12,
     shadowOpacity: 0.3,
+    zIndex: 1,
+  },
+  cardViewActionContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 5,
+  },
+  cardViewActionContainerBack: {
+    alignItems: 'flex-end',
+    zIndex: 5,
+  },
+  viewInfoContainer: {
+    // backgroundColor: 'white',
+    // margin: 16,
+    flex: 1,
   },
   cardTextContainer: {
     alignItems: 'center',

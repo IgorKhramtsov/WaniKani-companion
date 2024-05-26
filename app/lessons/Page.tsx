@@ -4,13 +4,24 @@ import { PropsWithChildren } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
+interface Props extends PropsWithChildren {
+  topContent?: React.ReactNode
+  bottomContent?: React.ReactNode
+}
+
 /**
  * Use [PageSection] for adding sections to the page.
  */
-export const Page = ({ children }: PropsWithChildren) => {
+export const Page = ({ children, topContent, bottomContent }: Props) => {
   const { styles } = useStyles(pageStylesheet)
 
-  return <ScrollView style={styles.pageView}>{children}</ScrollView>
+  return (
+    <ScrollView style={[styles.pageView]}>
+      {topContent && topContent}
+      {children}
+      {bottomContent && bottomContent}
+    </ScrollView>
+  )
 }
 
 type PageSectionProps = PropsWithChildren<{

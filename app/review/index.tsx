@@ -50,7 +50,7 @@ export default function Index() {
     return params
       ?.split(',')
       .map(el => parseInt(el))
-      // .slice(0, 2)
+      .slice(0, 2)
   }, [params])
   console.log('SUBJECTS', subjectIds)
   const subjectsData = useAppSelector(selectSubjects(subjectIds))
@@ -59,6 +59,7 @@ export default function Index() {
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
   const progressValue = useSharedValue(0)
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
   useEffect(() => {
     progressValue.value = withSpring(progress, {
@@ -106,6 +107,23 @@ export default function Index() {
     }
   }, [currentTask, currentInputRef])
 
+  // Keep track of keyboard state
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true),
+    )
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false),
+    )
+
+    return () => {
+      keyboardDidHideListener.remove()
+      keyboardDidShowListener.remove()
+    }
+  }, [])
+
   if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
   }
@@ -124,6 +142,9 @@ export default function Index() {
   return (
     <Pressable
       style={{ height: '100%' }}
+      // Disable pressable when keyboard is not shown. This is to avoid issue
+      // with scrollable for info view of card
+      disabled={!isKeyboardVisible}
       onPress={Keyboard.dismiss}
       accessible={false}>
       <View style={styles.progressIndicatorContainer}>
@@ -135,6 +156,7 @@ export default function Index() {
       <View style={styles.pageContainer}>
         {nextTask && (
           <Animated.View
+            pointerEvents='none'
             key={nextTask.subject.id + nextTask.type + nextTask.numberOfErrors}
             style={{
               height: '100%',

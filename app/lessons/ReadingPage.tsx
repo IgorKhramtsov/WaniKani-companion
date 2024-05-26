@@ -1,7 +1,7 @@
 import { Kanji } from '@/src/types/kanji'
 import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
-import { FlatList, Text, View } from 'react-native'
+import { FlatList, View, ViewProps } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
@@ -10,21 +10,30 @@ import { Hint } from './Hint'
 import { ReadingView } from './ReadingView'
 import { Reading } from '@/src/types/reading'
 
-type Props = {
+interface BaseProps {
+  topContent?: React.ReactNode
+  bottomContent?: React.ReactNode
+}
+
+interface Props extends BaseProps {
   subject: Vocabulary | Kanji
 }
 
-export const ReadingPage = ({ subject }: Props) => {
+export const ReadingPage = ({ subject, ...args }: Props) => {
   return SubjectUtils.isKanji(subject)
-    ? KanjiPage({ subject })
-    : VocabularyPage({ subject })
+    ? KanjiPage({ subject, ...args })
+    : VocabularyPage({ subject, ...args })
 }
 
-type VocabularyProps = {
+interface VocabularyProps extends BaseProps {
   subject: Vocabulary
 }
 
-export const VocabularyPage = ({ subject }: VocabularyProps) => {
+export const VocabularyPage = ({
+  subject,
+  topContent,
+  bottomContent,
+}: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
   console.log('\n\nPRONON', subject.pronunciation_audios)
@@ -34,7 +43,7 @@ export const VocabularyPage = ({ subject }: VocabularyProps) => {
   console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
 
   return (
-    <Page>
+    <Page topContent={topContent} bottomContent={bottomContent}>
       <PageSection title='Vocab Reading'>
         <FlatList
           scrollEnabled={false}
@@ -61,15 +70,19 @@ export const VocabularyPage = ({ subject }: VocabularyProps) => {
   )
 }
 
-type KanjiProps = {
+interface KanjiProps extends BaseProps {
   subject: Kanji
 }
 
-export const KanjiPage = ({ subject }: KanjiProps) => {
+export const KanjiPage = ({
+  subject,
+  topContent,
+  bottomContent,
+}: KanjiProps) => {
   const { styles } = useStyles(stylesheet)
 
   return (
-    <Page>
+    <Page topContent={topContent} bottomContent={bottomContent}>
       <PageSection title='Meaning Mnemonic'>
         <CustomTagRenderer style={styles.explanation}>
           {subject.meaning_mnemonic}
