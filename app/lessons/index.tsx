@@ -7,7 +7,7 @@ import {
 } from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { useLocalSearchParams } from 'expo-router'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
@@ -18,18 +18,21 @@ import { ContextPage } from './ContextPage'
 
 export default function Index() {
   const dispatch = useAppDispatch()
-  const subjects = useLocalSearchParams<{ subjects: string }>()
-    .subjects?.split(',')
-    .map(el => parseInt(el))
+  const params = useLocalSearchParams<{ subjects: string }>().subjects
   const { styles } = useStyles(stylesheet)
-  const subject = useAppSelector(selectSubject(subjects?.[0]))
+
+  const subjectIds = useMemo(() => {
+    console.log('Processing params: ', params)
+    return params?.split(',').map(el => parseInt(el))
+  }, [params])
+  const subject = useAppSelector(selectSubject(subjectIds?.[0]))
   const subjectSliceStatus = useAppSelector(selectStatus)
 
   useEffect(() => {
-    if (subjects !== undefined) {
-      dispatch(fetchSubjects(subjects))
+    if (subjectIds !== undefined) {
+      dispatch(fetchSubjects(subjectIds))
     }
-  }, [subjects, dispatch])
+  }, [subjectIds, dispatch])
 
   useEffect(() => {
     if (!subject) return
@@ -38,7 +41,7 @@ export default function Index() {
     }
   }, [subject, dispatch])
 
-  if (subjects === undefined) {
+  if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
   }
 

@@ -82,10 +82,18 @@ export const fetchSubjects = createAsyncThunk(
 
 export const selectStatus = (state: RootState) => state.subjectsSlice.status
 
-export const selectSubject = (id?: number) => (state: RootState) => {
-  if (!id) return undefined
-  return state.subjectsSlice.subjects[id]
-}
+const selectSubjectInner = createSelector(
+  (state: RootState) => state.subjectsSlice.subjects,
+  (_: RootState, id?: number) => id,
+  (subjects, id) => {
+    if (!id) return undefined
+    return subjects[id]
+  },
+)
+
+export const selectSubject = (id: number | undefined) => (state: RootState) =>
+  selectSubjectInner(state, id)
+
 const innerSelectSubjects = createSelector(
   (state: RootState) => state.subjectsSlice.subjects,
   (_: RootState, ids?: number[]) => ids,
