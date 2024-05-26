@@ -151,6 +151,22 @@ export default function Index() {
         </Animated.View>
       </View>
       <View style={styles.pageContainer}>
+        {nextTask && (
+          // Show next task in order to keep the keyboard always open (we focus
+          // the next task's input node when current one is leaving the scene)
+          <Animated.View
+            pointerEvents='none'
+            key={nextTask.subject.id + nextTask.type + nextTask.numberOfErrors}
+            style={{
+              height: '100%',
+              width: '100%',
+              zIndex: 0,
+              position: 'absolute',
+              transform: [{ translateY: -4 }, { translateX: 3 }],
+            }}>
+            <CardView task={nextTask} textInputRef={nextInputRef} />
+          </Animated.View>
+        )}
         {currentTask && (
           <Animated.View
             key={

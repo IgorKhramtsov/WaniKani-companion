@@ -79,6 +79,7 @@ export const reviewSlice = createSlice({
       console.log('INIT', action.payload.length)
       if (action.payload.length === 0) return
 
+      // TODO: shuffle
       for (const subject of action.payload) {
         if (
           SubjectUtils.isVocabulary(subject) ||
