@@ -13,6 +13,10 @@ import { KanaVocabulary } from '@/src/types/kanaVocabulary'
 interface BaseProps {
   topContent?: React.ReactNode
   bottomContent?: React.ReactNode
+  /*
+   * whether to show the meaning (for review card)
+   */
+  showMeaning?: boolean
 }
 
 interface Props extends BaseProps {
@@ -40,21 +44,35 @@ interface VocabularyProps extends BaseProps {
 
 export const VocabularyPage = ({
   subject,
+  showMeaning,
   topContent,
   bottomContent,
 }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
+  const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
   const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
     el => el.meaning,
   )
 
   return (
     <Page topContent={topContent} bottomContent={bottomContent}>
-      <PageSection title='Other meanings'>
-        <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
-      </PageSection>
-      <View style={{ height: 16 }} />
+      {showMeaning && (
+        <View>
+          <PageSection title='Meaning'>
+            <Text style={typography.body}>{primaryMeaning}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
+      {otherMeanings.length > 0 && (
+        <View>
+          <PageSection title='Other meanings'>
+            <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
       <PageSection title='Word Type'>
         <Text style={typography.body}>{subject.parts_of_speech}</Text>
       </PageSection>
@@ -74,13 +92,34 @@ interface KanjiProps extends BaseProps {
 
 export const KanjiPage = ({
   subject,
+  showMeaning,
   topContent,
   bottomContent,
 }: KanjiProps) => {
   const { styles } = useStyles(stylesheet)
+  const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
+  const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
+    el => el.meaning,
+  )
 
   return (
     <Page topContent={topContent} bottomContent={bottomContent}>
+      {showMeaning && (
+        <View>
+          <PageSection title='Meaning'>
+            <Text style={typography.body}>{primaryMeaning}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
+      {otherMeanings.length > 0 && (
+        <View>
+          <PageSection title='Other meanings'>
+            <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
       <PageSection title='Meaning Mnemonic'>
         <CustomTagRenderer style={styles.meaningExplanation}>
           {subject.meaning_mnemonic}
@@ -98,13 +137,23 @@ interface RadicalProps extends BaseProps {
 
 export const RadicalPage = ({
   subject,
+  showMeaning,
   topContent,
   bottomContent,
 }: RadicalProps) => {
   const { styles } = useStyles(stylesheet)
+  const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
   return (
     <Page topContent={topContent} bottomContent={bottomContent}>
+      {showMeaning && (
+        <View>
+          <PageSection title='Meaning'>
+            <Text style={typography.body}>{primaryMeaning}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
       <PageSection title='Mnemonic'>
         <CustomTagRenderer style={styles.meaningExplanation}>
           {subject.meaning_mnemonic}

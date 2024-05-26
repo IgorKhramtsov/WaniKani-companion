@@ -207,6 +207,9 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           {task.type === 'meaning' && (
             <MeaningPage
               topContent={turnBackButton}
+              // TODO: use another page layout after it is implemented
+              // (subjects library view)
+              showMeaning={true}
               bottomContent={<View style={{ height: 24 }} />}
               subject={task.subject}
             />
