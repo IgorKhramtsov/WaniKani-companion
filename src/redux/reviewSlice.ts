@@ -8,6 +8,7 @@ import { SubjectType, SubjectUtils } from '../types/subject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
+import { WaniKaniApi } from '../api/wanikani'
 
 type TaskType = 'reading' | 'meaning'
 
@@ -93,7 +94,10 @@ export const reviewSlice = createSlice({
       state,
       action: PayloadAction<{ id: number; type: TaskType }>,
     ) {
-      const task = state.tasks.find(
+      const allTasksForSubject = state.tasks.filter(
+        task => task.subject.id === action.payload.id,
+      )
+      const task = allTasksForSubject.find(
         task =>
           task.subject.id === action.payload.id &&
           task.type === action.payload.type,
@@ -104,6 +108,28 @@ export const reviewSlice = createSlice({
       }
       task.completed = true
       state.index++
+
+      if (allTasksForSubject.every(task => task.completed)) {
+        const incorrect_meaning_answers =
+          allTasksForSubject.find(task => task.type === 'meaning')
+            ?.numberOfErrors ?? 0
+        const incorrect_reading_answers =
+          allTasksForSubject.find(task => task.type === 'reading')
+            ?.numberOfErrors ?? 0
+        console.log(
+          'Creating review for subject: ',
+          task.subject.id,
+          '\n\tincorrect_meanings: ',
+          incorrect_meaning_answers,
+          '\n\tincorrect_readings: ',
+          incorrect_reading_answers,
+        )
+        WaniKaniApi.createReview({
+          subject_id: task.subject.id,
+          incorrect_meaning_answers,
+          incorrect_reading_answers,
+        })
+      }
     },
     answeredIncorrectly(
       state,

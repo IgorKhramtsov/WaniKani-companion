@@ -8,35 +8,65 @@ import { API_TOKEN } from '../../config'
 
 const API_BASE_URL = 'https://api.wanikani.com/v2'
 
-const authHeaders = {
-  Authorization: `Bearer ${API_TOKEN}`,
-  'Wanikani-Revision': '20170710',
-}
-
-const options = {
-  headers: authHeaders,
-}
+const http = axios.create({})
+http.interceptors.request.use(
+  config => {
+    config.headers.Authorization = `Bearer ${API_TOKEN}`
+    config.headers['Wanikani-Revision'] = '20170710'
+    return config
+  },
+  error => {
+    console.error(error)
+    return Promise.reject(error)
+  },
+)
+http.interceptors.response.use(
+  response => {
+    return response
+  },
+  error => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(
+        'Error response: ',
+        error.response.data,
+        ' status: ',
+        error.response.status,
+        ' headers: ',
+        error.response.headers,
+      )
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.error('No response received: ', error.request)
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Unknown network error: ', error.message)
+    }
+    console.log(error.config)
+    return Promise.reject(error)
+  },
+)
 
 const fetchLessons = async (): Promise<Assignment[]> => {
-  const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
+  const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
-    options,
   )
   return response.data.data.map(el => el.data)
 }
 
 const fetchReviews = async (): Promise<Assignment[]> => {
-  const response = await axios.get<ApiResponse<ApiResponse<Assignment>[]>>(
+  const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
-    options,
   )
   return response.data.data.map(el => el.data)
 }
 
 const fetchSubject = async (id: number): Promise<SubjectType> => {
-  const response = await axios.get<ApiResponse<SubjectType>>(
+  const response = await http.get<ApiResponse<SubjectType>>(
     `${API_BASE_URL}/subjects/${id}`,
-    options,
   )
   const type = response.data.object
   if (isValidSubjectType(type)) {
@@ -51,10 +81,9 @@ const fetchSubject = async (id: number): Promise<SubjectType> => {
 }
 
 const fetchSubjects = async (ids: number[]): Promise<SubjectType[]> => {
-  const response = await axios.get<ApiResponse<ApiResponse<SubjectType>[]>>(
+  const response = await http.get<ApiResponse<ApiResponse<SubjectType>[]>>(
     `${API_BASE_URL}/subjects/`,
     {
-      ...options,
       params: { ids: ids.join(',') },
     },
   )
@@ -73,9 +102,8 @@ const fetchSubjects = async (ids: number[]): Promise<SubjectType[]> => {
 }
 
 const startAssignment = async (id: number): Promise<Assignment> => {
-  const response = await axios.put<ApiResponse<Assignment>>(
+  const response = await http.put<ApiResponse<Assignment>>(
     `${API_BASE_URL}/assignments/${id}/start`,
-    options,
   )
   return response.data.data
 }
@@ -83,10 +111,9 @@ const startAssignment = async (id: number): Promise<Assignment> => {
 const createReview = async (
   params: CreateReviewParams,
 ): Promise<[Review, CreateReviewResourcesUpdated]> => {
-  const response = await axios.post<CreateReviewApiResponse>(
+  const response = await http.post<CreateReviewApiResponse>(
     `${API_BASE_URL}/reviews`,
-    params,
-    options,
+    { review: params },
   )
   return [response.data.data, response.data.resources_updated]
 }

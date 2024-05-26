@@ -47,10 +47,7 @@ export default function Index() {
 
   const subjectIds = useMemo(() => {
     console.log('Processing params: ', params)
-    return params
-      ?.split(',')
-      .map(el => parseInt(el))
-      .slice(0, 2)
+    return params?.split(',').map(el => parseInt(el))
   }, [params])
   console.log('SUBJECTS', subjectIds)
   const subjectsData = useAppSelector(selectSubjects(subjectIds))
