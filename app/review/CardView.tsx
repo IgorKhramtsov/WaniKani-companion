@@ -173,9 +173,10 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
             <Pressable
               style={{ alignItems: 'center', zIndex: 31 }}
               onPress={switchCard}>
-              <AntDesign name='eyeo' size={32} color='white' />
+              <AntDesign name='questioncircleo' size={24} color='white' />
+              <View style={{ height: 4 }} />
               <Text style={[styles.hintText, { color: 'white' }]}>
-                show info
+                need help
               </Text>
             </Pressable>
           )}
