@@ -135,25 +135,29 @@ export default function Index() {
       <View style={styles.pageContainer}>
         {nextTask && (
           <Animated.View
+            key={nextTask.subject.id + nextTask.type + nextTask.numberOfErrors}
             style={{
               height: '100%',
               width: '100%',
               zIndex: 0,
               position: 'absolute',
               transform: [{ translateY: -4 }, { translateX: 3 }],
-            }}
-            key={nextTask.subject.id + nextTask.type}>
+            }}>
             <CardView task={nextTask} textInputRef={nextInputRef} />
           </Animated.View>
         )}
         {currentTask && (
           <Animated.View
+            key={
+              currentTask.subject.id +
+              currentTask.type +
+              currentTask.numberOfErrors
+            }
             style={{
               height: '100%',
               width: '100%',
               position: 'absolute',
             }}
-            key={currentTask.subject.id + currentTask.type}
             exiting={RollOutRight.duration(500)}>
             <CardView
               task={currentTask}
