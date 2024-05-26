@@ -19,8 +19,47 @@ export namespace StringUtils {
     if (!str) return str
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
   }
+  export const splitAndGetSecondOrFirst = (str: string, separator: string) => {
+    const arr = str.split(separator)
+    return arr[1] || arr[0]
+  }
+  export const splitAndGetNumbers = (str: string, separator: string) => {
+    return str.split(separator).filter(el => !isNaN(parseInt(el)))
+  }
 
-  export type ComparingResult = 'equal' | 'almost' | 'not'
+  export type ComparingResult = {
+    result: 'equal' | 'almost' | 'not'
+    match: string | undefined
+  }
+
+  export const compareStringWithArrayWithThresholdEnsuringNumbers = (
+    a: string,
+    arr: string[],
+    threshold: number = 1,
+  ): ComparingResult => {
+    const sanitizedA = a.trim().toLowerCase()
+    const comparisonResult = StringUtils.compareStringWithArrayWithThreshold(
+      sanitizedA,
+      arr,
+      threshold,
+    )
+    if (comparisonResult.result === 'equal') {
+      return comparisonResult
+    } else if (comparisonResult.result === 'almost') {
+      // If we are off by 1 symbol - ensure this symbol is not a number
+      const match = comparisonResult.match || ''
+      const aNumbers = StringUtils.splitAndGetNumbers(sanitizedA, '')
+      const matchNumbers = StringUtils.splitAndGetNumbers(match, '')
+      console.log('answerNumbers: ', aNumbers, 'matchNumbers: ', matchNumbers)
+      if (aNumbers.join('') === matchNumbers.join('')) {
+        return comparisonResult
+      }
+    }
+    return {
+      result: 'not',
+      match: undefined,
+    }
+  }
 
   export const compareStringWithArrayWithThreshold = (
     a: string,
@@ -29,12 +68,16 @@ export namespace StringUtils {
   ): ComparingResult => {
     const aLower = a.toLowerCase()
     const arrLower = arr.map(el => el.toLowerCase())
-    if (arrLower.includes(aLower)) return 'equal'
-    return arrLower.some(el =>
+    const exactMatch = arrLower.find(el => el === aLower)
+    if (exactMatch) return { result: 'equal', match: exactMatch }
+
+    const match = arrLower.find(el =>
       optimizedLevenshteinDistance(aLower, el, threshold),
     )
-      ? 'almost'
-      : 'not'
+    return {
+      result: match ? 'almost' : 'not',
+      match,
+    }
   }
   export const optimizedLevenshteinDistance = (
     a: string,

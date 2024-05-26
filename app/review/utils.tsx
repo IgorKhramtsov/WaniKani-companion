@@ -53,16 +53,23 @@ export const isMeaningCorrect = (
   answer: string,
   subject: SubjectType,
 ): Result => {
-  //  meaning: 1 symbol derivation (or 1 symbol length difference)
-  const comparisonResult = StringUtils.compareStringWithArrayWithThreshold(
-    answer,
-    subject.meanings.filter(el => el.accepted_answer).map(el => el.meaning),
-  )
-  if (comparisonResult === 'equal') {
+  const sanitizedAnswer = answer.trim().toLowerCase()
+  const meanings = [
+    ...subject.meanings.filter(el => el.accepted_answer),
+    ...subject.auxiliary_meanings.filter(el => el.type === 'whitelist'),
+  ]
+  console.log('MEANINGS: ', meanings)
+
+  const comparisonResult =
+    StringUtils.compareStringWithArrayWithThresholdEnsuringNumbers(
+      sanitizedAnswer,
+      meanings.map(el => el.meaning),
+    )
+  if (comparisonResult.result === 'equal') {
     return {
       status: 'correct',
     }
-  } else if (comparisonResult === 'almost') {
+  } else if (comparisonResult.result === 'almost') {
     return {
       status: 'correctWithHint',
       hint: 'Your answer was a bit off. Check the meaning to make sure you are correct.',
