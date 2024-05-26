@@ -7,15 +7,17 @@ import { KanaVocabulary } from '@/src/types/kanaVocabulary'
 
 type Props = {
   subject: Vocabulary | KanaVocabulary
+  topContent?: React.ReactNode
+  bottomContent?: React.ReactNode
 }
 
-export const ContextPage = ({ subject }: Props) => {
+export const ContextPage = ({ subject, bottomContent, topContent }: Props) => {
   const { styles } = useStyles(stylesheet)
 
   console.log('\n\nContext', subject.context_sentences)
 
   return (
-    <Page>
+    <Page bottomContent={bottomContent} topContent={topContent}>
       <PageSection title='Context Sentences'>
         <FlatList
           scrollEnabled={false}

@@ -1,10 +1,14 @@
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
-import { fetchSubjects, selectSubject } from '@/src/redux/subjectsSlice'
+import {
+  fetchSubjects,
+  selectStatus,
+  selectSubject,
+} from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect } from 'react'
-import { Text, View } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CompositionPage } from './CompositionPage'
@@ -19,6 +23,7 @@ export default function Index() {
     .map(el => parseInt(el))
   const { styles } = useStyles(stylesheet)
   const subject = useAppSelector(selectSubject(subjects?.[0]))
+  const subjectSliceStatus = useAppSelector(selectStatus)
 
   useEffect(() => {
     if (subjects !== undefined) {
@@ -35,6 +40,14 @@ export default function Index() {
 
   if (subjects === undefined) {
     return <Text>Couldn't get parameters</Text>
+  }
+
+  if (subjectSliceStatus === 'loading' && subject === undefined) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size='large' />
+      </View>
+    )
   }
 
   if (subject === undefined) {
@@ -56,24 +69,36 @@ export default function Index() {
         {(SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)) && (
           <View key='CompositionPage'>
-            <CompositionPage subject={subject} />
+            <CompositionPage
+              subject={subject}
+              bottomContent={<View style={{ height: 64 }} />}
+            />
           </View>
         )}
         {(SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)) && (
           <View key='MeaningPage'>
-            <MeaningPage subject={subject} />
+            <MeaningPage
+              subject={subject}
+              bottomContent={<View style={{ height: 64 }} />}
+            />
           </View>
         )}
         {(SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)) && (
           <View key='ReadingPage'>
-            <ReadingPage subject={subject} />
+            <ReadingPage
+              subject={subject}
+              bottomContent={<View style={{ height: 64 }} />}
+            />
           </View>
         )}
         {SubjectUtils.isVocabulary(subject) && (
           <View key='ContextPage'>
-            <ContextPage subject={subject} />
+            <ContextPage
+              subject={subject}
+              bottomContent={<View style={{ height: 64 }} />}
+            />
           </View>
         )}
       </PagerView>

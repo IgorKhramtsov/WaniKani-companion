@@ -9,9 +9,15 @@ import { Page, PageSection } from './Page'
 
 type CompositionPageProps = {
   subject: Vocabulary | Kanji
+  topContent?: React.ReactNode
+  bottomContent?: React.ReactNode
 }
 
-export const CompositionPage = ({ subject }: CompositionPageProps) => {
+export const CompositionPage = ({
+  subject,
+  bottomContent,
+  topContent,
+}: CompositionPageProps) => {
   const { styles } = useStyles(compositionPageStylesheet)
 
   const name = subject.type.toString()
@@ -21,13 +27,14 @@ export const CompositionPage = ({ subject }: CompositionPageProps) => {
   )
 
   return (
-    <Page>
+    <Page bottomContent={bottomContent} topContent={topContent}>
       <PageSection title={`${componentName} composition`}>
         <Text>
           The {name} is composed of {countWord} {componentName.toLowerCase()}:
         </Text>
         <View style={{ height: 24 }} />
         <FlatList
+          scrollEnabled={false}
           style={styles.flatList}
           data={subject.component_subject_ids}
           renderItem={el => <GlyphTile id={el.item} />}
