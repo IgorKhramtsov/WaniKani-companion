@@ -12,7 +12,7 @@ export default function RootLayout() {
           <Stack.Screen
             name='index'
             options={{
-              title: 'WaniKani',
+              title: 'Home',
               headerTitle: () => (
                 <View>
                   <Image
@@ -21,6 +21,13 @@ export default function RootLayout() {
                   />
                 </View>
               ),
+            }}
+          />
+          <Stack.Screen
+            name='review/index'
+            options={{
+              title: 'Review',
+              headerTitle: 'Review',
             }}
           />
         </Stack>
