@@ -31,6 +31,7 @@ import { isMeaningCorrect, isReadingCorrect } from './utils'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
 import { MeaningPage } from '../lessons/MeaningPage'
 import { ReadingPage } from '../lessons/ReadingPage'
+import wanakana from 'wanakana'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
 type CardState = 'input' | 'viewInfo'
@@ -263,6 +264,19 @@ export const CardInputVariant = ({
     }
   }, [shakeInput, taskState])
 
+  const setInputAndConvert = useCallback(
+    (input: string) => {
+      if (task.type === 'reading') {
+        // IME mode is needed to avoid converting 'n' to 'ん' during the typing
+        // so that it is possible to type na/ni etc.
+        setInput(wanakana.toHiragana(input, { IMEMode: 'toHiragana' }))
+      } else {
+        setInput(input)
+      }
+    },
+    [setInput, task.type],
+  )
+
   const subject = task.subject
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
@@ -305,7 +319,7 @@ export const CardInputVariant = ({
             },
           ]}
           textAlign={'center'}
-          onChangeText={setInput}
+          onChangeText={input => setInputAndConvert(input)}
           onSubmitEditing={_ => submit(input)}
           value={input}
           blurOnSubmit={false}
