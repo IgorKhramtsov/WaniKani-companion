@@ -3,13 +3,12 @@ import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
   fetchSubjects,
   selectStatus,
-  selectSubject,
   selectSubjects,
 } from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
-import { useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef } from 'react'
-import { ActivityIndicator, Button, Text, View } from 'react-native'
+import { ActivityIndicator, Button, Pressable, Text, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CompositionPage } from './CompositionPage'
@@ -17,6 +16,11 @@ import { MeaningPage } from './MeaningPage'
 import { ReadingPage } from './ReadingPage'
 import { ContextPage } from './ContextPage'
 import { ExamplesPage } from './ExamplesPage'
+import { GlyphTile } from './GlyphTile'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { appStyles } from '@/src/constants/styles'
+import { Colors } from '@/src/constants/Colors'
+import { AntDesign } from '@expo/vector-icons'
 
 export default function Index() {
   const dispatch = useAppDispatch()
@@ -28,7 +32,6 @@ export default function Index() {
     return params?.split(',').map(el => parseInt(el))
   }, [params])
   const subjects = useAppSelector(selectSubjects(subjectIds))
-  // const subject = useAppSelector(selectSubject(subjectIds?.[0]))
   const subjectSliceStatus = useAppSelector(selectStatus)
   const parentPagerView = useRef<PagerView>(null)
 
@@ -37,6 +40,10 @@ export default function Index() {
       dispatch(fetchSubjects(subjectIds))
     }
   }, [subjectIds, dispatch])
+
+  const openQuiz = () => {
+    router.replace({ pathname: 'quiz', params: { subjects: subjectIds } })
+  }
 
   if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
@@ -51,34 +58,42 @@ export default function Index() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
       <PagerView ref={parentPagerView} style={styles.pagerView} initialPage={0}>
         {subjects.map((subject, index) => {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
+          const isLast = index === subjects.length - 1
           console.log('building subject #', index)
           console.log('\n\nSUBJECT DATA', JSON.stringify(subject, null, 2))
           const getBottomContent = ({
             direction,
           }: {
             direction: 'next' | 'prev'
-          }) => (
-            <View>
-              {((index > 0 && direction === 'prev') ||
-                (index < subjects.length && direction === 'next')) && (
-                <Button
-                  title={direction === 'next' ? 'Next' : 'Prev'}
-                  onPress={() =>
-                    parentPagerView.current?.setPage(
-                      direction === 'next' ? index + 1 : index - 1,
-                    )
-                  }
-                />
-              )}
+          }) => {
+            const buttonTitle =
+              direction === 'next' ? (isLast ? 'Start Quiz' : 'Next') : 'Prev'
+            const onPress = () => {
+              if (direction === 'next' && isLast) {
+                openQuiz()
+              } else {
+                // TODO: set innerPagerView page to 0
+                parentPagerView.current?.setPage(
+                  direction === 'next' ? index + 1 : index - 1,
+                )
+              }
+            }
+            return (
+              <View>
+                {((index > 0 && direction === 'prev') ||
+                  (index < subjects.length && direction === 'next')) && (
+                  <Button title={buttonTitle} onPress={onPress} />
+                )}
 
-              <View style={{ height: 64 }} />
-            </View>
-          )
+                <View style={{ height: 64 }} />
+              </View>
+            )
+          }
 
           const pages = []
           if (
@@ -130,18 +145,7 @@ export default function Index() {
               <View key='ContextPage' collapsable={false}>
                 <ContextPage
                   subject={subject}
-                  bottomContent={
-                    <View>
-                      <Button
-                        title='Next'
-                        onPress={() =>
-                          parentPagerView.current?.setPage(index + 1)
-                        }
-                      />
-
-                      <View style={{ height: 64 }} />
-                    </View>
-                  }
+                  bottomContent={getBottomContent({ direction: 'next' })}
                 />
               </View>,
             )
@@ -154,18 +158,7 @@ export default function Index() {
               <View key='ExamplesPage' collapsable={false}>
                 <ExamplesPage
                   subject={subject}
-                  bottomContent={
-                    <View>
-                      <Button
-                        title='Next'
-                        onPress={() =>
-                          parentPagerView.current?.setPage(index + 1)
-                        }
-                      />
-
-                      <View style={{ height: 64 }} />
-                    </View>
-                  }
+                  bottomContent={getBottomContent({ direction: 'next' })}
                 />
               </View>,
             )
@@ -189,7 +182,25 @@ export default function Index() {
           )
         })}
       </PagerView>
-    </View>
+      <View style={styles.subjectQueueContainer}>
+        {subjects.map((subject, index) => (
+          <Pressable
+            key={subject.id}
+            onPress={() => parentPagerView.current?.setPage(index)}>
+            <View style={styles.subjectQueueItem}>
+              <GlyphTile id={subject.id} variant={'compact'} />
+            </View>
+          </Pressable>
+        ))}
+        <Pressable key={'quiz'}>
+          <View style={[styles.subjectQueueItem, styles.quizItem]}>
+            <Text style={styles.quizItemText}>Quiz</Text>
+            <View style={{ width: 4 }} />
+            <AntDesign name='arrowright' size={24} color='white' />
+          </View>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   )
 }
 
@@ -221,5 +232,25 @@ const stylesheet = createStyleSheet({
   },
   pagerView: {
     flex: 1,
+  },
+  subjectQueueContainer: {
+    ...appStyles.row,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  subjectQueueItem: {
+    padding: 3,
+  },
+  quizItem: {
+    ...appStyles.row,
+    backgroundColor: Colors.quizGreen,
+    padding: 4,
+    paddingHorizontal: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.getBottomBorderColor(Colors.quizGreen),
+  },
+  quizItemText: {
+    ...typography.titleC,
+    color: 'white',
   },
 })

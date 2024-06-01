@@ -9,9 +9,10 @@ import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 type GlyphTileProps = {
   id: number
+  variant?: 'normal' | 'compact'
 }
 
-export const GlyphTile = ({ id }: GlyphTileProps) => {
+export const GlyphTile = ({ id, variant = 'normal' }: GlyphTileProps) => {
   const subject = useAppSelector(selectSubject(id))
   console.log('id: ', id, ' subj: ', subject)
   const { styles } = useStyles(glyphTileStylesheet)
@@ -20,33 +21,35 @@ export const GlyphTile = ({ id }: GlyphTileProps) => {
   }
 
   const associatedColor = SubjectUtils.getAssociatedColor(subject)
+  const resolvedTileViewStyles = [
+    styles.glyphTileViewBase,
+    variant === 'compact' ? styles.glyphTileViewCompact : {},
+  ]
+  const resolvedTileTextStyle = [
+    styles.subjectTextBase,
+    variant === 'compact' ? styles.subjectTextCompact : {},
+  ]
 
   return (
     <View style={styles.view}>
       <View
         style={[
-          styles.glyphTileView,
+          resolvedTileViewStyles,
           {
             backgroundColor: associatedColor,
             borderBottomColor: Colors.getBottomBorderColor(associatedColor),
           },
         ]}>
-        <Text style={styles.subjectText}>{subject?.characters}</Text>
+        <Text style={resolvedTileTextStyle}>{subject?.characters}</Text>
       </View>
-      {SubjectUtils.isKanji(subject) && (
-        <View style={{ marginStart: 8 }}>
-          <Text style={styles.subjectSubText}>
-            {SubjectUtils.getPrimaryMeaning(subject)?.meaning}
-          </Text>
-        </View>
-      )}
-      {SubjectUtils.isRadical(subject) && (
-        <View style={{ marginStart: 8 }}>
-          <Text style={styles.subjectSubText}>
-            {SubjectUtils.getPrimaryMeaning(subject)?.meaning}
-          </Text>
-        </View>
-      )}
+      {variant === 'normal' &&
+        (SubjectUtils.isKanji(subject) || SubjectUtils.isRadical(subject)) && (
+          <View style={{ marginStart: 8 }}>
+            <Text style={styles.subjectSubText}>
+              {SubjectUtils.getPrimaryMeaning(subject)?.meaning}
+            </Text>
+          </View>
+        )}
     </View>
   )
 }
@@ -55,7 +58,7 @@ const glyphTileStylesheet = createStyleSheet({
   view: {
     ...appStyles.row,
   },
-  glyphTileView: {
+  glyphTileViewBase: {
     borderRadius: 3,
     padding: 8,
     paddingHorizontal: 10,
@@ -63,10 +66,19 @@ const glyphTileStylesheet = createStyleSheet({
     justifyContent: 'center',
     borderBottomWidth: 3,
   },
-  subjectText: {
+  glyphTileViewCompact: {
+    padding: 4,
+    paddingHorizontal: 10,
+    borderBottomWidth: 2,
+  },
+  subjectTextBase: {
     ...typography.titleB,
     color: 'white',
     fontWeight: '700',
+  },
+  subjectTextCompact: {
+    ...typography.titleC,
+    fontWeight: '400',
   },
   subjectSubText: {
     ...typography.titleB,

@@ -25,6 +25,7 @@ export const Colors = {
   generalGray: '#EAEAEA',
   generalDarkGray: '#DADADA',
   correctGreen: '#88CC01',
+  quizGreen: '#34D399',
   incorrectRed: '#DC3545',
   /*
    * Can be used for borders
