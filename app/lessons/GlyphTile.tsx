@@ -1,9 +1,11 @@
+import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
-import { selectSubject } from '@/src/redux/subjectsSlice'
+import { selectStatus, selectSubject } from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
+import { useEffect } from 'react'
 import { Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
@@ -13,9 +15,13 @@ type GlyphTileProps = {
 }
 
 export const GlyphTile = ({ id, variant = 'normal' }: GlyphTileProps) => {
-  const subject = useAppSelector(selectSubject(id))
-  console.log('id: ', id, ' subj: ', subject)
   const { styles } = useStyles(glyphTileStylesheet)
+  const subject = useAppSelector(selectSubject(id))
+  const status = useAppSelector(selectStatus)
+  if (subject === undefined && status === 'loading') {
+    return <FullPageLoading />
+  }
+
   if (subject === undefined) {
     return <Text>undefined</Text>
   }
@@ -42,14 +48,13 @@ export const GlyphTile = ({ id, variant = 'normal' }: GlyphTileProps) => {
         ]}>
         <Text style={resolvedTileTextStyle}>{subject?.characters}</Text>
       </View>
-      {variant === 'normal' &&
-        (SubjectUtils.isKanji(subject) || SubjectUtils.isRadical(subject)) && (
-          <View style={{ marginStart: 8 }}>
-            <Text style={styles.subjectSubText}>
-              {SubjectUtils.getPrimaryMeaning(subject)?.meaning}
-            </Text>
-          </View>
-        )}
+      {variant === 'normal' && (
+        <View style={{ marginStart: 8 }}>
+          <Text style={styles.subjectSubText}>
+            {SubjectUtils.getPrimaryMeaning(subject)?.meaning}
+          </Text>
+        </View>
+      )}
     </View>
   )
 }

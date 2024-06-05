@@ -6,6 +6,7 @@ import { FlatList, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { GlyphTile } from './GlyphTile'
 import { Page, PageSection } from './Page'
+import { useMemo } from 'react'
 
 type CompositionPageProps = {
   subject: Vocabulary | Kanji
@@ -19,6 +20,9 @@ export const CompositionPage = ({
   topContent,
 }: CompositionPageProps) => {
   const { styles } = useStyles(compositionPageStylesheet)
+  const subjectIdsToShow = useMemo(() => {
+    return subject.component_subject_ids
+  }, [subject])
 
   const name = subject.type.toString()
   const componentName = SubjectUtils.isVocabulary(subject) ? 'Kanji' : 'Radical'
@@ -36,7 +40,7 @@ export const CompositionPage = ({
         <FlatList
           scrollEnabled={false}
           style={styles.flatList}
-          data={subject.component_subject_ids}
+          data={subjectIdsToShow}
           renderItem={el => <GlyphTile id={el.item} />}
           ItemSeparatorComponent={() => (
             <View style={styles.flatListSeparator} />

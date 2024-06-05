@@ -14,7 +14,7 @@ type Props = {
 export const ContextPage = ({ subject, bottomContent, topContent }: Props) => {
   const { styles } = useStyles(stylesheet)
 
-  console.log('\n\nContext', subject.context_sentences)
+  // console.log('\n\nContext', subject.context_sentences)
 
   return (
     <Page bottomContent={bottomContent} topContent={topContent}>

@@ -44,6 +44,10 @@ export const subjectsSlice = createSlice({
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
         state.status = 'idle'
+        console.log(
+          '[SubjectsSlice] fetched subject ids',
+          action.payload.map(subject => subject.id),
+        )
         for (const subject of action.payload) {
           state.subjects[subject.id] = subject
         }
@@ -68,14 +72,16 @@ export const fetchSubjects = createAsyncThunk(
   async (subjectIds: number[], { getState }) => {
     const state = getState() as RootState
     const existingIds = Object.keys(state.subjectsSlice.subjects)
+    console.log('[SubjectsSlice] existingIds: ', existingIds)
     const missingids = subjectIds.filter(
       el => !existingIds.includes(el.toString()),
     )
     if (missingids.length === 0) {
-      console.log('Nothing to fetch. Returning []')
+      console.log('[SubjectsSlice] Nothing to fetch. Returning []')
       return []
     }
 
+    console.log('[SubjectsSlice] fetching subjects: ', missingids)
     return WaniKaniApi.fetchSubjects(missingids)
   },
 )
@@ -104,9 +110,10 @@ const innerSelectSubjects = createSelector(
     const definedSubjects = selectedSubjects.filter(el => el !== undefined)
     if (definedSubjects.length !== selectedSubjects.length) {
       const undefinedSubjects = selectedSubjects.filter(el => el === undefined)
-      console.error(
+      console.log(
         'Undefined subjects found during selection. Number of undefined elements: ',
         undefinedSubjects.length,
+        '. This is fine as long as this happens during subjects loading.',
       )
     }
     return definedSubjects

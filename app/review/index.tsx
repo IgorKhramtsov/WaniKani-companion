@@ -10,16 +10,9 @@ import {
   selectProgress,
   selectStatus,
 } from '@/src/redux/reviewSlice'
-import { fetchSubjects, selectSubjects } from '@/src/redux/subjectsSlice'
 import { Link, useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  ActivityIndicator,
-  Keyboard,
-  Pressable,
-  Text,
-  View,
-} from 'react-native'
+import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   useAnimatedStyle,
@@ -33,6 +26,8 @@ import {
   completionTitleCopywritings,
   getRandomCopywritings,
 } from './utils'
+import { useSubjectCache } from '@/src/hooks/useSubjectCache'
+import { FullPageLoading } from '@/src/components/FullPageLoading'
 
 export default function Index() {
   const dispatch = useAppDispatch()
@@ -46,11 +41,11 @@ export default function Index() {
   }>({ title: completionTitleCopywritings[0], copy: completionCopywritings[0] })
 
   const subjectIds = useMemo(() => {
-    console.log('Processing params: ', params)
+    console.log('[review] Processing params: ', params)
     return params?.split(',').map(el => parseInt(el))
   }, [params])
-  console.log('SUBJECTS', subjectIds)
-  const subjectsData = useAppSelector(selectSubjects(subjectIds))
+  console.log('[review] subjectIds: ', subjectIds)
+  const { subjects, subjectSliceStatus } = useSubjectCache(subjectIds)
   const reviewSliceStatus = useAppSelector(selectStatus)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
@@ -71,6 +66,8 @@ export default function Index() {
   }))
 
   useEffect(() => {
+    // TODO: find a way to prevent exit animation from happening upon entering
+    // the review page. (Right now because of the reset - it happens)
     dispatch(reset())
   }, [dispatch])
 
@@ -80,16 +77,12 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    if (subjectIds !== undefined) {
-      console.log('Sending fetchSubjects action with ', subjectIds.length)
-      dispatch(fetchSubjects(subjectIds))
-    }
-  }, [subjectIds, dispatch])
-
-  useEffect(() => {
-    console.log('Sending SubjectsFetched action with ', subjectsData.length)
-    dispatch(init(subjectsData))
-  }, [subjectsData, dispatch])
+    console.log(
+      '[review] Sending SubjectsFetched action with ',
+      subjects.length,
+    )
+    dispatch(init(subjects))
+  }, [subjects, dispatch])
 
   // Show keyboard after a timeout to avoid a bug with the keyboard being shown
   // during the page entering animation.
@@ -128,12 +121,8 @@ export default function Index() {
   // TODO: The cursor for TextInput is not in the middle when placeholder is in
   // place. To fix that custom placeholder should be implemented
 
-  if (reviewSliceStatus === 'loading') {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size='large' />
-      </View>
-    )
+  if (reviewSliceStatus === 'loading' || subjectSliceStatus === 'loading') {
+    return <FullPageLoading />
   }
 
   return (

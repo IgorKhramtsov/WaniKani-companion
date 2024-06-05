@@ -36,11 +36,11 @@ export const VocabularyPage = ({
 }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
-  console.log('\n\nPRONON', subject.pronunciation_audios)
+  // console.log('\n\nPRONON', subject.pronunciation_audios)
   const getAudio = (reading: Reading) =>
     SubjectUtils.getPrononciationAudioForReading(subject, reading)
 
-  console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
+  // console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
 
   return (
     <Page topContent={topContent} bottomContent={bottomContent}>

@@ -1,14 +1,8 @@
 import typography from '@/src/constants/typography'
-import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
-import {
-  fetchSubjects,
-  selectStatus,
-  selectSubjects,
-} from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { router, useLocalSearchParams } from 'expo-router'
-import { useEffect, useMemo, useRef } from 'react'
-import { ActivityIndicator, Button, Pressable, Text, View } from 'react-native'
+import { useCallback, useMemo, useRef } from 'react'
+import { Button, Pressable, Text, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CompositionPage } from './CompositionPage'
@@ -21,40 +15,30 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
 import { AntDesign } from '@expo/vector-icons'
+import { FullPageLoading } from '@/src/components/FullPageLoading'
+import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 
 export default function Index() {
-  const dispatch = useAppDispatch()
   const params = useLocalSearchParams<{ subjects: string }>().subjects
   const { styles } = useStyles(stylesheet)
 
   const subjectIds = useMemo(() => {
-    console.log('Processing params: ', params)
+    console.log('[lessons] Processing params: ', params)
     return params?.split(',').map(el => parseInt(el))
   }, [params])
-  const subjects = useAppSelector(selectSubjects(subjectIds))
-  const subjectSliceStatus = useAppSelector(selectStatus)
+  const { subjects, subjectSliceStatus } = useSubjectCache(subjectIds)
   const parentPagerView = useRef<PagerView>(null)
 
-  useEffect(() => {
-    if (subjectIds !== undefined) {
-      dispatch(fetchSubjects(subjectIds))
-    }
-  }, [subjectIds, dispatch])
-
-  const openQuiz = () => {
+  const openQuiz = useCallback(() => {
     router.replace({ pathname: 'quiz', params: { subjects: subjectIds } })
-  }
+  }, [subjectIds])
 
   if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
   }
 
-  if (subjectSliceStatus === 'loading' && subjects.length === 0) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size='large' />
-      </View>
-    )
+  if (subjectSliceStatus === 'loading') {
+    return <FullPageLoading />
   }
 
   return (
@@ -64,8 +48,8 @@ export default function Index() {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
           const isLast = index === subjects.length - 1
-          console.log('building subject #', index)
-          console.log('\n\nSUBJECT DATA', JSON.stringify(subject, null, 2))
+          console.log('[lessons] building subject #', index)
+          // console.log('\n\nSUBJECT DATA', JSON.stringify(subject, null, 2))
           const getBottomContent = ({
             direction,
           }: {
@@ -184,6 +168,7 @@ export default function Index() {
       </PagerView>
       <View style={styles.subjectQueueContainer}>
         {subjects.map((subject, index) => (
+          // TODO: probably we should move that to bottomContent of the pages
           <Pressable
             key={subject.id}
             onPress={() => parentPagerView.current?.setPage(index)}>
@@ -237,6 +222,7 @@ const stylesheet = createStyleSheet({
     ...appStyles.row,
     justifyContent: 'center',
     flexWrap: 'wrap',
+    paddingHorizontal: 20,
   },
   subjectQueueItem: {
     padding: 3,
