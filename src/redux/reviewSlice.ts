@@ -73,10 +73,10 @@ export const reviewSlice = createSlice({
       state.tasks = []
       state.index = 0
       state.status = 'loading'
-      console.log('RESET')
+      console.log('[ReviewSlice] RESET')
     },
     init(state, action: PayloadAction<SubjectType[]>) {
-      console.log('INIT', action.payload.length)
+      console.log('[ReviewSlice] INIT', action.payload.length)
       if (action.payload.length === 0) return
 
       // TODO: shuffle

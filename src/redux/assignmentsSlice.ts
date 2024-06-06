@@ -6,7 +6,6 @@ import {
 } from '@reduxjs/toolkit'
 import { Assignment } from '../types/assignment'
 import { WaniKaniApi } from '../api/wanikani'
-import { AppState } from 'react-native'
 import { RootState } from './store'
 
 // TODO: restrict number of lessons by the value from the user account settings
@@ -39,7 +38,7 @@ export const assignmentsSlice = createSlice({
         state.status = 'idle'
         state.lessons = action.payload.lessons
         console.log(
-          'fetched reviews',
+          '[AssignmentsSlice] fetched reviews',
           action.payload.reviews.map(el => el.subject_id),
         )
         state.reviews = action.payload.reviews
@@ -62,11 +61,6 @@ export const fetchLessonsAndReviews = createAsyncThunk(
     return { lessons, reviews }
   },
 )
-
-// export const { inc, dec } = lessonsSlice.actions
-
-// Other code such as selectors can use the imported `RootState` type
-// export const selectCount = (state: RootState) => state.counter.value
 
 export const selectStatus = (state: RootState) => state.assignmentsSlice.status
 export const selectLessonsCount = (state: RootState) =>
