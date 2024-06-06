@@ -37,6 +37,13 @@ export default function RootLayout() {
               headerTitle: 'Lessons',
             }}
           />
+          <Stack.Screen
+            name='quiz/index'
+            options={{
+              title: 'Quiz',
+              headerTitle: 'Quiz',
+            }}
+          />
         </Stack>
       </GestureHandlerRootView>
     </Provider>

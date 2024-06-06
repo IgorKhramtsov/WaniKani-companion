@@ -124,6 +124,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
   // Show keyboard after a timeout to avoid a bug with the keyboard being shown
   // during the page entering animation.
+  // TODO: depend on focus instead of keyboard. This way you can use it
+  // correctly in keyboardless mode (emulator)
   useEffect(() => {
     if (currentTask !== undefined) {
       // Adjust the delay time to match the duration of your animation

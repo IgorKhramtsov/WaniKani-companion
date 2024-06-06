@@ -35,9 +35,13 @@ export default function Index() {
   const lessonsCount = useAppSelector(selectLessonsCount)
   const reviewsCount = useAppSelector(selectReviewsCount)
   const error = useAppSelector(selectError)
-  const batch = useAppSelector(selectLessonsBatch)
+  const lessonsBatch = useAppSelector(selectLessonsBatch)
+  const lessonIdsBatch = useMemo(
+    () => lessonsBatch.map(r => r.id),
+    [lessonsBatch],
+  )
   const reviewBatch = useAppSelector(selectReviewsBatch)
-  const reviewBatchIds = useMemo(
+  const reviewIdsBatch = useMemo(
     () => reviewBatch.map(r => r.id),
     [reviewBatch],
   )
@@ -96,7 +100,10 @@ export default function Index() {
                 entering={enteringAnimationLeft}
                 exiting={exitingAnimationRight}>
                 <Link
-                  href={{ pathname: '/lessons', params: { subjects: batch } }}
+                  href={{
+                    pathname: '/lessons',
+                    params: { assignmentIds: lessonIdsBatch },
+                  }}
                   asChild>
                   <Pressable style={styles.startButton}>
                     <View style={appStyles.row}>
@@ -149,7 +156,7 @@ export default function Index() {
               <Link
                 href={{
                   pathname: 'review',
-                  params: { assignmentIds: reviewBatchIds },
+                  params: { assignmentIds: reviewIdsBatch },
                 }}
                 asChild>
                 <Pressable style={styles.startButton}>

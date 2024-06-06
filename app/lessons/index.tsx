@@ -17,21 +17,39 @@ import { Colors } from '@/src/constants/Colors'
 import { AntDesign } from '@expo/vector-icons'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
+import { useAppSelector } from '@/src/hooks/redux'
+import { selectAssignments } from '@/src/redux/assignmentsSlice'
 
 export default function Index() {
-  const params = useLocalSearchParams<{ subjects: string }>().subjects
+  const params = useLocalSearchParams<{
+    assignmentIds: string
+  }>()
   const { styles } = useStyles(stylesheet)
 
+  const assignmentIds = useMemo(() => {
+    console.log(
+      '[lessons] Processing assignmentIds from params: ',
+      params.assignmentIds,
+    )
+    return params.assignmentIds?.split(',').map(el => parseInt(el))
+  }, [params.assignmentIds])
+  console.log('[lessons] assignmentIds: ', assignmentIds)
+
+  const assignments = useAppSelector(selectAssignments(assignmentIds))
+
   const subjectIds = useMemo(() => {
-    console.log('[lessons] Processing params: ', params)
-    return params?.split(',').map(el => parseInt(el))
-  }, [params])
+    return assignments.map(el => el.subject_id)
+  }, [assignments])
+
   const { subjects, subjectSliceStatus } = useSubjectCache(subjectIds)
   const parentPagerView = useRef<PagerView>(null)
 
   const openQuiz = useCallback(() => {
-    router.replace({ pathname: 'quiz', params: { subjects: subjectIds } })
-  }, [subjectIds])
+    router.replace({
+      pathname: 'quiz',
+      params: { assignmentIds: assignmentIds },
+    })
+  }, [assignmentIds])
 
   if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
@@ -177,7 +195,7 @@ export default function Index() {
             </View>
           </Pressable>
         ))}
-        <Pressable key={'quiz'}>
+        <Pressable key={'quiz'} onPress={openQuiz}>
           <View style={[styles.subjectQueueItem, styles.quizItem]}>
             <Text style={styles.quizItemText}>Quiz</Text>
             <View style={{ width: 4 }} />

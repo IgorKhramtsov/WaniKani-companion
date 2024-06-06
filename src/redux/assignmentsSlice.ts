@@ -71,7 +71,7 @@ export const selectError = (state: RootState) => state.assignmentsSlice.error
 const selectLessons = (state: RootState) => state.assignmentsSlice.lessons
 // TODO: batch size setting
 export const selectLessonsBatch = createSelector(selectLessons, lessons =>
-  lessons.slice(0, 5).map(el => el.subject_id),
+  lessons.slice(0, 5),
 )
 export const selectReviewsBatch = (state: RootState) =>
   state.assignmentsSlice.reviews

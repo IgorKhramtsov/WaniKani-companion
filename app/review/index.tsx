@@ -23,7 +23,7 @@ export default function Index() {
       params.assignmentIds,
     )
     return params.assignmentIds?.split(',').map(el => parseInt(el))
-  }, [params])
+  }, [params.assignmentIds])
   console.log('[review] assignmentIds: ', assignmentIds)
 
   useEffect(() => {
