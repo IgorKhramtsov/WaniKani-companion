@@ -5,6 +5,7 @@ import { AntDesign } from '@expo/vector-icons'
 import { PropsWithChildren } from 'react'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
+import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
 
 export const Hint = ({ children }: PropsWithChildren) => {
   const { styles } = useStyles(stylesheet)
@@ -16,7 +17,7 @@ export const Hint = ({ children }: PropsWithChildren) => {
         <Text style={styles.hintTitle}>HINT</Text>
       </View>
       <View style={{ height: 8 }} />
-      <Text style={styles.hintText}>{children}</Text>
+      <CustomTagRenderer style={styles.hintText}>{children}</CustomTagRenderer>
     </View>
   )
 }

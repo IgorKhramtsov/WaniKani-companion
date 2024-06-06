@@ -92,9 +92,8 @@ export namespace SubjectUtils {
   export const getOtherMeaning = (subject: Subject): Meaning[] =>
     subject.meanings.filter(el => !el.primary)
 
-  export const getPrimaryReading = (
-    subject: Kanji | Vocabulary,
-  ): Reading | undefined => subject.readings.find(el => el.primary)
+  export const getPrimaryReadings = (subject: Kanji | Vocabulary): Reading[] =>
+    subject.readings.filter(el => el.primary)
 
   export const getPrononciationAudioForReading = (
     subject: Vocabulary | KanaVocabulary,

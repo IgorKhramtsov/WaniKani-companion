@@ -1,7 +1,7 @@
 import { Kanji } from '@/src/types/kanji'
 import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
-import { FlatList, View, ViewProps } from 'react-native'
+import { FlatList, Text, View, ViewProps } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
@@ -81,14 +81,28 @@ export const KanjiPage = ({
 }: KanjiProps) => {
   const { styles } = useStyles(stylesheet)
 
+  const primaryReadings = SubjectUtils.getPrimaryReadings(subject)
+
+  // TODO: add mapping for reading type (it should be on'youmi instead of
+  // onyomi)
   return (
     <Page topContent={topContent} bottomContent={bottomContent}>
-      <PageSection title='Meaning Mnemonic'>
+      <PageSection title={`Readings (${primaryReadings[0]?.type})`}>
+        <Text style={styles.readingText}>
+          {primaryReadings.map(e => e.reading).join(', ')}
+        </Text>
+      </PageSection>
+      <View style={{ height: 16 }} />
+      <PageSection title='Reading Mnemonic'>
         <CustomTagRenderer style={styles.explanation}>
-          {subject.meaning_mnemonic}
+          {subject.reading_mnemonic}
         </CustomTagRenderer>
-        <View style={{ height: 16 }} />
-        <Hint>{subject.meaning_hint}</Hint>
+        {subject.reading_hint && (
+          <View>
+            <View style={{ height: 16 }} />
+            <Hint>{subject.reading_hint}</Hint>
+          </View>
+        )}
       </PageSection>
     </Page>
   )
@@ -100,6 +114,9 @@ const stylesheet = createStyleSheet({
   },
   flatListSeparator: {
     width: 24,
+  },
+  readingText: {
+    ...typography.titleC,
   },
   explanation: {
     ...typography.body,
