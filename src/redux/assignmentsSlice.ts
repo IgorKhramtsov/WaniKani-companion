@@ -73,9 +73,28 @@ const selectLessons = (state: RootState) => state.assignmentsSlice.lessons
 export const selectLessonsBatch = createSelector(selectLessons, lessons =>
   lessons.slice(0, 5).map(el => el.subject_id),
 )
-const selectReviews = (state: RootState) => state.assignmentsSlice.reviews
-export const selectReviewsBatch = createSelector(selectReviews, reviews =>
-  reviews.map(el => el.subject_id),
+export const selectReviewsBatch = (state: RootState) =>
+  state.assignmentsSlice.reviews
+export const selectAssignments =
+  (ids: number[] | undefined) => (state: RootState) =>
+    selectAssignmentsInner(state, ids)
+const selectAssignmentsInner = createSelector(
+  (state: RootState) => state.assignmentsSlice.lessons,
+  (state: RootState) => state.assignmentsSlice.reviews,
+  (_: RootState, ids: number[] | undefined) => ids,
+  (lessons, reviews, ids) => {
+    if (!ids) return []
+
+    const allAssignments = lessons.concat(reviews)
+    const assignments = allAssignments.filter(el => ids.includes(el.id))
+    if (assignments.length !== ids.length) {
+      console.warn(
+        '[AssignmentsSlice] not all assignments were found',
+        ids.filter(el => !assignments.map(el => el.id).includes(el)),
+      )
+    }
+    return assignments
+  },
 )
 
 export default assignmentsSlice.reducer

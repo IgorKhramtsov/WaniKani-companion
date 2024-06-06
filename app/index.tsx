@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { Link, useFocusEffect } from 'expo-router'
 import typography from '@/src/constants/typography'
@@ -37,6 +37,10 @@ export default function Index() {
   const error = useAppSelector(selectError)
   const batch = useAppSelector(selectLessonsBatch)
   const reviewBatch = useAppSelector(selectReviewsBatch)
+  const reviewBatchIds = useMemo(
+    () => reviewBatch.map(r => r.id),
+    [reviewBatch],
+  )
 
   const refresh = useCallback(
     () => dispatch(fetchLessonsAndReviews()),
@@ -145,7 +149,7 @@ export default function Index() {
               <Link
                 href={{
                   pathname: 'review',
-                  params: { subjects: reviewBatch },
+                  params: { assignmentIds: reviewBatchIds },
                 }}
                 asChild>
                 <Pressable style={styles.startButton}>

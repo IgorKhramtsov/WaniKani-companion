@@ -1,7 +1,7 @@
 import { Kanji } from '@/src/types/kanji'
 import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
-import { FlatList, Text, View, ViewProps } from 'react-native'
+import { FlatList, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'

@@ -54,14 +54,14 @@ const fetchLessons = async (): Promise<Assignment[]> => {
   const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
   )
-  return response.data.data.map(el => el.data)
+  return response.data.data.map(el => ({ ...el.data, id: el.id }))
 }
 
 const fetchReviews = async (): Promise<Assignment[]> => {
   const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
     `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
   )
-  return response.data.data.map(el => el.data)
+  return response.data.data.map(el => ({ ...el.data, id: el.id }))
 }
 
 const fetchSubject = async (id: number): Promise<SubjectType> => {
@@ -105,7 +105,7 @@ const startAssignment = async (id: number): Promise<Assignment> => {
   const response = await http.put<ApiResponse<Assignment>>(
     `${API_BASE_URL}/assignments/${id}/start`,
   )
-  return response.data.data
+  return { ...response.data.data, id: response.data.id }
 }
 
 const createReview = async (

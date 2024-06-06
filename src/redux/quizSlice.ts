@@ -9,52 +9,65 @@ import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
 import { WaniKaniApi } from '../api/wanikani'
+import { Assignment } from '../types/assignment'
+import { QuizMode } from '../types/quizType'
 
 type TaskType = 'reading' | 'meaning'
 
-interface BaseReviewTask {
+interface BaseQuizTask {
   numberOfErrors: number
   completed: boolean
   type: TaskType
+  assignmentId?: number
 }
 
-interface ReviewReadingTask extends BaseReviewTask {
+interface QuizReadingTask extends BaseQuizTask {
   subject: Vocabulary | Kanji
   type: 'reading'
 }
-interface ReviewMeaningTask extends BaseReviewTask {
+interface QuizMeaningTask extends BaseQuizTask {
   subject: SubjectType
   type: 'meaning'
 }
 
-export type ReviewTask = ReviewReadingTask | ReviewMeaningTask
+export type QuizTask = QuizReadingTask | QuizMeaningTask
 
-export namespace ReviewTaskUtils {
-  export function isMeaningTask(task: ReviewTask): task is ReviewMeaningTask {
+export namespace QuizTaskUtils {
+  export function isMeaningTask(task: QuizTask): task is QuizMeaningTask {
     return task.type === 'meaning'
   }
 
-  export function isReadingTask(task: ReviewTask): task is ReviewReadingTask {
+  export function isReadingTask(task: QuizTask): task is QuizReadingTask {
     return task.type === 'reading'
   }
 }
 
-const createReadingTask = (subject: Vocabulary | Kanji): ReviewTask => ({
+const createReadingTask = (
+  subject: Vocabulary | Kanji,
+  assignmentId?: number,
+): QuizTask => ({
   subject,
   type: 'reading',
   numberOfErrors: 0,
   completed: false,
+  assignmentId,
 })
-const createMeaningTask = (subject: SubjectType): ReviewTask => ({
+
+const createMeaningTask = (
+  subject: SubjectType,
+  assignmentId?: number,
+): QuizTask => ({
   subject,
   type: 'meaning',
   numberOfErrors: 0,
   completed: false,
+  assignmentId,
 })
 
 export interface ReviewSlice {
-  tasks: ReviewTask[]
+  tasks: QuizTask[]
   index: number
+  mode: QuizMode
   status: 'idle' | 'loading' | 'failed'
   error?: SerializedError
 }
@@ -63,9 +76,10 @@ const initialState: ReviewSlice = {
   tasks: [],
   index: 0,
   status: 'loading',
+  mode: 'quiz',
 }
 
-export const reviewSlice = createSlice({
+export const quizSlice = createSlice({
   name: 'subjects',
   initialState,
   reducers: {
@@ -73,22 +87,62 @@ export const reviewSlice = createSlice({
       state.tasks = []
       state.index = 0
       state.status = 'loading'
-      console.log('[ReviewSlice] RESET')
+      console.log('[QuizSlice] RESET')
     },
-    init(state, action: PayloadAction<SubjectType[]>) {
-      console.log('[ReviewSlice] INIT', action.payload.length)
-      if (action.payload.length === 0) return
+    init(
+      state,
+      action: PayloadAction<{
+        assignments?: Assignment[]
+        subjects: SubjectType[]
+        mode: QuizMode
+      }>,
+    ) {
+      console.log(
+        '[QuizSlice] INIT mode: ',
+        action.payload.mode,
+        'subjects: ',
+        action.payload.subjects.length,
+        ' assignments: ',
+        action.payload?.assignments?.length,
+      )
+      if (action.payload.subjects.length === 0) return
 
-      // TODO: shuffle
-      for (const subject of action.payload) {
+      const createTasksFor = (
+        subject: SubjectType,
+        assignment?: Assignment,
+      ) => {
         if (
           SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)
         ) {
-          state.tasks.push(createReadingTask(subject))
+          state.tasks.push(createReadingTask(subject, assignment?.id))
         }
-        state.tasks.push(createMeaningTask(subject))
+        state.tasks.push(createMeaningTask(subject, assignment?.id))
       }
+
+      state.mode = action.payload.mode
+      if (action.payload.assignments !== undefined) {
+        for (const assignment of action.payload.assignments) {
+          const subject = action.payload.subjects.find(
+            subject => subject.id === assignment.subject_id,
+          )
+          if (subject === undefined) {
+            console.error('Can not find subject for assignment: ', assignment)
+            continue
+          }
+          createTasksFor(subject, assignment)
+        }
+      } else {
+        // If there are no assignments - we might be in a quiz mode. Create
+        // tasks just based on subjects.
+
+        for (const subject of action.payload.subjects) {
+          createTasksFor(subject)
+        }
+      }
+
+      // TODO: shuffle
+
       state.status = 'idle'
     },
     answeredCorrectly(
@@ -110,6 +164,8 @@ export const reviewSlice = createSlice({
       task.completed = true
       state.index++
 
+      if (state.mode === 'quiz') return
+
       if (allTasksForSubject.every(task => task.completed)) {
         const incorrect_meaning_answers =
           allTasksForSubject.find(task => task.type === 'meaning')
@@ -118,18 +174,33 @@ export const reviewSlice = createSlice({
           allTasksForSubject.find(task => task.type === 'reading')
             ?.numberOfErrors ?? 0
         console.log(
-          'Creating review for subject: ',
+          'quiz result for subject: ',
           task.subject.id,
           '\n\tincorrect_meanings: ',
           incorrect_meaning_answers,
           '\n\tincorrect_readings: ',
           incorrect_reading_answers,
         )
-        WaniKaniApi.createReview({
-          subject_id: task.subject.id,
-          incorrect_meaning_answers,
-          incorrect_reading_answers,
-        })
+        if (state.mode === 'review') {
+          console.log('creating review')
+          WaniKaniApi.createReview({
+            subject_id: task.subject.id,
+            incorrect_meaning_answers,
+            incorrect_reading_answers,
+          })
+        }
+        if (state.mode === 'lessonsQuiz') {
+          const assignmentId = allTasksForSubject[0].assignmentId
+          if (assignmentId === undefined) {
+            console.error(
+              'Can not find assignment id for subject: ',
+              task.subject,
+            )
+            return
+          }
+          console.log('starting an assignment')
+          WaniKaniApi.startAssignment(assignmentId)
+        }
       }
     },
     answeredIncorrectly(
@@ -161,7 +232,7 @@ export const reviewSlice = createSlice({
 })
 
 export const { reset, init, answeredCorrectly, answeredIncorrectly } =
-  reviewSlice.actions
+  quizSlice.actions
 
 export const selectStatus = (state: RootState) => state.reviewSlice.status
 export const selectProgress = createSelector(
@@ -190,7 +261,7 @@ export const selectCurrentTask = createSelector(
 export const selectNextTask = createSelector(
   (state: RootState) => state.reviewSlice.index,
   (state: RootState) => state.reviewSlice.tasks,
-  (index, tasks): ReviewTask | undefined => tasks[index + 1],
+  (index, tasks): QuizTask | undefined => tasks[index + 1],
 )
 
-export default reviewSlice.reducer
+export default quizSlice.reducer

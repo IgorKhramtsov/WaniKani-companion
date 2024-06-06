@@ -5,7 +5,6 @@ import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
 import { selectStatus, selectSubject } from '@/src/redux/subjectsSlice'
 import { SubjectUtils } from '@/src/types/subject'
-import { useEffect } from 'react'
 import { Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 

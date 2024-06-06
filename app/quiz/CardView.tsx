@@ -2,11 +2,11 @@ import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch } from '@/src/hooks/redux'
 import {
-  ReviewTask,
-  ReviewTaskUtils,
+  QuizTask,
+  QuizTaskUtils,
   answeredCorrectly,
   answeredIncorrectly,
-} from '@/src/redux/reviewSlice'
+} from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { Fragment, useCallback, useEffect, useState } from 'react'
@@ -37,7 +37,7 @@ type TaskState = 'correct' | 'incorrect' | 'notAnswered'
 type CardState = 'input' | 'viewInfo'
 
 type CardProps = {
-  task: ReviewTask
+  task: QuizTask
   textInputRef: React.RefObject<TextInput>
   onSubmit?: () => void
 }
@@ -121,7 +121,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       }
 
       if (input.length === 0) return
-      const result = ReviewTaskUtils.isReadingTask(task)
+      const result = QuizTaskUtils.isReadingTask(task)
         ? isReadingCorrect(input, task.subject)
         : isMeaningCorrect(input, task.subject)
       if (result.status === 'correct') {
@@ -225,7 +225,7 @@ type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>
   submit: (input: string) => void
   taskState: TaskState
-  task: ReviewTask
+  task: QuizTask
   hint: string | undefined
 }
 
