@@ -79,7 +79,8 @@ const glyphTileStylesheet = createStyleSheet({
   subjectTextBase: {
     ...typography.titleB,
     color: 'white',
-    fontWeight: '700',
+    // 500 looks too thick
+    fontWeight: '400',
   },
   subjectTextCompact: {
     ...typography.titleC,
