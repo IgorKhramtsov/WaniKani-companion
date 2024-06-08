@@ -7,6 +7,7 @@ import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { SettingsSectionedPage } from './SettingsSectionedPage'
 import { AntDesign } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSession } from '@/src/context/authContext'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -21,6 +22,7 @@ interface SectionsData {
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
+  const { signOut } = useSession()
   const sectionsData: SectionsData[] = [
     {
       title: 'Lesson',
@@ -96,7 +98,7 @@ export default function Index() {
         {
           title: 'Logout',
           type: 'destructiveButton',
-          onPress: () => router.navigate('/(tabs)/settings/batchSize'),
+          onPress: () => signOut(),
         },
       ],
     },

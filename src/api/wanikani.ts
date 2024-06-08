@@ -4,14 +4,24 @@ import { SubjectType } from '../types/subject'
 import { Review } from '../types/review'
 import { CreateReviewParams } from '../types/createReviewParams'
 import { ReviewStatistic } from '../types/reviewStatistic'
-import { API_TOKEN } from '../../config'
 
 const API_BASE_URL = 'https://api.wanikani.com/v2'
+
+// TODO: maybe refactor in future to look more like a data source which is
+// injected to redux store?
+//
+// TODO: add api key verification (by making empty request to server) to check
+// permissions and disable app's features if not authorized.
+let apiKey: string | undefined
+const setApiKey = (key: string) => {
+  apiKey = key
+}
+const getApiKey = () => apiKey
 
 const http = axios.create({})
 http.interceptors.request.use(
   config => {
-    config.headers.Authorization = `Bearer ${API_TOKEN}`
+    config.headers.Authorization = `Bearer ${apiKey}`
     config.headers['Wanikani-Revision'] = '20170710'
     return config
   },
@@ -137,6 +147,9 @@ export const WaniKaniApi = {
   startAssignment: startAssignment,
   createReview: createReview,
   fetchReviews: fetchReviews,
+
+  setApiKey: setApiKey,
+  getApiKey: getApiKey,
 }
 
 interface ApiResponse<T> {
