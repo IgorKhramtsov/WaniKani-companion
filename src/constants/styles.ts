@@ -12,4 +12,9 @@ export const appStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  rowSpaceBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
 })

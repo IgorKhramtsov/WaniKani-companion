@@ -27,6 +27,7 @@ export const Colors = {
   correctGreen: '#88CC01',
   quizGreen: '#34D399',
   incorrectRed: '#DC3545',
+  destructiveRed: '#FF3B30',
   /*
    * Can be used for borders
    */

@@ -7,7 +7,7 @@ import { Audio } from 'expo-av'
 import { useEffect, useState } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import Waveform from '../../assets/images/waveform_short.svg'
+import Waveform from '@/assets/images/waveform_short.svg'
 
 export const PronunciationAudioView = ({
   pronunciation_audio,
