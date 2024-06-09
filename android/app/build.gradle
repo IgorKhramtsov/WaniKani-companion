@@ -83,9 +83,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.wanikani'
+    namespace 'dev.khramtsov.wanikani'
     defaultConfig {
-        applicationId 'com.anonymous.wanikani'
+        applicationId 'dev.khramtsov.wanikani'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

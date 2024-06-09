@@ -1,4 +1,4 @@
-package com.anonymous.wanikani
+package dev.khramtsov.wanikani
 
 import android.app.Application
 import android.content.res.Configuration

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "wanikani",
+    "name": "wanikani-companion",
     "slug": "wanikani",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.wanikani"
+      "bundleIdentifier": "dev.khramtsov.wanikani"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.wanikani"
+      "package": "dev.khramtsov.wanikani"
     },
     "web": {
       "bundler": "metro",
