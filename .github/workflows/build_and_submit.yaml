@@ -13,7 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Setup Expo and EAS
         uses: expo/expo-github-action@v7
@@ -29,7 +31,7 @@ jobs:
         run: |
           eas build --local \
             --non-interactive \
-            --outpout=./app.ipa \
+            --output=./app.ipa \
             --platform=ios \
             --profile=production
 
