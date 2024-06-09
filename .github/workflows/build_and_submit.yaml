@@ -1,0 +1,44 @@
+name: Build and Submit to App Store via EAS local
+
+on: 
+  push:
+    branches:
+      - "dev"
+      - "prod"
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v2
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v7
+        with:
+          token: ${{ secrets.EXPO_TOKEN }}
+          expo-version: latest # installs expo
+          eas-version: latest # installs eas
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build iOS
+        run: |
+          eas build --local \
+            --non-interactive \
+            --outpout=./app.ipa \
+            --platform=ios \
+            --profile=production
+
+      - name: Submit to App Store
+        run: eas submit --platform=ios --profile=production --path ./app.ipa
+            
+            
+
+
+
+
+
