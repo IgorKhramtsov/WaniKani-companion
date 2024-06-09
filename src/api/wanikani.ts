@@ -4,6 +4,8 @@ import { SubjectType } from '../types/subject'
 import { Review } from '../types/review'
 import { CreateReviewParams } from '../types/createReviewParams'
 import { ReviewStatistic } from '../types/reviewStatistic'
+import { User } from '../types/user'
+import { Preferences } from '../types/preferences'
 
 const API_BASE_URL = 'https://api.wanikani.com/v2'
 
@@ -128,6 +130,18 @@ const createReview = async (
   return [response.data.data, response.data.resources_updated]
 }
 
+const fetchSettings = async (): Promise<User> => {
+  const response = await http.get<ApiResponse<User>>(`${API_BASE_URL}/user`)
+  return response.data.data
+}
+
+const updateSettings = async (params: Preferences): Promise<User> => {
+  const response = await http.put<ApiResponse<User>>(`${API_BASE_URL}/user`, {
+    user: { preferences: params },
+  })
+  return response.data.data
+}
+
 /**
  * Checks if a given type is a valid SubjectType.
  *
@@ -147,6 +161,9 @@ export const WaniKaniApi = {
   startAssignment: startAssignment,
   createReview: createReview,
   fetchReviews: fetchReviews,
+
+  fetchSettings: fetchSettings,
+  updateSettings: updateSettings,
 
   setApiKey: setApiKey,
   getApiKey: getApiKey,

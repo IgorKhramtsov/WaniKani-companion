@@ -113,13 +113,13 @@ const stylesheet = createStyleSheet({
     minHeight: 42,
     paddingHorizontal: 16,
     borderRadius: 8,
-    borderBottomColor: Colors.generalGray,
+    borderBottomColor: Colors.grayEA,
   },
   topAndBottomText: {
     paddingHorizontal: 32,
     paddingVertical: 4,
     ...typography.body,
     lineHeight: typography.body.fontSize * 1.2,
-    color: Colors.gray,
+    color: Colors.gray55,
   },
 })

@@ -22,7 +22,7 @@ const renderers = {
   vocabulary: getGenericRenderer(Colors.purple),
   kanji: getGenericRenderer(Colors.pink),
   radical: getGenericRenderer(Colors.blue),
-  reading: getGenericRenderer(Colors.gray),
+  reading: getGenericRenderer(Colors.gray55),
 }
 
 const styles = StyleSheet.create({

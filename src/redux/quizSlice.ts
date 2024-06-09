@@ -234,9 +234,9 @@ export const quizSlice = createSlice({
 export const { reset, init, answeredCorrectly, answeredIncorrectly } =
   quizSlice.actions
 
-export const selectStatus = (state: RootState) => state.reviewSlice.status
+export const selectStatus = (state: RootState) => state.quizSlice.status
 export const selectProgress = createSelector(
-  (state: RootState) => state.reviewSlice.tasks,
+  (state: RootState) => state.quizSlice.tasks,
   tasks => {
     const completed = tasks.filter(task => task.completed).length
     const total = tasks.length
@@ -246,8 +246,8 @@ export const selectProgress = createSelector(
   },
 )
 export const selectCurrentTask = createSelector(
-  (state: RootState) => state.reviewSlice.index,
-  (state: RootState) => state.reviewSlice.tasks,
+  (state: RootState) => state.quizSlice.index,
+  (state: RootState) => state.quizSlice.tasks,
   (index, tasks) => {
     console.log(
       'Selecting current task. index: ',
@@ -259,8 +259,8 @@ export const selectCurrentTask = createSelector(
   },
 )
 export const selectNextTask = createSelector(
-  (state: RootState) => state.reviewSlice.index,
-  (state: RootState) => state.reviewSlice.tasks,
+  (state: RootState) => state.quizSlice.index,
+  (state: RootState) => state.quizSlice.tasks,
   (index, tasks): QuizTask | undefined => tasks[index + 1],
 )
 

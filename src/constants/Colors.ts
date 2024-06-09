@@ -11,7 +11,7 @@ const tintColorDark = '#fff'
 const pink = '#FF00AA'
 const purple = '#9F01ED'
 const blue = '#00AAFF'
-const gray = '#555555'
+const gray55 = '#555555'
 
 const getDarker = (baseColor: string, strength: number) =>
   tinycolor(baseColor).darken(strength).toString()
@@ -21,9 +21,11 @@ export const Colors = {
   pink,
   blue,
   purple,
-  gray,
-  generalGray: '#EAEAEA',
-  generalDarkGray: '#DADADA',
+  gray55,
+  grayC5: '#C5C5C7', // ios settings icon
+  gray88: '#88888C', // ios settings value
+  grayEA: '#EAEAEA',
+  grayDA: '#DADADA',
   correctGreen: '#88CC01',
   quizGreen: '#34D399',
   incorrectRed: '#DC3545',

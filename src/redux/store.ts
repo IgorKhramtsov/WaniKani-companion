@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import assignmentsSlice from './assignmentsSlice'
 import subjectsSlice from './subjectsSlice'
 import quizSlice from './quizSlice'
+import settingsSlice from './settingsSlice'
 
 export const store = configureStore({
   middleware: getDefaultMiddleware =>
@@ -12,7 +13,8 @@ export const store = configureStore({
   reducer: {
     assignmentsSlice,
     subjectsSlice,
-    reviewSlice: quizSlice,
+    quizSlice,
+    settingsSlice,
   },
 })
 

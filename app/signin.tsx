@@ -45,7 +45,7 @@ export default function SignIn() {
                 value={input}
               />
             </View>
-            <View style={{ height: 8 }} />
+            <View style={{ height: 12 }} />
             <Pressable
               onPress={() =>
                 Linking.openURL(
@@ -103,7 +103,7 @@ const stylesheet = createStyleSheet({
     minWidth: 300,
     padding: 12,
     borderRadius: 5,
-    backgroundColor: Colors.generalGray,
+    backgroundColor: Colors.grayEA,
     // borderColor: Colors.gray,
     // borderBottomWidth: 1,
   },
@@ -120,11 +120,11 @@ const stylesheet = createStyleSheet({
   },
   apiTokenLabel: {
     ...typography.caption,
-    color: Colors.gray,
+    color: Colors.gray55,
   },
   footerText: {
     ...typography.caption,
-    color: Colors.gray,
+    color: Colors.gray55,
     textAlign: 'center',
   },
 })

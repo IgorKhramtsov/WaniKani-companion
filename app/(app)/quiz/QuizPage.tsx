@@ -233,7 +233,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 const stylesheet = createStyleSheet({
   progressIndicatorContainer: {
     height: 20,
-    backgroundColor: Colors.generalDarkGray,
+    backgroundColor: Colors.grayDA,
     borderRadius: 10,
     marginHorizontal: 8,
     marginTop: 8,

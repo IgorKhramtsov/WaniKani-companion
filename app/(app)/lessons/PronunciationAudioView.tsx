@@ -88,7 +88,7 @@ const stylesheet = createStyleSheet({
   },
   voiceView: {
     borderRadius: 8,
-    backgroundColor: Colors.generalGray,
+    backgroundColor: Colors.grayEA,
     padding: 8,
     paddingHorizontal: 16,
   },

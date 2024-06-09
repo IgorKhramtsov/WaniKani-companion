@@ -384,7 +384,7 @@ const stylesheet = createStyleSheet({
   },
   hintText: {
     ...typography.subheading,
-    color: Colors.generalGray,
+    color: Colors.grayEA,
   },
   textInputBox: {
     padding: 20,
