@@ -7,15 +7,9 @@ import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { SettingsSectionedPage } from './SettingsSectionedPage'
 import { AntDesign } from '@expo/vector-icons'
 import { useSession } from '@/src/context/authContext'
-import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
-import {
-  fetchSettings,
-  selectPreferences,
-  selectStatus,
-} from '@/src/redux/settingsSlice'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
-import { useEffect } from 'react'
 import { StringUtils } from '@/src/utils/stringUtils'
+import { useSettings } from '@/src/hooks/useSettings'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -30,15 +24,12 @@ interface SectionsData {
 }
 
 export default function Index() {
-  const dispatch = useAppDispatch()
   const { styles } = useStyles(stylesheet)
   const { signOut } = useSession()
-  const status = useAppSelector(selectStatus)
-  const preferences = useAppSelector(selectPreferences)
+  const { preferences, setProperty, isLoading } = useSettings()
 
-  useEffect(() => {
-    dispatch(fetchSettings())
-  }, [dispatch])
+  if (isLoading) return <FullPageLoading />
+  if (!preferences) return <Text>Couldn't get user preferences</Text>
 
   const sectionsData: SectionsData[] = [
     {
@@ -47,7 +38,7 @@ export default function Index() {
         {
           title: 'Preferred lesson batch size',
           type: 'page',
-          value: preferences?.lessons_batch_size,
+          value: preferences.lessons_batch_size,
           onPress: () => router.navigate('/(tabs)/settings/batchSize'),
         },
         {
@@ -73,8 +64,12 @@ export default function Index() {
         {
           title: 'SRS update indicator during reviews',
           type: 'switch',
-          value: preferences?.reviews_display_srs_indicator,
-          onPress: () => router.navigate('/(tabs)/settings/batchSize'),
+          value: preferences.reviews_display_srs_indicator,
+          onPress: () =>
+            setProperty(
+              'reviews_display_srs_indicator',
+              !preferences.reviews_display_srs_indicator,
+            ),
         },
       ],
     },
@@ -83,7 +78,7 @@ export default function Index() {
         {
           title: 'Review ordering',
           type: 'page',
-          value: preferences?.reviews_presentation_order,
+          value: preferences.reviews_presentation_order,
           onPress: () => router.navigate('/(tabs)/settings/reviewOrdering'),
         },
       ],
@@ -94,20 +89,32 @@ export default function Index() {
         {
           title: 'Autoplay audio in lessons',
           type: 'switch',
-          value: preferences?.lessons_autoplay_audio,
-          onPress: () => router.navigate('/(tabs)/settings/batchSize'),
+          value: preferences.lessons_autoplay_audio,
+          onPress: () =>
+            setProperty(
+              'lessons_autoplay_audio',
+              !preferences.lessons_autoplay_audio,
+            ),
         },
         {
           title: 'Autoplay audio in reviews',
           type: 'switch',
-          value: preferences?.reviews_autoplay_audio,
-          onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
+          value: preferences.reviews_autoplay_audio,
+          onPress: () =>
+            setProperty(
+              'reviews_autoplay_audio',
+              !preferences.reviews_autoplay_audio,
+            ),
         },
         {
           title: 'Autoplay audio in extra study',
           type: 'switch',
-          value: preferences?.extra_study_autoplay_audio,
-          onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
+          value: preferences.extra_study_autoplay_audio,
+          onPress: () =>
+            setProperty(
+              'extra_study_autoplay_audio',
+              !preferences.extra_study_autoplay_audio,
+            ),
         },
       ],
     },
@@ -122,8 +129,6 @@ export default function Index() {
       ],
     },
   ]
-
-  if (status === 'loading') return <FullPageLoading />
 
   return (
     <SettingsSectionedPage
@@ -144,7 +149,9 @@ export default function Index() {
         return (
           <View style={appStyles.rowSpaceBetween}>
             <Text style={textStyle}>{item.title}</Text>
-            {item.type === 'switch' && <Switch value={item.value} />}
+            {item.type === 'switch' && (
+              <Switch value={item.value} onValueChange={item.onPress} />
+            )}
             {
               // TODO: show current value
               item.type === 'page' && (

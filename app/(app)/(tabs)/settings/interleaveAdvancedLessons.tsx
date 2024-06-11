@@ -21,6 +21,7 @@ export default function Index() {
       <SettingsSectionedPage
         sections={[
           {
+            // TODO: local setting
             footer:
               'Interleave Lessons on the Advanced Lessons page. When set to “No,” Lessons are ordered by level, then subject type, then lesson order. When set to “Yes” we will attempt to interleave (mix item types) Lessons, if possible.',
             data: [

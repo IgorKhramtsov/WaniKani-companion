@@ -1,17 +1,17 @@
 import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
-import { useState } from 'react'
-import { View, Text, SectionList, Pressable } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { SettingsSectionedPage } from './SettingsSectionedPage'
-import { Preferences, ReviewsPresentationOrder } from '@/src/types/preferences'
+import { ReviewsPresentationOrder } from '@/src/types/preferences'
 import { FontAwesome5 } from '@expo/vector-icons'
+import { useSettings } from '@/src/hooks/useSettings'
+import { FullPageLoading } from '@/src/components/FullPageLoading'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const [batchSize, setBatchSize] = useState(10)
-  const [value, setValue] = useState<ReviewsPresentationOrder>('shuffled')
+  const { preferences, setProperty, isLoading } = useSettings()
   const data: { title: string; value: ReviewsPresentationOrder }[] = [
     {
       title: 'Shuffled',
@@ -22,6 +22,9 @@ export default function Index() {
       value: 'lower_levels_first',
     },
   ]
+
+  if (isLoading) return <FullPageLoading />
+  if (!preferences) return <Text>Couldn't get user preferences</Text>
 
   return (
     <SettingsSectionedPage
@@ -36,13 +39,16 @@ export default function Index() {
       renderItem={item => (
         <View style={appStyles.rowSpaceBetween}>
           <Text style={styles.itemText}>{item.title}</Text>
-          {value === item.value && (
+          {preferences.reviews_presentation_order === item.value && (
             <FontAwesome5 name='check' size={16} color={Colors.blue} />
           )}
         </View>
       )}
       itemWrapper={(item, children) => (
-        <Pressable onPress={() => setValue(item.value)}>{children}</Pressable>
+        <Pressable
+          onPress={() => setProperty('reviews_presentation_order', item.value)}>
+          {children}
+        </Pressable>
       )}
     />
   )

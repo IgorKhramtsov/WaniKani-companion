@@ -17,6 +17,20 @@ export default function RootLayout() {
           headerTitle: 'Batch Size',
         }}
       />
+      <Stack.Screen
+        name='maxLessons'
+        options={{
+          title: 'Max Lessons Per Day',
+          headerTitle: 'Max Lessons Per Day',
+        }}
+      />
+      <Stack.Screen
+        name='reviewOrdering'
+        options={{
+          title: 'Review ordering',
+          headerTitle: 'Review ordering',
+        }}
+      />
     </Stack>
   )
 }

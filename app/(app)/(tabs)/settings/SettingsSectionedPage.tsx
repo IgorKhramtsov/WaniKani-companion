@@ -12,14 +12,6 @@ interface BaseSection {
 interface Props<ItemT, SectionT extends BaseSection> {
   sections: readonly SectionListData<ItemT, SectionT>[]
 
-  // sections:  SectionListData<
-  //   any,
-  //   {
-  //     title: string
-  //     footer?: string
-  //     data: ItemT
-  //   }
-  // >[]
   renderItem: (item: ItemT) => any
   itemWrapper?: (item: ItemT, children: JSX.Element) => any
 }
@@ -30,12 +22,6 @@ export const SettingsSectionedPage = <ItemT, SectionT extends BaseSection>({
   itemWrapper,
 }: Props<ItemT, SectionT>) => {
   const { styles } = useStyles(stylesheet)
-
-  // <Picker>
-  //   {lessonsNumber.map(el => (
-  //     <Picker.Item label={el.toString()} value={el} />
-  //   ))}
-  // </Picker>
 
   return (
     <View>

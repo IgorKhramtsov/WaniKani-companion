@@ -33,7 +33,9 @@
     "expo-system-ui": "~3.0.4",
     "expo-updates": "~0.25.16",
     "expo-web-browser": "~13.0.3",
+    "lodash": "^4.17.21",
     "react": "18.2.0",
+    "react-autosave": "^0.4.4",
     "react-dom": "18.2.0",
     "react-native": "0.74.1",
     "react-native-gesture-handler": "~2.16.1",
@@ -51,6 +53,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/jest": "^29.5.12",
+    "@types/lodash": "^4.17.5",
     "@types/react": "~18.2.45",
     "@types/react-test-renderer": "^18.0.7",
     "@types/tinycolor2": "^1.4.6",

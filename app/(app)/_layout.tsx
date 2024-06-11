@@ -1,4 +1,5 @@
 import { WaniKaniApi } from '@/src/api/wanikani'
+import { getApiKey, setApiKey } from '@/src/api/wanikaniApi'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSession } from '@/src/context/authContext'
 import { Redirect, Stack } from 'expo-router'
@@ -14,6 +15,9 @@ export default function RootLayout() {
   }
   if (WaniKaniApi.getApiKey() !== apiKey) {
     WaniKaniApi.setApiKey(apiKey)
+  }
+  if (getApiKey() !== apiKey) {
+    setApiKey(apiKey)
   }
 
   return (
