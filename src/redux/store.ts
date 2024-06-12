@@ -8,19 +8,26 @@ import {
   rtkQueryErrorLogger,
   wanikaniApi,
 } from '@/src/api/wanikaniApi'
+import { localSettingsApi } from '../api/localStorageApi'
 
 export const store = configureStore({
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: { warnAfter: 300 },
       immutableCheck: { warnAfter: 300 },
-    }).concat(wanikaniApi.middleware, rtkQueryErrorLogger, loggerMiddleware),
+    }).concat(
+      wanikaniApi.middleware,
+      localSettingsApi.middleware,
+      rtkQueryErrorLogger,
+      loggerMiddleware,
+    ),
   reducer: {
     assignmentsSlice,
     subjectsSlice,
     quizSlice,
     settingsSlice,
     [wanikaniApi.reducerPath]: wanikaniApi.reducer,
+    [localSettingsApi.reducerPath]: localSettingsApi.reducer,
   },
 })
 

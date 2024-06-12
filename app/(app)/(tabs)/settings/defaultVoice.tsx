@@ -7,42 +7,16 @@ import { useSettings } from '@/src/hooks/useSettings'
 import { FontAwesome5 } from '@expo/vector-icons'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
-
-type VoiceType =
-  | 'FeminineOnly'
-  | 'MasculineOnly'
-  | 'PreferFeminine'
-  | 'PreferMasculine'
-  | 'Random'
+import { voiceTypeStrings } from '@/src/types/localSettings'
+import { StringUtils } from '@/src/utils/stringUtils'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const { preferences, setProperty, isLoading } = useSettings()
-  const data: { title: string; value: VoiceType }[] = [
-    {
-      title: 'Feminine Only',
-      value: 'FeminineOnly',
-    },
-    {
-      title: 'Masculine Only',
-      value: 'MasculineOnly',
-    },
-    {
-      title: 'Prefer Feminine',
-      value: 'PreferFeminine',
-    },
-    {
-      title: 'Prefer Masculine',
-      value: 'PreferMasculine',
-    },
-    {
-      title: 'Random',
-      value: 'Random',
-    },
-  ]
+  const { settings, setProperty, isLoading } = useSettings()
+  const data = voiceTypeStrings
 
   if (isLoading) return <FullPageLoading />
-  if (!preferences) return <Text>Couldn't get user preferences</Text>
+  if (!settings) return <Text>Couldn't get user preferences</Text>
 
   return (
     <SettingsSectionedPage
@@ -55,19 +29,19 @@ export default function Index() {
       ]}
       renderItem={item => (
         <View style={appStyles.rowSpaceBetween}>
-          <Text style={styles.itemText}>{item.title}</Text>
-          {data[0] === item && (
+          <Text style={styles.itemText}>
+            {StringUtils.convertEnumTypeToString(item)}
+          </Text>
+          {settings.default_voice === item && (
             <FontAwesome5 name='check' size={16} color={Colors.blue} />
           )}
         </View>
       )}
-      // TODO: local setting
-      //
-      // itemWrapper={(item, children) => (
-      //   <Pressable onPress={() => setProperty('lessons_batch_size', item)}>
-      //     {children}
-      //   </Pressable>
-      // )}
+      itemWrapper={(item, children) => (
+        <Pressable onPress={() => setProperty('default_voice', item)}>
+          {children}
+        </Pressable>
+      )}
     />
   )
 }

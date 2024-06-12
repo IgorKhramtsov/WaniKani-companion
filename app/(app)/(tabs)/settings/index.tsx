@@ -26,10 +26,10 @@ interface SectionsData {
 export default function Index() {
   const { styles } = useStyles(stylesheet)
   const { signOut } = useSession()
-  const { preferences, setProperty, isLoading } = useSettings()
+  const { settings, setProperty, isLoading } = useSettings()
 
   if (isLoading) return <FullPageLoading />
-  if (!preferences) return <Text>Couldn't get user preferences</Text>
+  if (!settings) return <Text>Couldn't get user preferences</Text>
 
   const sectionsData: SectionsData[] = [
     {
@@ -38,7 +38,7 @@ export default function Index() {
         {
           title: 'Preferred lesson batch size',
           type: 'page',
-          value: preferences.lessons_batch_size,
+          value: settings.lessons_batch_size,
           onPress: () => router.navigate('/(tabs)/settings/batchSize'),
         },
         {
@@ -64,11 +64,11 @@ export default function Index() {
         {
           title: 'SRS update indicator during reviews',
           type: 'switch',
-          value: preferences.reviews_display_srs_indicator,
+          value: settings.reviews_display_srs_indicator,
           onPress: () =>
             setProperty(
               'reviews_display_srs_indicator',
-              !preferences.reviews_display_srs_indicator,
+              !settings.reviews_display_srs_indicator,
             ),
         },
       ],
@@ -78,7 +78,7 @@ export default function Index() {
         {
           title: 'Review ordering',
           type: 'page',
-          value: preferences.reviews_presentation_order,
+          value: settings.reviews_presentation_order,
           onPress: () => router.navigate('/(tabs)/settings/reviewOrdering'),
         },
       ],
@@ -89,38 +89,37 @@ export default function Index() {
         {
           title: 'Default voice',
           type: 'page',
-          // TODO: local setting
-          // value: preferences.lessons_autoplay_audio,
+          value: settings.default_voice,
           onPress: () => router.navigate('/(tabs)/settings/defaultVoice'),
         },
         {
           title: 'Autoplay audio in lessons',
           type: 'switch',
-          value: preferences.lessons_autoplay_audio,
+          value: settings.lessons_autoplay_audio,
           onPress: () =>
             setProperty(
               'lessons_autoplay_audio',
-              !preferences.lessons_autoplay_audio,
+              !settings.lessons_autoplay_audio,
             ),
         },
         {
           title: 'Autoplay audio in reviews',
           type: 'switch',
-          value: preferences.reviews_autoplay_audio,
+          value: settings.reviews_autoplay_audio,
           onPress: () =>
             setProperty(
               'reviews_autoplay_audio',
-              !preferences.reviews_autoplay_audio,
+              !settings.reviews_autoplay_audio,
             ),
         },
         {
           title: 'Autoplay audio in extra study',
           type: 'switch',
-          value: preferences.extra_study_autoplay_audio,
+          value: settings.extra_study_autoplay_audio,
           onPress: () =>
             setProperty(
               'extra_study_autoplay_audio',
-              !preferences.extra_study_autoplay_audio,
+              !settings.extra_study_autoplay_audio,
             ),
         },
       ],
@@ -151,7 +150,7 @@ export default function Index() {
         const textStyle = [styles.itemText, { color: textColor }]
         const valueString =
           item.value && typeof item.value === 'string'
-            ? StringUtils.capitalizeFirstLetter(item.value.replaceAll('_', ' '))
+            ? StringUtils.convertEnumTypeToString(item.value)
             : item.value
         return (
           <View style={appStyles.rowSpaceBetween}>

@@ -10,11 +10,11 @@ import { Colors } from '@/src/constants/Colors'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const { preferences, setProperty, isLoading } = useSettings()
+  const { settings, setProperty, isLoading } = useSettings()
   const batchSizes = Array.from(Array(11 - 3).keys()).map(el => el + 3)
 
   if (isLoading) return <FullPageLoading />
-  if (!preferences) return <Text>Couldn't get user preferences</Text>
+  if (!settings) return <Text>Couldn't get user preferences</Text>
 
   return (
     <SettingsSectionedPage
@@ -29,7 +29,7 @@ export default function Index() {
       renderItem={item => (
         <View style={appStyles.rowSpaceBetween}>
           <Text style={styles.itemText}>{item}</Text>
-          {preferences.lessons_batch_size === item && (
+          {settings.lessons_batch_size === item && (
             <FontAwesome5 name='check' size={16} color={Colors.blue} />
           )}
         </View>

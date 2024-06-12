@@ -26,6 +26,10 @@ export namespace StringUtils {
   export const splitAndGetNumbers = (str: string, separator: string) => {
     return str.split(separator).filter(el => !isNaN(parseInt(el)))
   }
+  export const convertEnumTypeToString = (str: string): string => {
+    if (!str) return str
+    return capitalizeFirstLetter(str.replaceAll('_', ' '))
+  }
 
   export type ComparingResult = {
     result: 'equal' | 'almost' | 'not'

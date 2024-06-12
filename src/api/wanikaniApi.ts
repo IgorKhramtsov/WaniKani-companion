@@ -108,8 +108,9 @@ export const loggerMiddleware: Middleware = api => next => async action => {
     const endpointName =
       'endpointName' in arg ? (arg.endpointName as string) : undefined
     if (
-      endpointName &&
-      Object.keys(wanikaniApi.endpoints).includes(endpointName)
+      endpointName 
+      //   &&
+      // Object.keys(wanikaniApi.endpoints).includes(endpointName)
     ) {
       console.log(`Request to ${endpointName} :`, arg)
     }

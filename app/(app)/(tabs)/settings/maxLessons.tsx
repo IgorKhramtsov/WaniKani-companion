@@ -10,11 +10,11 @@ import { FullPageLoading } from '@/src/components/FullPageLoading'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const { preferences, setProperty, isLoading } = useSettings()
+  const { settings, setProperty, isLoading } = useSettings()
   const lessonsNumber = Array.from(Array(100).keys()).map(el => el)
 
   if (isLoading) return <FullPageLoading />
-  if (!preferences) return <Text>Couldn't get user preferences</Text>
+  if (!settings) return <Text>Couldn't get user preferences</Text>
 
   return (
     <SettingsSectionedPage
@@ -29,10 +29,8 @@ export default function Index() {
       renderItem={_ => (
         <Picker
           // TODO: local setting
-          selectedValue={15}
-          // selectedValue={preferences.lessons_batch_size}
-          // onValueChange={value => setProperty('', value)}
-        >
+          selectedValue={settings.max_lessons_per_day}
+          onValueChange={value => setProperty('max_lessons_per_day', value)}>
           {lessonsNumber.map(el => (
             <Picker.Item key={el} label={el.toString()} value={el} />
           ))}
