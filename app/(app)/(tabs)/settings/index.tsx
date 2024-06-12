@@ -87,6 +87,13 @@ export default function Index() {
       title: 'Audio',
       data: [
         {
+          title: 'Default voice',
+          type: 'page',
+          // TODO: local setting
+          // value: preferences.lessons_autoplay_audio,
+          onPress: () => router.navigate('/(tabs)/settings/defaultVoice'),
+        },
+        {
           title: 'Autoplay audio in lessons',
           type: 'switch',
           value: preferences.lessons_autoplay_audio,
