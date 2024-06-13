@@ -1,18 +1,17 @@
-import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
-import { useState } from 'react'
-import { View, Text, SectionList, Switch } from 'react-native'
+import { View, Text, Switch } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { SettingsSectionedPage } from './SettingsSectionedPage'
-import { selectPreferences } from '@/src/redux/settingsSlice'
-import { useAppSelector } from '@/src/hooks/redux'
+import { useSettings } from '@/src/hooks/useSettings'
+import { FullPageLoading } from '@/src/components/FullPageLoading'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const [batchSize, setBatchSize] = useState(10)
-  const [value, setValue] = useState(false)
-  const preferences = useAppSelector(selectPreferences)
+  const { settings, setProperty, isLoading } = useSettings()
+
+  if (isLoading) return <FullPageLoading />
+  if (!settings) return <Text>Couldn't get user preferences</Text>
 
   return (
     <View>
@@ -21,20 +20,29 @@ export default function Index() {
       <SettingsSectionedPage
         sections={[
           {
-            // TODO: local setting
             footer:
               'Interleave Lessons on the Advanced Lessons page. When set to “No,” Lessons are ordered by level, then subject type, then lesson order. When set to “Yes” we will attempt to interleave (mix item types) Lessons, if possible.',
             data: [
               {
-                value: value,
+                title: 'Interleave Advanced Lessons',
+                value: settings.interleave_advanced_lessons,
+                onValueChange: (value: boolean) => {
+                  console.log(
+                    'Interleave Advanced Lessons',
+                    settings.interleave_advanced_lessons,
+                    value,
+                  )
+
+                  setProperty('interleave_advanced_lessons', value)
+                },
               },
             ],
           },
         ]}
         renderItem={item => (
           <View style={appStyles.rowSpaceBetween}>
-            <Text style={typography.body}>Interleave Advanced Lessons</Text>
-            <Switch value={item.value} onValueChange={setValue} />
+            <Text style={typography.body}>{item.title}</Text>
+            <Switch value={item.value} onValueChange={item.onValueChange} />
           </View>
         )}
       />

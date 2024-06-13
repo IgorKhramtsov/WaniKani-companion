@@ -6,7 +6,10 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Preferences } from '../types/preferences'
 import { LocalSettings } from '../types/localSettings'
-import { useGetSettingsQuery, useSetSettingsMutation } from '../api/localStorageApi'
+import {
+  useGetSettingsQuery,
+  useSetSettingsMutation,
+} from '../api/localStorageApi'
 
 export const useSettings = () => {
   const { data: user, isLoading: isRemoteLoading } = useGetUserQuery()

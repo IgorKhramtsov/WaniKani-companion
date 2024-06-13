@@ -28,7 +28,6 @@ export default function Index() {
       ]}
       renderItem={_ => (
         <Picker
-          // TODO: local setting
           selectedValue={settings.max_lessons_per_day}
           onValueChange={value => setProperty('max_lessons_per_day', value)}>
           {lessonsNumber.map(el => (

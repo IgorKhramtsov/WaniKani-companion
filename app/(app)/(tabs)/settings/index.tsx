@@ -44,13 +44,11 @@ export default function Index() {
         {
           title: 'Maximum recommended daily lessons',
           type: 'page',
-          // TODO: local setting
           onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
         },
         {
           title: 'Interleave Advanced Lessons',
           type: 'page',
-          // TODO: local setting
           onPress: () =>
             router.navigate('/(tabs)/settings/interleaveAdvancedLessons'),
         },
@@ -158,22 +156,19 @@ export default function Index() {
             {item.type === 'switch' && (
               <Switch value={item.value} onValueChange={item.onPress} />
             )}
-            {
-              // TODO: show current value
-              item.type === 'page' && (
-                <View style={appStyles.row}>
-                  {item.value && typeof item.value === 'string' && (
-                    <Text style={styles.itemValueText}>{valueString}</Text>
-                  )}
-                  <View style={{ width: 8 }} />
-                  <AntDesign
-                    name='right'
-                    size={typography.body.fontSize}
-                    color={Colors.grayC5}
-                  />
-                </View>
-              )
-            }
+            {item.type === 'page' && (
+              <View style={appStyles.row}>
+                {item.value && typeof item.value === 'string' && (
+                  <Text style={styles.itemValueText}>{valueString}</Text>
+                )}
+                <View style={{ width: 8 }} />
+                <AntDesign
+                  name='right'
+                  size={typography.body.fontSize}
+                  color={Colors.grayC5}
+                />
+              </View>
+            )}
           </View>
         )
       }}

@@ -18,7 +18,13 @@ export const localSettingsApi = createApi({
           const value = await AsyncStorage.getItem(asyncStorageKey)
           const data =
             value != null ? JSON.parse(value) : localSettingsDefautlValue
-          return { data }
+          return {
+            // Apply default values if missing
+            data: {
+              ...localSettingsDefautlValue,
+              ...data,
+            },
+          }
         } catch (e) {
           console.error('Failed to get settings. ', e)
           const error = `unable to get settings from async storage: ${e}`
