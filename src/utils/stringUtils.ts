@@ -31,8 +31,8 @@ export namespace StringUtils {
     return capitalizeFirstLetter(str.replaceAll('_', ' '))
   }
 
-  export type ComparingResult = {
-    result: 'equal' | 'almost' | 'not'
+  export type ComparisonResult = {
+    result: 'exact' | 'almost' | 'not'
     match: string | undefined
   }
 
@@ -40,14 +40,14 @@ export namespace StringUtils {
     a: string,
     arr: string[],
     threshold: number = 1,
-  ): ComparingResult => {
+  ): ComparisonResult => {
     const sanitizedA = a.trim().toLowerCase()
     const comparisonResult = StringUtils.compareStringWithArrayWithThreshold(
       sanitizedA,
       arr,
       threshold,
     )
-    if (comparisonResult.result === 'equal') {
+    if (comparisonResult.result === 'exact') {
       return comparisonResult
     } else if (comparisonResult.result === 'almost') {
       // If we are off by 1 symbol - ensure this symbol is not a number
@@ -66,17 +66,15 @@ export namespace StringUtils {
   }
 
   export const compareStringWithArrayWithThreshold = (
-    a: string,
+    target: string,
     arr: string[],
     threshold: number = 1,
-  ): ComparingResult => {
-    const aLower = a.toLowerCase()
-    const arrLower = arr.map(el => el.toLowerCase())
-    const exactMatch = arrLower.find(el => el === aLower)
-    if (exactMatch) return { result: 'equal', match: exactMatch }
+  ): ComparisonResult => {
+    const exactMatch = arr.find(el => el === target)
+    if (exactMatch) return { result: 'exact', match: exactMatch }
 
-    const match = arrLower.find(el =>
-      optimizedLevenshteinDistance(aLower, el, threshold),
+    const match = arr.find(el =>
+      optimizedLevenshteinDistance(target, el, threshold),
     )
     return {
       result: match ? 'almost' : 'not',
@@ -91,7 +89,7 @@ export namespace StringUtils {
     console.log('a: ', a, 'b: ', b, 'threshold: ', threshold)
     if (a === b) {
       console.log('exact match')
-      return true // Early exit for exact match
+      return true // Early exit for exact match (just in case)
     }
 
     if (Math.abs(a.length - b.length) > threshold) {

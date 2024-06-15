@@ -56,3 +56,8 @@ https://community.wanikani.com/t/my-journey-of-368-days-the-ultimate-guide-for-w
 1. Patterns of use (context) is not in the API yet. I need to scrap it someway.
    Possible solution - scrap data manually using the cookies and upload it to
    github grouped by level. Add an action to update it periodically.
+
+NOTES:
+
+1. Undocumented api for fetching data for review - https://www.wanikani.com/subjects/review/items?ids=512-68-2617
+   this data probably contain additional auxiliary_meanings/auxiliary_readings

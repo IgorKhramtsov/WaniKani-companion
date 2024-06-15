@@ -10,6 +10,7 @@ import { Reading } from './reading'
 import { Vocabulary } from './vocabulary'
 
 export type SubjectType = Radical | Kanji | Vocabulary | KanaVocabulary
+export type SubjectTypeString = SubjectType['type']
 
 /**
  * Represents a subject in the WaniKani system.
@@ -105,6 +106,9 @@ export namespace SubjectUtils {
 
   export const getSubjectName = (subject: SubjectType) =>
     StringUtils.capitalizeFirstLetter(subject.type.toString()).split('_')[0]
+
+  export const getPrimaryReadingType = (subject: Kanji) =>
+    subject.readings.find(el => el.primary)?.type
 
   export function isRadical(subject: SubjectType): subject is Radical {
     return subject.type === 'radical'

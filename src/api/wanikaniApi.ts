@@ -22,6 +22,7 @@ export const setApiKey = (key: string) => {
 }
 export const getApiKey = () => apiKey
 
+// TODO: rewrite axios api to rtk query
 export const wanikaniApi = createApi({
   reducerPath: 'wanikaniApi',
   baseQuery: fetchBaseQuery({
@@ -108,7 +109,7 @@ export const loggerMiddleware: Middleware = api => next => async action => {
     const endpointName =
       'endpointName' in arg ? (arg.endpointName as string) : undefined
     if (
-      endpointName 
+      endpointName
       //   &&
       // Object.keys(wanikaniApi.endpoints).includes(endpointName)
     ) {

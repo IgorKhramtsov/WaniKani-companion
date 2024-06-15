@@ -11,8 +11,7 @@ import { RootState } from './store'
 import { WaniKaniApi } from '../api/wanikani'
 import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
-
-type TaskType = 'reading' | 'meaning'
+import { TaskType } from '../types/quizTaskType'
 
 interface BaseQuizTask {
   numberOfErrors: number
