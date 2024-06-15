@@ -1,5 +1,4 @@
 import { TaskType } from '@/src/types/quizTaskType'
-import { Subject } from '@/src/types/subject'
 import { AnswerCheckResult } from './types/answerCheckResult'
 import { CheckAnswerResult } from './checkAnswerUtils'
 import checkNPlugin from './plugins/checkNPlugin'
@@ -16,7 +15,7 @@ import checkImpossibleKanaPlugin from './plugins/checkImpossibleKanaPlugin'
 import { EnrichedSubject } from './types/enrichedSubject'
 
 export type CheckAnswerPluginInput = {
-  subject: EnrichedSubject,
+  subject: EnrichedSubject
   taskType: TaskType
   response: string
   checkResult: CheckAnswerResult

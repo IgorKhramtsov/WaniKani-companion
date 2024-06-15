@@ -88,8 +88,9 @@ export interface SubjectBase {
 }
 
 export namespace SubjectUtils {
-  export const getPrimaryMeaning = (subject: SubjectBase): Meaning | undefined =>
-    subject.meanings.find(el => el.primary)
+  export const getPrimaryMeaning = (
+    subject: SubjectBase,
+  ): Meaning | undefined => subject.meanings.find(el => el.primary)
   export const getOtherMeaning = (subject: SubjectBase): Meaning[] =>
     subject.meanings.filter(el => !el.primary)
 

@@ -34,7 +34,7 @@ const hasMatchedMeaning = (
 }
 
 export const plugin: CheckAnswerPlugin = {
-  shouldEvaluate: ({ subject, response, checkResult, taskType }) => {
+  shouldEvaluate: ({ checkResult }) => {
     return !checkResult.passed
   },
   evaluate: ({

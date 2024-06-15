@@ -6,7 +6,6 @@ import {
   checkReading,
   normalizeString,
 } from './checkAnswerUtils'
-import { Subject } from '@/src/types/subject'
 import { plugins } from './checkAnswerPlugin'
 import { EnrichedSubject } from './types/enrichedSubject'
 

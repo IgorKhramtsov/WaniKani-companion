@@ -106,10 +106,7 @@ export const quizSlice = createSlice({
       )
       if (action.payload.subjects.length === 0) return
 
-      const createTasksFor = (
-        subject: Subject,
-        assignment?: Assignment,
-      ) => {
+      const createTasksFor = (subject: Subject, assignment?: Assignment) => {
         if (
           SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)
