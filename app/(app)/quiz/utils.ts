@@ -30,10 +30,7 @@ export const isReadingCorrect = (
   }
 }
 
-export const isMeaningCorrect = (
-  answer: string,
-  subject: Subject,
-): Result => {
+export const isMeaningCorrect = (answer: string, subject: Subject): Result => {
   const sanitizedAnswer = answer.trim().toLowerCase()
   const meanings = [
     ...subject.meanings.filter(el => el.accepted_answer),
@@ -46,7 +43,7 @@ export const isMeaningCorrect = (
       sanitizedAnswer,
       meanings.map(el => el.meaning),
     )
-  if (comparisonResult.result === 'equal') {
+  if (comparisonResult.result === 'exact') {
     return {
       status: 'correct',
     }
