@@ -1,5 +1,5 @@
 import { Kanji } from '@/src/types/kanji'
-import { SubjectType, SubjectUtils } from '@/src/types/subject'
+import { Subject, SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
@@ -20,7 +20,7 @@ interface BaseProps {
 }
 
 interface Props extends BaseProps {
-  subject: SubjectType
+  subject: Subject
 }
 
 export const MeaningPage = ({ subject, ...args }: Props) => {

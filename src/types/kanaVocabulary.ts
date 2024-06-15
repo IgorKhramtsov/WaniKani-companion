@@ -1,4 +1,4 @@
-import { Subject } from './subject';
+import { SubjectBase } from './subject';
 import { ContextSentence } from './contextSentence';
 import { PronunciationAudio } from './pronunciationAudio';
 
@@ -6,7 +6,7 @@ import { PronunciationAudio } from './pronunciationAudio';
  * Represents a kana vocabulary item in the WaniKani system.
  * Kana vocabulary items are words made up of kana only.
  */
-export interface KanaVocabulary extends Subject {
+export interface KanaVocabulary extends SubjectBase {
   type: 'kana_vocabulary'
 
   /**

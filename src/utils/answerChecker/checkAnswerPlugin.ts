@@ -1,5 +1,5 @@
 import { TaskType } from '@/src/types/quizTaskType'
-import { SubjectType } from '@/src/types/subject'
+import { Subject } from '@/src/types/subject'
 import { AnswerCheckResult } from './types/answerCheckResult'
 import { CheckAnswerResult } from './checkAnswerUtils'
 import checkNPlugin from './plugins/checkNPlugin'

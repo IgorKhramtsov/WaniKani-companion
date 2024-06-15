@@ -6,10 +6,10 @@ import {
 } from '@reduxjs/toolkit'
 import { WaniKaniApi } from '../api/wanikani'
 import { RootState } from './store'
-import { SubjectType } from '../types/subject'
+import { Subject } from '../types/subject'
 
 export interface SubjectsSlice {
-  subjects: Record<number, SubjectType>
+  subjects: Record<number, Subject>
   status: 'idle' | 'loading' | 'failed'
   error?: SerializedError
 }

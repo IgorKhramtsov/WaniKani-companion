@@ -3,7 +3,7 @@
 import { toHiragana } from 'wanakana'
 import { CheckAnswerPlugin } from '../checkAnswerPlugin'
 import { TaskType } from '@/src/types/quizTaskType'
-import { SubjectTypeString, SubjectUtils } from '@/src/types/subject'
+import { SubjectType, SubjectUtils } from '@/src/types/subject'
 import { EnrichedSubject } from '../types/enrichedSubject'
 
 // TODO: we have to provide additional data for this plugin.
@@ -71,7 +71,7 @@ const hasMatchingReadings = (
   )
 
 const messages: Record<
-  SubjectTypeString,
+  SubjectType,
   Record<
     TaskType,
     (enrichedSubject: EnrichedSubject, response: string) => string | undefined

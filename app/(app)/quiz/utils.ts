@@ -1,5 +1,5 @@
 import { Kanji } from '@/src/types/kanji'
-import { SubjectType } from '@/src/types/subject'
+import { Subject } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { StringUtils } from '@/src/utils/stringUtils'
 
@@ -32,7 +32,7 @@ export const isReadingCorrect = (
 
 export const isMeaningCorrect = (
   answer: string,
-  subject: SubjectType,
+  subject: Subject,
 ): Result => {
   const sanitizedAnswer = answer.trim().toLowerCase()
   const meanings = [

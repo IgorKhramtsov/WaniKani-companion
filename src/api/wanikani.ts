@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { Assignment } from '../types/assignment'
-import { SubjectType } from '../types/subject'
+import { Subject } from '../types/subject'
 import { Review } from '../types/review'
 import { CreateReviewParams } from '../types/createReviewParams'
 import { ReviewStatistic } from '../types/reviewStatistic'
@@ -76,8 +76,8 @@ const fetchReviews = async (): Promise<Assignment[]> => {
   return response.data.data.map(el => ({ ...el.data, id: el.id }))
 }
 
-const fetchSubject = async (id: number): Promise<SubjectType> => {
-  const response = await http.get<ApiResponse<SubjectType>>(
+const fetchSubject = async (id: number): Promise<Subject> => {
+  const response = await http.get<ApiResponse<Subject>>(
     `${API_BASE_URL}/subjects/${id}`,
   )
   const type = response.data.object
@@ -86,14 +86,14 @@ const fetchSubject = async (id: number): Promise<SubjectType> => {
       ...response.data.data,
       id: response.data.id,
       type,
-    } as SubjectType
+    } as Subject
   }
 
   throw `object field used for determining type of subject is wrong. object: ${type}`
 }
 
-const fetchSubjects = async (ids: number[]): Promise<SubjectType[]> => {
-  const response = await http.get<ApiResponse<ApiResponse<SubjectType>[]>>(
+const fetchSubjects = async (ids: number[]): Promise<Subject[]> => {
+  const response = await http.get<ApiResponse<ApiResponse<Subject>[]>>(
     `${API_BASE_URL}/subjects/`,
     {
       params: { ids: ids.join(',') },
@@ -104,13 +104,13 @@ const fetchSubjects = async (ids: number[]): Promise<SubjectType[]> => {
     .map(el => {
       const type = el.object
       if (isValidSubjectType(type)) {
-        return { ...el.data, id: el.id, type } as SubjectType
+        return { ...el.data, id: el.id, type } as Subject
       } else {
         console.error('Unknown subject type: ', type)
         return undefined
       }
     })
-    .filter((el): el is SubjectType => el !== undefined)
+    .filter((el): el is Subject => el !== undefined)
 }
 
 const startAssignment = async (id: number): Promise<Assignment> => {

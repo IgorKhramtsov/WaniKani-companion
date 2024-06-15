@@ -1,5 +1,5 @@
 import { TaskType } from '@/src/types/quizTaskType'
-import { SubjectType, SubjectUtils } from '@/src/types/subject'
+import { Subject, SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '../stringUtils'
 
 const punctuationRange = '\u3000-\u303f'
@@ -55,7 +55,7 @@ const digitsMatch = (a: string, b: string) => {
 
 export const checkReading = (
   input: string,
-  subject: SubjectType,
+  subject: Subject,
 ): CheckAnswerResult => {
   const correctAnswers = readingAnswerList(subject)
   const hasMatch = correctAnswers.some(e => e === input)
@@ -68,7 +68,7 @@ export const checkReading = (
 
 export const checkMeaning = (
   input: string,
-  subject: SubjectType,
+  subject: Subject,
   userSynonyms: string[],
 ): CheckAnswerResult => {
   const meanings = getFullMeaningAnswerList(subject, input, userSynonyms)
@@ -84,7 +84,7 @@ export const checkMeaning = (
   }
 }
 
-const readingAnswerList = (subject: SubjectType) => {
+const readingAnswerList = (subject: Subject) => {
   if (!SubjectUtils.isKanji(subject) && !SubjectUtils.isVocabulary(subject)) {
     return []
   }
@@ -92,7 +92,7 @@ const readingAnswerList = (subject: SubjectType) => {
 }
 
 const getFullMeaningAnswerList = (
-  subject: SubjectType,
+  subject: Subject,
   input: string,
   userSynonyms: string[],
 ) => {
@@ -113,7 +113,7 @@ const getFullMeaningAnswerList = (
   return allMeanings
 }
 
-function isBlacklisted(subject: SubjectType, input: string) {
+function isBlacklisted(subject: Subject, input: string) {
   return subject.auxiliary_meanings.some(
     item =>
       item.type === 'blacklist' && input === normalizeString(item.meaning),

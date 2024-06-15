@@ -4,7 +4,7 @@ import {
   createSelector,
   createSlice,
 } from '@reduxjs/toolkit'
-import { SubjectType, SubjectUtils } from '../types/subject'
+import { Subject, SubjectUtils } from '../types/subject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
@@ -25,7 +25,7 @@ interface QuizReadingTask extends BaseQuizTask {
   type: 'reading'
 }
 interface QuizMeaningTask extends BaseQuizTask {
-  subject: SubjectType
+  subject: Subject
   type: 'meaning'
 }
 
@@ -53,7 +53,7 @@ const createReadingTask = (
 })
 
 const createMeaningTask = (
-  subject: SubjectType,
+  subject: Subject,
   assignmentId?: number,
 ): QuizTask => ({
   subject,
@@ -92,7 +92,7 @@ export const quizSlice = createSlice({
       state,
       action: PayloadAction<{
         assignments?: Assignment[]
-        subjects: SubjectType[]
+        subjects: Subject[]
         mode: QuizMode
       }>,
     ) {
@@ -107,7 +107,7 @@ export const quizSlice = createSlice({
       if (action.payload.subjects.length === 0) return
 
       const createTasksFor = (
-        subject: SubjectType,
+        subject: Subject,
         assignment?: Assignment,
       ) => {
         if (

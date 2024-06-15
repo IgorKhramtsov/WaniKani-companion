@@ -1,11 +1,11 @@
-import { Subject } from './subject';
+import { SubjectBase } from './subject';
 import { CharacterImage } from './characterImage';
 
 /**
  * Represents a radical in the WaniKani system.
  * A radical is a component used to build kanji characters.
  */
-export interface Radical extends Subject {
+export interface Radical extends SubjectBase {
   type: 'radical';
 
   /**

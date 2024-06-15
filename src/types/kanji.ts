@@ -1,11 +1,11 @@
-import { Subject } from './subject'
+import { SubjectBase } from './subject'
 import { Reading } from './reading'
 
 /**
  * Represents a kanji in the WaniKani system.
  * Kanji are characters used in the Japanese writing system.
  */
-export interface Kanji extends Subject {
+export interface Kanji extends SubjectBase {
   type: 'kanji'
 
   /**

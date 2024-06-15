@@ -9,13 +9,13 @@ import { Radical } from './radical'
 import { Reading } from './reading'
 import { Vocabulary } from './vocabulary'
 
-export type SubjectType = Radical | Kanji | Vocabulary | KanaVocabulary
-export type SubjectTypeString = SubjectType['type']
+export type Subject = Radical | Kanji | Vocabulary | KanaVocabulary
+export type SubjectType = Subject['type']
 
 /**
  * Represents a subject in the WaniKani system.
  */
-export interface Subject {
+export interface SubjectBase {
   type: string
 
   /**
@@ -88,9 +88,9 @@ export interface Subject {
 }
 
 export namespace SubjectUtils {
-  export const getPrimaryMeaning = (subject: Subject): Meaning | undefined =>
+  export const getPrimaryMeaning = (subject: SubjectBase): Meaning | undefined =>
     subject.meanings.find(el => el.primary)
-  export const getOtherMeaning = (subject: Subject): Meaning[] =>
+  export const getOtherMeaning = (subject: SubjectBase): Meaning[] =>
     subject.meanings.filter(el => !el.primary)
 
   export const getPrimaryReadings = (subject: Kanji | Vocabulary): Reading[] =>
@@ -104,35 +104,35 @@ export namespace SubjectUtils {
       el => el.metadata.pronunciation === reading.reading,
     )
 
-  export const getSubjectName = (subject: SubjectType) =>
+  export const getSubjectName = (subject: Subject) =>
     StringUtils.capitalizeFirstLetter(subject.type.toString()).split('_')[0]
 
   export const getPrimaryReadingType = (subject: Kanji) =>
     subject.readings.find(el => el.primary)?.type
 
-  export function isRadical(subject: SubjectType): subject is Radical {
+  export function isRadical(subject: Subject): subject is Radical {
     return subject.type === 'radical'
   }
-  export function isKanji(subject: SubjectType): subject is Kanji {
+  export function isKanji(subject: Subject): subject is Kanji {
     return subject.type === 'kanji'
   }
-  export function isVocabulary(subject: SubjectType): subject is Vocabulary {
+  export function isVocabulary(subject: Subject): subject is Vocabulary {
     return subject.type === 'vocabulary'
   }
   export function isKanaVocabulary(
-    subject: SubjectType,
+    subject: Subject,
   ): subject is KanaVocabulary {
     return subject.type === 'kana_vocabulary'
   }
 
   export function map<T>(
-    subject: SubjectType,
-    mapping: Record<SubjectType['type'], T>,
+    subject: Subject,
+    mapping: Record<Subject['type'], T>,
   ): T {
     return mapping[subject.type]
   }
 
-  export function getAssociatedColor(subject: SubjectType): string {
+  export function getAssociatedColor(subject: Subject): string {
     return map(subject, {
       kana_vocabulary: Colors.purple,
       vocabulary: Colors.purple,

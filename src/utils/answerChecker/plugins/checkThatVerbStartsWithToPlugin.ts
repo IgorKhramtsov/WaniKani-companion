@@ -1,10 +1,10 @@
 // ref: https://assets.wanikani.com/assets/v4/lib/answer_checker/plugins/check_that_verb_starts_with_to-6089ce6ae4ff6cee559d2e3251e379be9005baa6dd43b94d89fcc490f92904f6.js
 
-import { SubjectType } from '@/src/types/subject'
+import { Subject } from '@/src/types/subject'
 import { stripOkurigana } from 'wanakana'
 import { CheckAnswerPlugin } from '../checkAnswerPlugin'
 
-const findMatchedMeaning = (subject: SubjectType, response: string) => {
+const findMatchedMeaning = (subject: Subject, response: string) => {
   // TODO: use levenshtein distance to find the closest match
   return subject.meanings
     .map(e => e.meaning)
