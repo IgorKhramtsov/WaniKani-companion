@@ -3,12 +3,12 @@ import assignmentsSlice from './assignmentsSlice'
 import subjectsSlice from './subjectsSlice'
 import quizSlice from './quizSlice'
 import settingsSlice from './settingsSlice'
+import { wanikaniApi } from '@/src/api/wanikaniApi'
+import { localSettingsApi } from '../api/localStorageApi'
 import {
   loggerMiddleware,
   rtkQueryErrorLogger,
-  wanikaniApi,
-} from '@/src/api/wanikaniApi'
-import { localSettingsApi } from '../api/localStorageApi'
+} from '../api/loggingMiddlewares'
 
 export const store = configureStore({
   middleware: getDefaultMiddleware =>
