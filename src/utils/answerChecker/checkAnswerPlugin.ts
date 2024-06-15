@@ -13,9 +13,10 @@ import checkThatVerbStartsWithToPlugin from './plugins/checkThatVerbStartsWithTo
 import checkTransliteratedPlugin from './plugins/checkTransliteratedPlugin'
 // import checkWarningListPlugin from './plugins/checkWarningListPlugin'
 import checkImpossibleKanaPlugin from './plugins/checkImpossibleKanaPlugin'
+import { EnrichedSubject } from './types/enrichedSubject'
 
 export type CheckAnswerPluginInput = {
-  subject: SubjectType
+  subject: EnrichedSubject,
   taskType: TaskType
   response: string
   checkResult: CheckAnswerResult

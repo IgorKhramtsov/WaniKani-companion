@@ -69,7 +69,8 @@ export const plugin: CheckAnswerPlugin = {
   shouldEvaluate: ({ taskType }) => {
     return taskType === 'reading'
   },
-  evaluate: ({ response, subject }) => {
+  evaluate: ({ response, subject: enrichedSubject }) => {
+    const { subject } = enrichedSubject
     if (!SubjectUtils.isKanji(subject) && !SubjectUtils.isVocabulary(subject)) {
       return undefined
     }

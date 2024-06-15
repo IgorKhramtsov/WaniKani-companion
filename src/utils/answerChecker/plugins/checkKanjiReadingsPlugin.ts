@@ -18,10 +18,11 @@ export const plugin: CheckAnswerPlugin = {
     return (
       !checkResult.passed &&
       taskType === 'reading' &&
-      SubjectUtils.isKanji(subject)
+      SubjectUtils.isKanji(subject.subject)
     )
   },
-  evaluate: ({ response, subject }) => {
+  evaluate: ({ response, subject: enrichedSubject }) => {
+    const { subject } = enrichedSubject
     if (!SubjectUtils.isKanji(subject)) return undefined
 
     if (answeredAlternateReading(subject, response)) {

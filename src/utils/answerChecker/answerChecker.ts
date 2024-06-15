@@ -8,18 +8,19 @@ import {
 } from './checkAnswerUtils'
 import { SubjectType } from '@/src/types/subject'
 import { plugins } from './checkAnswerPlugin'
+import { EnrichedSubject } from './types/enrichedSubject'
 
 export const checkAnswer = (
   taskType: TaskType,
   input: string,
-  subject: SubjectType,
+  subject: EnrichedSubject,
   userSynonyms: string[],
 ): AnswerCheckResult => {
   let normalizedInput = normalizeString(input)
   const checkResult =
     taskType === 'meaning'
-      ? checkMeaning(normalizedInput, subject, userSynonyms)
-      : checkReading(normalizedInput, subject)
+      ? checkMeaning(normalizedInput, subject.subject, userSynonyms)
+      : checkReading(normalizedInput, subject.subject)
 
   if (!checkResult.passed || (checkResult.passed && !checkResult.accurate)) {
     for (const plugin of plugins) {

@@ -22,12 +22,15 @@ export const plugin: CheckAnswerPlugin = {
     return (
       !checkResult.passed &&
       taskType === 'meaning' &&
-      subject.meanings &&
-      subject.meanings.some(t => t.meaning.toLowerCase().startsWith('to ')) &&
+      subject.subject.meanings &&
+      subject.subject.meanings.some(t =>
+        t.meaning.toLowerCase().startsWith('to '),
+      ) &&
       !response.toLowerCase().startsWith('to ')
     )
   },
-  evaluate: ({ response, subject }) => {
+  evaluate: ({ response, subject: enrichedSubject }) => {
+    const { subject } = enrichedSubject
     const matchedMeaning = findMatchedMeaning(subject, response)
 
     if (matchedMeaning && subject.characters) {

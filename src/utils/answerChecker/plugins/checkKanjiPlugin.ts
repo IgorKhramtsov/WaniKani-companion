@@ -4,7 +4,7 @@ import { CheckAnswerPlugin } from '../checkAnswerPlugin'
 
 export const plugin: CheckAnswerPlugin = {
   shouldEvaluate: ({ subject, response }) => {
-    return subject.characters === response
+    return subject.subject.characters === response
   },
   evaluate: () => {
     return {

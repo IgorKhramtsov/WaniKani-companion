@@ -3,11 +3,8 @@
 import { toHiragana } from 'wanakana'
 import { CheckAnswerPlugin } from '../checkAnswerPlugin'
 import { TaskType } from '@/src/types/quizTaskType'
-import {
-  SubjectType,
-  SubjectTypeString,
-  SubjectUtils,
-} from '@/src/types/subject'
+import { SubjectTypeString, SubjectUtils } from '@/src/types/subject'
+import { EnrichedSubject } from '../types/enrichedSubject'
 
 // TODO: we have to provide additional data for this plugin.
 // The data needed is:
@@ -19,26 +16,31 @@ import {
 // case they are different from this subject's reading/meaning.
 //
 
+type RelatedSubjectsType = 'radicals' | 'kanji' | 'vocabulary'
+
 const normalize = (input: string, taskType: TaskType) =>
   taskType === 'reading' ? toHiragana(input.trim()) : input.trim().toLowerCase()
 
+const normalizeArray = (arr: string[], taskType: TaskType) =>
+  arr.map(e => normalize(e, taskType))
+
 const extractMeanings = (
-  data: Record<SubjectTypeString, SubjectType[]>,
-  type: SubjectTypeString,
-) => ((data && data[type]) || []).flatMap(a => a.meanings.map(e => e.meaning))
+  enrichedSubject: EnrichedSubject,
+  type: RelatedSubjectsType,
+) =>
+  ((enrichedSubject && enrichedSubject[type]) || []).flatMap(a =>
+    a.meanings.map(e => e.meaning),
+  )
 
 const extractReadings = (
-  data: Record<SubjectTypeString, SubjectType[]>,
-  type: SubjectTypeString,
+  enrichedSubject: EnrichedSubject,
+  type: RelatedSubjectsType,
 ) =>
-  ((data && data[type]) || []).flatMap(e =>
+  ((enrichedSubject && enrichedSubject[type]) || []).flatMap(e =>
     SubjectUtils.isKanji(e) || SubjectUtils.isVocabulary(e)
       ? e.readings.map(e => e.reading)
       : [],
   )
-
-const normalizeArray = (arr: string[], taskType: TaskType) =>
-  arr.map(e => normalize(e, taskType))
 
 const hasMatchingAnswers = (
   correctAnswers: string[],
@@ -47,72 +49,78 @@ const hasMatchingAnswers = (
 ) => normalizeArray(correctAnswers, taskType).indexOf(response) !== -1
 
 const hasMatchingMeanings = (
-  data: Record<SubjectTypeString, SubjectType[]>,
-  type: SubjectTypeString,
+  enrichedSubject: EnrichedSubject,
+  type: RelatedSubjectsType,
   response: string,
-) => hasMatchingAnswers(extractMeanings(data, type), 'meaning', response)
+) =>
+  hasMatchingAnswers(
+    extractMeanings(enrichedSubject, type),
+    'meaning',
+    response,
+  )
 
 const hasMatchingReadings = (
-  data: Record<SubjectTypeString, SubjectType[]>,
-  type: SubjectTypeString,
+  enrichedSubject: EnrichedSubject,
+  type: RelatedSubjectsType,
   response: string,
-) => hasMatchingAnswers(extractReadings(data, type), 'reading', response)
+) =>
+  hasMatchingAnswers(
+    extractReadings(enrichedSubject, type),
+    'reading',
+    response,
+  )
 
 const messages: Record<
   SubjectTypeString,
   Record<
     TaskType,
-    (
-      data: Record<SubjectTypeString, SubjectType[]>,
-      type: SubjectTypeString,
-    ) => string | undefined
+    (enrichedSubject: EnrichedSubject, response: string) => string | undefined
   >
 > = {
   radical: {
-    meaning: (a, n) =>
-      hasMatchingMeanings(a, 'kanji', n)
+    meaning: (enrichedSubject, response) =>
+      hasMatchingMeanings(enrichedSubject, 'kanji', response)
         ? 'Oops, we want the radical meaning, not the kanji meaning.'
         : undefined,
     reading: () => undefined,
   },
   kanji: {
-    meaning: (a, n) =>
-      hasMatchingMeanings(a, 'radicals', n)
+    meaning: (enrichedSubject, response) =>
+      hasMatchingMeanings(enrichedSubject, 'radicals', response)
         ? 'Oops, we want the kanji meaning, not the radical meaning.'
-        : hasMatchingMeanings(a, 'vocabulary', n)
+        : hasMatchingMeanings(enrichedSubject, 'vocabulary', response)
           ? 'Oops, we want the kanji meaning, not the vocabulary meaning.'
           : undefined,
     reading: () => undefined,
   },
   vocabulary: {
-    meaning: (a, n) =>
-      hasMatchingMeanings(a, 'kanji', n)
+    meaning: (enrichedSubject, response) =>
+      hasMatchingMeanings(enrichedSubject, 'kanji', response)
         ? 'Oops, we want the vocabulary meaning, not the kanji meaning.'
         : undefined,
-    reading: (a, n) =>
-      hasMatchingReadings(a, 'kanji', n)
+    reading: (enrichedSubject, reponse) =>
+      hasMatchingReadings(enrichedSubject, 'kanji', reponse)
         ? 'Oops, we want the vocabulary reading, not the kanji reading.'
         : undefined,
   },
   kana_vocabulary: {
-    meaning: (a, n) => undefined,
-    reading: (a, n) => undefined,
+    meaning: () => undefined,
+    reading: () => undefined,
   },
 }
 
 export const plugin: CheckAnswerPlugin = {
-  shouldEvaluate: ({ checkResult, taskType, subject }) => {
-    // TODO: populate radicals, kanji and vocabulary with the data
+  shouldEvaluate: ({ subject: enrichedSubject }) => {
     return (
-      this.hasPopulatedArray('radicals') ||
-      this.hasPopulatedArray('kanji') ||
-      this.hasPopulatedArray('vocabulary')
+      enrichedSubject.radicals.length > 0 ||
+      enrichedSubject.kanji.length > 0 ||
+      enrichedSubject.vocabulary.length > 0
     )
   },
-  evaluate: ({ response, subject, taskType }) => {
+  evaluate: ({ response, subject: enrichedSubject, taskType }) => {
     const normalizedResponse = normalize(response, taskType)
-    const message = messages[subject.type][taskType](
-      subject,
+    const message = messages[enrichedSubject.subject.type][taskType](
+      enrichedSubject,
       normalizedResponse,
     )
     if (message) {

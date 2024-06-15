@@ -14,11 +14,12 @@ export const plugin: CheckAnswerPlugin = {
     return (
       !checkResult.passed &&
       taskType === 'meaning' &&
-      SubjectUtils.isKanji(subject) &&
+      SubjectUtils.isKanji(subject.subject) &&
       response.startsWith('to ')
     )
   },
-  evaluate: ({ response, subject }) => {
+  evaluate: ({ response, subject: enrichedSubject }) => {
+    const { subject } = enrichedSubject
     if (!SubjectUtils.isKanji(subject)) return undefined
 
     if (hasMatchedMeaning(response, subject)) {
