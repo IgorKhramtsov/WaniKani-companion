@@ -1,17 +1,52 @@
-import { useEffect, useMemo, useState } from 'react'
-import { SubjectUtils } from '../types/subject'
+import { useEffect, useMemo } from 'react'
+import { Subject, SubjectUtils } from '../types/subject'
 import { useGetSubjectsQuery } from '../api/wanikaniApi'
+import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
+import { useAppDispatch, useAppSelector } from './redux'
+
+type Result = {
+  subjects: Subject[]
+  isLoading: boolean
+}
 
 export const useSubjectCache = (
   subjectIds: number[] | undefined,
   cacheDependencies: boolean = true,
-) => {
-  // TODO: do we need local state here??
-  const [dependenciesFetched, setDependenciesFetched] = useState(false)
-  const { data: subjects, isLoading: mainIsLoading } = useGetSubjectsQuery(
-    subjectIds ?? [],
-    { skip: subjectIds === undefined },
+): Result => {
+  const dispatch = useAppDispatch()
+  const subjectIdsSafe = useMemo(() => {
+    return subjectIds ?? []
+  }, [subjectIds])
+
+  const alreadyFetchedSubjects = useAppSelector(selectSubjects(subjectIdsSafe))
+
+  console.log(
+    '[useSubjectCache] alreadyFetchedSubjects: ',
+    alreadyFetchedSubjects?.length,
   )
+
+  // TODO: fetch missing
+  const { data: subjects, isLoading: mainIsLoading } = useGetSubjectsQuery(
+    subjectIdsSafe,
+    {
+      skip:
+        // Do not fetch if there is nothing to fetch
+        subjectIdsSafe.length === 0 ||
+        // Do not fetch if we already have all the subjects
+        alreadyFetchedSubjects?.length === subjectIdsSafe.length,
+    },
+  )
+
+  // Populate slice cache
+  useEffect(() => {
+    if (subjects) {
+      dispatch(subjectsReceived(subjects))
+    }
+  }, [dispatch, subjects])
+
+  const subjectsResolved = useMemo(() => {
+    return subjects ?? alreadyFetchedSubjects
+  }, [subjects, alreadyFetchedSubjects])
 
   // Memoize subjects' dependencies (to prevent infinite loop)
   const dependencySubjectIds = useMemo(() => {
@@ -21,10 +56,10 @@ export const useSubjectCache = (
     const subjectsToFetch: number[] = []
     console.log(
       '[useSubjectCache] mainSubjects is undefined: ',
-      subjects === undefined,
+      subjectsResolved === undefined,
     )
-    if (subjects !== undefined) {
-      subjects.map(subject => {
+    if (subjectsResolved !== undefined) {
+      subjectsResolved.map(subject => {
         if (
           SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)
@@ -37,52 +72,45 @@ export const useSubjectCache = (
       })
     }
     return subjectsToFetch
-  }, [subjects, cacheDependencies])
+  }, [subjectsResolved, cacheDependencies])
 
+  const alreadyFetchedSubjectsDependencies = useAppSelector(
+    selectSubjects(dependencySubjectIds),
+  )
+
+  // TODO: fetch missing, use slice cache
+  //
   // Cache subjects' dependencies
-  const { data: dependencySeubjects, isLoading: dependenciesIsLoading } =
+  const { data: dependencySubjects, isLoading: dependenciesIsLoading } =
     useGetSubjectsQuery(dependencySubjectIds, {
       skip: dependencySubjectIds.length === 0,
     })
 
-  // True if dependencies have been fetched or if we don't need to cache
-  // dependencies
-  const dependenciesFetchedResolved = useMemo(() => {
-    return (
-      dependenciesFetched ||
-      !cacheDependencies ||
-      (subjectIds ?? []).length === 0
-    )
-  }, [cacheDependencies, dependenciesFetched, subjectIds])
-
+  // Populate slice cache
   useEffect(() => {
-    // If dependencies have been fetched or if we don't need to cache
-    // dependencies - skip
-    if (dependenciesFetchedResolved) return
-
-    // If we fetched main subjects
-    if ((subjects?.length ?? 0) > 0) {
-      // And we fetched dependencies
-      if ((dependencySeubjects?.length ?? 0) > 0) {
-        // Set dependencies fetched to true
-        setDependenciesFetched(true)
-      }
+    if (dependencySubjects) {
+      dispatch(subjectsReceived(dependencySubjects))
     }
-  }, [
-    dependenciesFetchedResolved,
-    dependencySeubjects?.length,
-    subjects?.length,
-  ])
+  }, [dispatch, dependencySubjects])
 
   const isLoading = useMemo(() => {
-    return (
-      !dependenciesFetchedResolved || mainIsLoading || dependenciesIsLoading
-    )
-  }, [dependenciesFetchedResolved, mainIsLoading, dependenciesIsLoading])
+    // Ensures that subjects slice state gets hydrated before the UI is
+    // rendered. This is required to prevent GlyphTile from fetching data that
+    // is already fetched due to race condition.
+    const subjectsSliceIsHydrating =
+      alreadyFetchedSubjectsDependencies.length <
+      (dependencySubjects?.length ?? 0)
+    return subjectsSliceIsHydrating || mainIsLoading || dependenciesIsLoading
+  }, [
+    alreadyFetchedSubjectsDependencies.length,
+    dependencySubjects?.length,
+    mainIsLoading,
+    dependenciesIsLoading,
+  ])
 
   const subjectsSafe = useMemo(() => {
-    return subjects ?? []
-  }, [subjects])
+    return subjectsResolved ?? []
+  }, [subjectsResolved])
 
   return { subjects: subjectsSafe, isLoading }
 }
