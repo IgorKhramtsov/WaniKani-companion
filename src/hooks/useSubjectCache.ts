@@ -18,80 +18,66 @@ export const useSubjectCache = (
     return subjectIds ?? []
   }, [subjectIds])
 
-  const alreadyFetchedSubjects = useAppSelector(selectSubjects(subjectIdsSafe))
+  const subjects = useAppSelector(selectSubjects(subjectIdsSafe))
 
-  console.log(
-    '[useSubjectCache] alreadyFetchedSubjects: ',
-    alreadyFetchedSubjects?.length,
-  )
+  const missingIds = useMemo(() => {
+    return subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
+  }, [subjectIdsSafe, subjects])
 
-  // TODO: fetch missing
-  const { data: subjects, isLoading: mainIsLoading } = useGetSubjectsQuery(
-    subjectIdsSafe,
-    {
-      skip:
-        // Do not fetch if there is nothing to fetch
-        subjectIdsSafe.length === 0 ||
-        // Do not fetch if we already have all the subjects
-        alreadyFetchedSubjects?.length === subjectIdsSafe.length,
-    },
-  )
+  const { data: missingSubjects, isLoading: mainIsLoading } =
+    // Do not fetch if there is nothing to fetch
+    useGetSubjectsQuery(missingIds, { skip: missingIds.length === 0 })
 
   // Populate slice cache
   useEffect(() => {
-    if (subjects) {
-      dispatch(subjectsReceived(subjects))
+    if (missingSubjects) {
+      dispatch(subjectsReceived(missingSubjects))
     }
-  }, [dispatch, subjects])
-
-  const subjectsResolved = useMemo(() => {
-    return subjects ?? alreadyFetchedSubjects
-  }, [subjects, alreadyFetchedSubjects])
+  }, [dispatch, missingSubjects])
 
   // Memoize subjects' dependencies (to prevent infinite loop)
   const dependencySubjectIds = useMemo(() => {
     console.log('[useSubjectCache] cachingDependencies: ', cacheDependencies)
     if (!cacheDependencies) return []
+    // If not all subjects are fetched yet (slice is still hydrating) - skip
+    if (subjects.length !== subjectIdsSafe.length) return []
 
     const subjectsToFetch: number[] = []
-    console.log(
-      '[useSubjectCache] mainSubjects is undefined: ',
-      subjectsResolved === undefined,
-    )
-    if (subjectsResolved !== undefined) {
-      subjectsResolved.map(subject => {
-        if (
-          SubjectUtils.isVocabulary(subject) ||
-          SubjectUtils.isKanji(subject)
-        ) {
-          subjectsToFetch.push(...subject.component_subject_ids)
-        }
-        if (SubjectUtils.isRadical(subject) || SubjectUtils.isKanji(subject)) {
-          subjectsToFetch.push(...subject.amalgamation_subject_ids)
-        }
-      })
-    }
+    subjects.map(subject => {
+      if (SubjectUtils.isVocabulary(subject) || SubjectUtils.isKanji(subject)) {
+        subjectsToFetch.push(...subject.component_subject_ids)
+      }
+      if (SubjectUtils.isRadical(subject) || SubjectUtils.isKanji(subject)) {
+        subjectsToFetch.push(...subject.amalgamation_subject_ids)
+      }
+    })
     return subjectsToFetch
-  }, [subjectsResolved, cacheDependencies])
+  }, [cacheDependencies, subjects, subjectIdsSafe.length])
+
+  // TODO: recursively call useSubjectCache to fetch dependencies?
 
   const alreadyFetchedSubjectsDependencies = useAppSelector(
     selectSubjects(dependencySubjectIds),
   )
 
-  // TODO: fetch missing, use slice cache
-  //
+  const missingDependencyIds = useMemo(() => {
+    return dependencySubjectIds.filter(
+      id => !alreadyFetchedSubjectsDependencies.some(el => el.id === id),
+    )
+  }, [alreadyFetchedSubjectsDependencies, dependencySubjectIds])
+
   // Cache subjects' dependencies
-  const { data: dependencySubjects, isLoading: dependenciesIsLoading } =
-    useGetSubjectsQuery(dependencySubjectIds, {
-      skip: dependencySubjectIds.length === 0,
+  const { data: missingDependencies, isLoading: dependenciesIsLoading } =
+    useGetSubjectsQuery(missingDependencyIds, {
+      skip: missingDependencyIds.length === 0,
     })
 
   // Populate slice cache
   useEffect(() => {
-    if (dependencySubjects) {
-      dispatch(subjectsReceived(dependencySubjects))
+    if (missingDependencies) {
+      dispatch(subjectsReceived(missingDependencies))
     }
-  }, [dispatch, dependencySubjects])
+  }, [dispatch, missingDependencies])
 
   const isLoading = useMemo(() => {
     // Ensures that subjects slice state gets hydrated before the UI is
@@ -99,18 +85,17 @@ export const useSubjectCache = (
     // is already fetched due to race condition.
     const subjectsSliceIsHydrating =
       alreadyFetchedSubjectsDependencies.length <
-      (dependencySubjects?.length ?? 0)
+        (missingDependencies?.length ?? 0) ||
+      subjects.length < (missingSubjects?.length ?? 0)
     return subjectsSliceIsHydrating || mainIsLoading || dependenciesIsLoading
   }, [
     alreadyFetchedSubjectsDependencies.length,
-    dependencySubjects?.length,
+    missingDependencies?.length,
+    subjects.length,
+    missingSubjects?.length,
     mainIsLoading,
     dependenciesIsLoading,
   ])
 
-  const subjectsSafe = useMemo(() => {
-    return subjectsResolved ?? []
-  }, [subjectsResolved])
-
-  return { subjects: subjectsSafe, isLoading }
+  return { subjects, isLoading }
 }
