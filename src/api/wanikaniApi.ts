@@ -92,6 +92,7 @@ export const wanikaniApi = createApi({
           .filter((el): el is Subject => el !== undefined)
       },
       providesTags: result =>
+        // TODO: check if this caching works correctly
         result
           ? [
               ...result.map(({ id }) => ({ type: 'Subject' as const, id })),

@@ -33,7 +33,7 @@ export default function Index() {
     )
     return params.assignmentIds?.split(',').map(el => parseInt(el))
   }, [params.assignmentIds])
-  console.log('[lessons] assignmentIds: ', assignmentIds)
+  console.log('[lessons] assignmentIds:', assignmentIds)
 
   const assignments = useAppSelector(selectAssignments(assignmentIds ?? []))
 
