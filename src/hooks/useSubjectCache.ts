@@ -9,9 +9,8 @@ type Result = {
   isLoading: boolean
 }
 
-export const useSubjectCache = (
+const useFetchSubjectsAndHydrate = (
   subjectIds: number[] | undefined,
-  cacheDependencies: boolean = true,
 ): Result => {
   const dispatch = useAppDispatch()
   const subjectIdsSafe = useMemo(() => {
@@ -23,6 +22,9 @@ export const useSubjectCache = (
   const missingIds = useMemo(() => {
     return subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
   }, [subjectIdsSafe, subjects])
+  if (missingIds.length > 0) {
+    console.log('[useSubjectCache] fetching missing subjects: ', missingIds)
+  }
 
   const { data: missingSubjects, isLoading: mainIsLoading } =
     // Do not fetch if there is nothing to fetch
@@ -35,9 +37,31 @@ export const useSubjectCache = (
     }
   }, [dispatch, missingSubjects])
 
+  const isLoading = useMemo(() => {
+    // Ensures that subjects slice state gets hydrated before the UI is
+    // rendered. This is required to prevent GlyphTile from fetching data that
+    // is already fetched due to race condition.
+    const subjectsSliceIsHydrating =
+      subjects.length < (missingSubjects?.length ?? 0)
+    return subjectsSliceIsHydrating || mainIsLoading
+  }, [subjects.length, missingSubjects?.length, mainIsLoading])
+
+  return { subjects, isLoading }
+}
+
+export const useSubjectCache = (
+  subjectIds: number[] | undefined,
+  cacheDependencies: boolean = true,
+): Result => {
+  const subjectIdsSafe = useMemo(() => {
+    return subjectIds ?? []
+  }, [subjectIds])
+
+  const { subjects, isLoading: mainIsLoading } =
+    useFetchSubjectsAndHydrate(subjectIdsSafe)
+
   // Memoize subjects' dependencies (to prevent infinite loop)
   const dependencySubjectIds = useMemo(() => {
-    console.log('[useSubjectCache] cachingDependencies: ', cacheDependencies)
     if (!cacheDependencies) return []
     // If not all subjects are fetched yet (slice is still hydrating) - skip
     if (subjects.length !== subjectIdsSafe.length) return []
@@ -53,49 +77,19 @@ export const useSubjectCache = (
     })
     return subjectsToFetch
   }, [cacheDependencies, subjects, subjectIdsSafe.length])
-
-  // TODO: recursively call useSubjectCache to fetch dependencies?
-
-  const alreadyFetchedSubjectsDependencies = useAppSelector(
-    selectSubjects(dependencySubjectIds),
-  )
-
-  const missingDependencyIds = useMemo(() => {
-    return dependencySubjectIds.filter(
-      id => !alreadyFetchedSubjectsDependencies.some(el => el.id === id),
+  if (dependencySubjectIds.length > 0) {
+    console.log(
+      '[useSubjectCache] dependencies detected: ',
+      dependencySubjectIds,
     )
-  }, [alreadyFetchedSubjectsDependencies, dependencySubjectIds])
+  }
 
-  // Cache subjects' dependencies
-  const { data: missingDependencies, isLoading: dependenciesIsLoading } =
-    useGetSubjectsQuery(missingDependencyIds, {
-      skip: missingDependencyIds.length === 0,
-    })
-
-  // Populate slice cache
-  useEffect(() => {
-    if (missingDependencies) {
-      dispatch(subjectsReceived(missingDependencies))
-    }
-  }, [dispatch, missingDependencies])
+  const { isLoading: dependenciesIsLoading } =
+    useFetchSubjectsAndHydrate(dependencySubjectIds)
 
   const isLoading = useMemo(() => {
-    // Ensures that subjects slice state gets hydrated before the UI is
-    // rendered. This is required to prevent GlyphTile from fetching data that
-    // is already fetched due to race condition.
-    const subjectsSliceIsHydrating =
-      alreadyFetchedSubjectsDependencies.length <
-        (missingDependencies?.length ?? 0) ||
-      subjects.length < (missingSubjects?.length ?? 0)
-    return subjectsSliceIsHydrating || mainIsLoading || dependenciesIsLoading
-  }, [
-    alreadyFetchedSubjectsDependencies.length,
-    missingDependencies?.length,
-    subjects.length,
-    missingSubjects?.length,
-    mainIsLoading,
-    dependenciesIsLoading,
-  ])
+    return mainIsLoading || dependenciesIsLoading
+  }, [mainIsLoading, dependenciesIsLoading])
 
   return { subjects, isLoading }
 }
