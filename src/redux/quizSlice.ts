@@ -162,45 +162,6 @@ export const quizSlice = createSlice({
       }
       task.completed = true
       state.index++
-
-      // if (state.mode === 'quiz') return
-      //
-      // if (allTasksForSubject.every(task => task.completed)) {
-      //   const incorrect_meaning_answers =
-      //     allTasksForSubject.find(task => task.type === 'meaning')
-      //       ?.numberOfErrors ?? 0
-      //   const incorrect_reading_answers =
-      //     allTasksForSubject.find(task => task.type === 'reading')
-      //       ?.numberOfErrors ?? 0
-      //   console.log(
-      //     'quiz result for subject: ',
-      //     task.subject.id,
-      //     '\n\tincorrect_meanings: ',
-      //     incorrect_meaning_answers,
-      //     '\n\tincorrect_readings: ',
-      //     incorrect_reading_answers,
-      //   )
-      //   if (state.mode === 'review') {
-      //     console.log('creating review')
-      //     WaniKaniApi.createReview({
-      //       subject_id: task.subject.id,
-      //       incorrect_meaning_answers,
-      //       incorrect_reading_answers,
-      //     })
-      //   }
-      //   if (state.mode === 'lessonsQuiz') {
-      //     const assignmentId = allTasksForSubject[0].assignmentId
-      //     if (assignmentId === undefined) {
-      //       console.error(
-      //         'Can not find assignment id for subject: ',
-      //         task.subject,
-      //       )
-      //       return
-      //     }
-      //     console.log('starting an assignment')
-      //     WaniKaniApi.startAssignment(assignmentId)
-      //   }
-      // }
     },
     answeredIncorrectly(
       state,
