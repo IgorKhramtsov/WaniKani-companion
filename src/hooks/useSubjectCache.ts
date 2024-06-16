@@ -13,6 +13,8 @@ export const useSubjectCache = (
 
   // Memoize subjects' dependencies (to prevent infinite loop)
   const dependencySubjectIds = useMemo(() => {
+    if (!cacheDependencies) return []
+
     const subjectsToFetch: number[] = []
     console.log(
       '[useSubjectCache] mainSubjects is undefined: ',
@@ -32,7 +34,7 @@ export const useSubjectCache = (
       })
     }
     return subjectsToFetch
-  }, [mainSubjects])
+  }, [mainSubjects, cacheDependencies])
 
   // Cache subjects' dependencies
   const { data: dependencySeubjects, isLoading: dependenciesIsLoading } =
