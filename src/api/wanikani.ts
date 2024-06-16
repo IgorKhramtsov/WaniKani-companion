@@ -62,85 +62,85 @@ http.interceptors.response.use(
   },
 )
 
-const fetchLessons = async (): Promise<Assignment[]> => {
-  const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
-    `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
-  )
-  return response.data.data.map(el => ({ ...el.data, id: el.id }))
-}
+// const fetchLessons = async (): Promise<Assignment[]> => {
+//   const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
+//     `${API_BASE_URL}/assignments?immediately_available_for_lessons=true`,
+//   )
+//   return response.data.data.map(el => ({ ...el.data, id: el.id }))
+// }
 
-const fetchReviews = async (): Promise<Assignment[]> => {
-  const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
-    `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
-  )
-  return response.data.data.map(el => ({ ...el.data, id: el.id }))
-}
+// const fetchReviews = async (): Promise<Assignment[]> => {
+//   const response = await http.get<ApiResponse<ApiResponse<Assignment>[]>>(
+//     `${API_BASE_URL}/assignments?immediately_available_for_review=true`,
+//   )
+//   return response.data.data.map(el => ({ ...el.data, id: el.id }))
+// }
 
-const fetchSubject = async (id: number): Promise<Subject> => {
-  const response = await http.get<ApiResponse<Subject>>(
-    `${API_BASE_URL}/subjects/${id}`,
-  )
-  const type = response.data.object
-  if (isValidSubjectType(type)) {
-    return {
-      ...response.data.data,
-      id: response.data.id,
-      type,
-    } as Subject
-  }
+// const fetchSubject = async (id: number): Promise<Subject> => {
+//   const response = await http.get<ApiResponse<Subject>>(
+//     `${API_BASE_URL}/subjects/${id}`,
+//   )
+//   const type = response.data.object
+//   if (isValidSubjectType(type)) {
+//     return {
+//       ...response.data.data,
+//       id: response.data.id,
+//       type,
+//     } as Subject
+//   }
+//
+//   throw `object field used for determining type of subject is wrong. object: ${type}`
+// }
 
-  throw `object field used for determining type of subject is wrong. object: ${type}`
-}
+// const fetchSubjects = async (ids: number[]): Promise<Subject[]> => {
+//   const response = await http.get<ApiResponse<ApiResponse<Subject>[]>>(
+//     `${API_BASE_URL}/subjects/`,
+//     {
+//       params: { ids: ids.join(',') },
+//     },
+//   )
+//
+//   return response.data.data
+//     .map(el => {
+//       const type = el.object
+//       if (isValidSubjectType(type)) {
+//         return { ...el.data, id: el.id, type } as Subject
+//       } else {
+//         console.error('Unknown subject type: ', type)
+//         return undefined
+//       }
+//     })
+//     .filter((el): el is Subject => el !== undefined)
+// }
 
-const fetchSubjects = async (ids: number[]): Promise<Subject[]> => {
-  const response = await http.get<ApiResponse<ApiResponse<Subject>[]>>(
-    `${API_BASE_URL}/subjects/`,
-    {
-      params: { ids: ids.join(',') },
-    },
-  )
+// const startAssignment = async (id: number): Promise<Assignment> => {
+//   const response = await http.put<ApiResponse<Assignment>>(
+//     `${API_BASE_URL}/assignments/${id}/start`,
+//   )
+//   return { ...response.data.data, id: response.data.id }
+// }
 
-  return response.data.data
-    .map(el => {
-      const type = el.object
-      if (isValidSubjectType(type)) {
-        return { ...el.data, id: el.id, type } as Subject
-      } else {
-        console.error('Unknown subject type: ', type)
-        return undefined
-      }
-    })
-    .filter((el): el is Subject => el !== undefined)
-}
+// const createReview = async (
+//   params: CreateReviewParams,
+// ): Promise<[Review, CreateReviewResourcesUpdated]> => {
+//   const response = await http.post<CreateReviewApiResponse>(
+//     `${API_BASE_URL}/reviews`,
+//     { review: params },
+//   )
+//   return [response.data.data, response.data.resources_updated]
+// }
 
-const startAssignment = async (id: number): Promise<Assignment> => {
-  const response = await http.put<ApiResponse<Assignment>>(
-    `${API_BASE_URL}/assignments/${id}/start`,
-  )
-  return { ...response.data.data, id: response.data.id }
-}
-
-const createReview = async (
-  params: CreateReviewParams,
-): Promise<[Review, CreateReviewResourcesUpdated]> => {
-  const response = await http.post<CreateReviewApiResponse>(
-    `${API_BASE_URL}/reviews`,
-    { review: params },
-  )
-  return [response.data.data, response.data.resources_updated]
-}
-
-const fetchSettings = async (): Promise<User> => {
-  const response = await http.get<ApiResponse<User>>(`${API_BASE_URL}/user`)
-  return response.data.data
-}
-
-const updateSettings = async (params: Preferences): Promise<User> => {
-  const response = await http.put<ApiResponse<User>>(`${API_BASE_URL}/user`, {
-    user: { preferences: params },
-  })
-  return response.data.data
-}
+// const fetchSettings = async (): Promise<User> => {
+//   const response = await http.get<ApiResponse<User>>(`${API_BASE_URL}/user`)
+//   return response.data.data
+// }
+//
+// const updateSettings = async (params: Preferences): Promise<User> => {
+//   const response = await http.put<ApiResponse<User>>(`${API_BASE_URL}/user`, {
+//     user: { preferences: params },
+//   })
+//   return response.data.data
+// }
 
 /**
  * Checks if a given type is a valid SubjectType.
@@ -154,20 +154,20 @@ function isValidSubjectType(
   return ['radical', 'kanji', 'vocabulary', 'kana_vocabulary'].includes(type)
 }
 
-export const WaniKaniApi = {
-  fetchLessons: fetchLessons,
-  fetchSubject: fetchSubject,
-  fetchSubjects: fetchSubjects,
-  startAssignment: startAssignment,
-  createReview: createReview,
-  fetchReviews: fetchReviews,
-
-  fetchSettings: fetchSettings,
-  updateSettings: updateSettings,
-
-  setApiKey: setApiKey,
-  getApiKey: getApiKey,
-}
+// export const WaniKaniApi = {
+//   fetchLessons: fetchLessons,
+//   fetchSubject: fetchSubject,
+//   fetchSubjects: fetchSubjects,
+//   startAssignment: startAssignment,
+//   createReview: createReview,
+//   fetchReviews: fetchReviews,
+//
+//   fetchSettings: fetchSettings,
+//   updateSettings: updateSettings,
+//
+//   setApiKey: setApiKey,
+//   getApiKey: getApiKey,
+// }
 
 interface ApiResponse<T> {
   id: number

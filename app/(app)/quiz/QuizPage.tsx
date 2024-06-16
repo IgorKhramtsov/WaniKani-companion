@@ -4,11 +4,13 @@ import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
   init,
+  markTaskPairAsReported,
   reset,
   selectCurrentTask,
   selectNextTask,
   selectProgress,
   selectStatus,
+  selectTaskPairsForReport,
 } from '@/src/redux/quizSlice'
 import { Link } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -24,7 +26,12 @@ import { CardView } from './CardView'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { QuizMode } from '@/src/types/quizType'
-import { selectAssignments } from '@/src/redux/assignmentsSlice'
+import {
+  selectAssignments,
+  useCreateReviewMutation,
+  useStartAssignmentMutation,
+} from '@/src/api/wanikaniApi'
+import { CreateReviewParams } from '@/src/types/createReviewParams'
 
 interface BaseProps {
   mode: QuizMode
@@ -74,26 +81,17 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     return assignments.map(assignment => assignment.subject_id)
   }, [props, assignments])
 
-  const { subjects, subjectSliceStatus } = useSubjectCache(resolvedSubjectIds)
+  const { subjects, isLoading } = useSubjectCache(resolvedSubjectIds)
 
-  const quizStatus = useAppSelector(selectStatus)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
+  const taskPairsForReport = useAppSelector(selectTaskPairsForReport)
+  const [startAssignment] = useStartAssignmentMutation()
+  const [createReview] = useCreateReviewMutation()
+
   const progressValue = useSharedValue(0)
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
-
-  useEffect(() => {
-    progressValue.value = withSpring(progress, {
-      duration: 300,
-      dampingRatio: 1.5,
-      stiffness: 300,
-    })
-  }, [progress, progressValue])
-
-  const progressAnimatedStyle = useAnimatedStyle(() => ({
-    width: `${progressValue.value}%`,
-  }))
 
   useEffect(() => {
     // TODO: find a way to prevent exit animation from happening upon entering
@@ -104,6 +102,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   useEffect(() => {
     if (isSubjectProps(props)) {
       console.log('[QuizPage]: dispatching init for quiz')
+      // TODO: dispatch only required data
       dispatch(init({ subjects, mode: props.mode }))
     } else if (isAssignmentProps(props)) {
       if (subjects.length === 0 || assignments.length === 0) {
@@ -121,6 +120,75 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       )
     }
   }, [subjects, dispatch, assignments, props])
+
+  useEffect(() => {
+    for (const taskPair of taskPairsForReport) {
+      switch (props.mode) {
+        case 'lessonsQuiz':
+          const assignmentId = taskPair[0].assignmentId
+          if (assignmentId === undefined) {
+            if (__DEV__) {
+              throw new Error('assignmentId is undefined')
+            }
+            return
+          }
+          startAssignment(assignmentId)
+          break
+        case 'review':
+          const readingTask = taskPair.find(task => task.type === 'reading')
+          const meaningTask = taskPair.find(task => task.type === 'meaning')
+          if (meaningTask === undefined) {
+            if (__DEV__) {
+              throw new Error('meaningTask is undefined')
+            }
+            return
+          }
+          if (
+            meaningTask.subject.type === 'kanji' ||
+            meaningTask.subject.type === 'vocabulary'
+          ) {
+            if (readingTask === undefined) {
+              if (__DEV__) {
+                throw new Error(
+                  'readingTask is undefined for kanji or vocabulary',
+                )
+              }
+              return
+            }
+          }
+          const params: CreateReviewParams = {
+            subject_id: meaningTask.subject.id,
+            incorrect_meaning_answers: meaningTask.numberOfErrors,
+            incorrect_reading_answers: readingTask?.numberOfErrors ?? 0,
+          }
+          createReview(params).then(result => {
+            if (result.error === undefined) {
+              if (props.mode === 'review') {
+                console.log('Review created successfully')
+              } else if (props.mode === 'lessonsQuiz') {
+                console.log('Assignment started successfully')
+              }
+              dispatch(markTaskPairAsReported({ taskPair: taskPair }))
+            } else {
+              console.error('Error reporting task pair', result.error)
+            }
+          })
+          break
+      }
+    }
+  }, [createReview, startAssignment, dispatch, props, taskPairsForReport])
+
+  useEffect(() => {
+    progressValue.value = withSpring(progress, {
+      duration: 300,
+      dampingRatio: 1.5,
+      stiffness: 300,
+    })
+  }, [progress, progressValue])
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value}%`,
+  }))
 
   // Show keyboard after a timeout to avoid a bug with the keyboard being shown
   // during the page entering animation.
@@ -154,7 +222,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     }
   }, [])
 
-  if (quizStatus === 'loading' || subjectSliceStatus === 'loading') {
+  if (isLoading) {
     return <FullPageLoading />
   }
 

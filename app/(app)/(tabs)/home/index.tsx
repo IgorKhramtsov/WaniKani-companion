@@ -17,45 +17,72 @@ import Animated, {
 import { ErrorWithRetry } from '@/src/components/ErrorWithRetry'
 import { appStyles } from '@/src/constants/styles'
 import { RefreshControl } from 'react-native-gesture-handler'
+import { Colors } from '@/src/constants/Colors'
 import {
-  fetchLessonsAndReviews,
-  selectError,
   selectLessonsBatch,
   selectLessonsCount,
   selectReviewsBatch,
   selectReviewsCount,
-  selectStatus,
-} from '@/src/redux/assignmentsSlice'
-import { Colors } from '@/src/constants/Colors'
+  useGetLessonsQuery,
+  useGetReviewsQuery,
+} from '@/src/api/wanikaniApi'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const dispatch = useAppDispatch()
-  const status = useAppSelector(selectStatus)
   const lessonsCount = useAppSelector(selectLessonsCount)
   const reviewsCount = useAppSelector(selectReviewsCount)
-  const error = useAppSelector(selectError)
-  const lessonsBatch = useAppSelector(selectLessonsBatch)
+  const {
+    refetch: refetchLessons,
+    isLoading: lessonsIsLoading,
+    error: lessonsError,
+  } = useGetLessonsQuery()
+  const {
+    refetch: refetchReviews,
+    isLoading: reviewsIsLoading,
+    error: reviewsError,
+  } = useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
+
+  const isLoading = useMemo(
+    () => lessonsIsLoading || reviewsIsLoading,
+    [lessonsIsLoading, reviewsIsLoading],
+  )
+  const error = useMemo(
+    () => lessonsError ?? reviewsError,
+    [lessonsError, reviewsError],
+  )
+  const errorMessage = useMemo(() => {
+    if (!error) return undefined
+
+    if ('status' in error) {
+      return `Error ${error.status}: ${error.data}`
+    }
+    if ('message' in error) {
+      return error.message
+    }
+  }, [error])
+
+  const lessonsBatch = useAppSelector(selectLessonsBatch(5))
+  const reviewBatch = useAppSelector(selectReviewsBatch)
+
   const lessonIdsBatch = useMemo(
     () => lessonsBatch.map(r => r.id),
     [lessonsBatch],
   )
-  const reviewBatch = useAppSelector(selectReviewsBatch)
   const reviewIdsBatch = useMemo(
     () => reviewBatch.map(r => r.id),
     [reviewBatch],
   )
 
-  const refresh = useCallback(
-    () => dispatch(fetchLessonsAndReviews()),
-    [dispatch],
-  )
+  const refresh = useCallback(() => {
+    refetchLessons()
+    refetchReviews()
+  }, [refetchLessons, refetchReviews])
 
-  useFocusEffect(
-    useCallback(() => {
-      refresh()
-    }, [refresh]),
-  )
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     refresh()
+  //   }, [refresh]),
+  // )
 
   const duration = 600
   const enteringAnimationLeft = useMemo(
@@ -76,19 +103,16 @@ export default function Index() {
   )
 
   return (
-    <ErrorWithRetry error={error?.message} onRetry={refresh}>
+    <ErrorWithRetry error={errorMessage} onRetry={refresh}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={
-          <RefreshControl
-            refreshing={status === 'loading'}
-            onRefresh={refresh}
-          />
+          <RefreshControl refreshing={isLoading} onRefresh={refresh} />
         }>
         <AssignmentsCard
           backgroundColor={Colors.pink}
           layoutAnimationDuration={duration * 0.6}
-          loading={status === 'loading'}
+          loading={isLoading}
           title='Lessons'
           suptitle="Today's"
           assignmentsCount={lessonsCount}

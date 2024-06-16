@@ -1,38 +1,25 @@
-import { useEffect, useMemo } from 'react'
-import {
-  fetchSubjects,
-  selectStatus,
-  selectSubjects,
-} from '../redux/subjectsSlice'
-import { useAppDispatch, useAppSelector } from './redux'
+import { useMemo } from 'react'
 import { SubjectUtils } from '../types/subject'
+import { useGetSubjectsQuery } from '../api/wanikaniApi'
 
-export const useSubjectCache = (subjectIds: number[] | undefined) => {
-  const dispatch = useAppDispatch()
-  const subjects = useAppSelector(selectSubjects(subjectIds))
-  const subjectSliceStatus = useAppSelector(selectStatus)
+export const useSubjectCache = (
+  subjectIds: number[] | undefined,
+  cacheDependencies: boolean = true,
+) => {
+  const { data: mainSubjects, isLoading: mainIsLoading } = useGetSubjectsQuery(
+    subjectIds ?? [],
+    { skip: subjectIds === undefined },
+  )
 
-  // Cache subjects themselves
-  useEffect(() => {
-    console.log(
-      '[useSubjectCache] subjectIds: ',
-      subjectIds,
-      ' dispatch: ',
-      dispatch,
-    )
-    if (subjectIds !== undefined) {
-      dispatch(fetchSubjects(subjectIds))
-    }
-  }, [subjectIds, dispatch])
   // Memoize subjects' dependencies (to prevent infinite loop)
-  const subjectsToFetch = useMemo(() => {
+  const dependencySubjectIds = useMemo(() => {
     const subjectsToFetch: number[] = []
     console.log(
-      '[useSubjectCache] subjects is undefined: ',
-      subjects === undefined,
+      '[useSubjectCache] mainSubjects is undefined: ',
+      mainSubjects === undefined,
     )
-    if (subjects !== undefined) {
-      subjects.map(subject => {
+    if (mainSubjects !== undefined) {
+      mainSubjects.map(subject => {
         if (
           SubjectUtils.isVocabulary(subject) ||
           SubjectUtils.isKanji(subject)
@@ -45,15 +32,20 @@ export const useSubjectCache = (subjectIds: number[] | undefined) => {
       })
     }
     return subjectsToFetch
-  }, [subjects])
-  // Cache subjects' dependencies
-  useEffect(() => {
-    // Do not fetch if there are no subjects to fetch. This will prevent
-    // loading status from resetting to idle
-    if (subjectsToFetch.length > 0) {
-      dispatch(fetchSubjects(subjectsToFetch))
-    }
-  }, [subjectsToFetch, dispatch])
+  }, [mainSubjects])
 
-  return { subjects, subjectSliceStatus }
+  // Cache subjects' dependencies
+  const { data: dependencySeubjects, isLoading: dependenciesIsLoading } =
+    useGetSubjectsQuery(dependencySubjectIds, {
+      skip: dependencySubjectIds.length === 0,
+    })
+
+  const subjects = useMemo(() => {
+    return (mainSubjects ?? []).concat(dependencySeubjects ?? [])
+  }, [mainSubjects, dependencySeubjects])
+  const isLoading = useMemo(() => {
+    return mainIsLoading || dependenciesIsLoading
+  }, [mainIsLoading, dependenciesIsLoading])
+
+  return { subjects, isLoading }
 }

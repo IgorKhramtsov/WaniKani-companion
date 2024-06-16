@@ -8,7 +8,7 @@ import { Subject, SubjectUtils } from '../types/subject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
-import { WaniKaniApi } from '../api/wanikani'
+// import { WaniKaniApi } from '../api/wanikani'
 import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
 import { TaskType } from '../types/quizTaskType'
@@ -16,6 +16,7 @@ import { TaskType } from '../types/quizTaskType'
 interface BaseQuizTask {
   numberOfErrors: number
   completed: boolean
+  reported: boolean
   type: TaskType
   assignmentId?: number
 }
@@ -49,6 +50,7 @@ const createReadingTask = (
   type: 'reading',
   numberOfErrors: 0,
   completed: false,
+  reported: false,
   assignmentId,
 })
 
@@ -60,6 +62,7 @@ const createMeaningTask = (
   type: 'meaning',
   numberOfErrors: 0,
   completed: false,
+  reported: false,
   assignmentId,
 })
 
@@ -160,44 +163,44 @@ export const quizSlice = createSlice({
       task.completed = true
       state.index++
 
-      if (state.mode === 'quiz') return
-
-      if (allTasksForSubject.every(task => task.completed)) {
-        const incorrect_meaning_answers =
-          allTasksForSubject.find(task => task.type === 'meaning')
-            ?.numberOfErrors ?? 0
-        const incorrect_reading_answers =
-          allTasksForSubject.find(task => task.type === 'reading')
-            ?.numberOfErrors ?? 0
-        console.log(
-          'quiz result for subject: ',
-          task.subject.id,
-          '\n\tincorrect_meanings: ',
-          incorrect_meaning_answers,
-          '\n\tincorrect_readings: ',
-          incorrect_reading_answers,
-        )
-        if (state.mode === 'review') {
-          console.log('creating review')
-          WaniKaniApi.createReview({
-            subject_id: task.subject.id,
-            incorrect_meaning_answers,
-            incorrect_reading_answers,
-          })
-        }
-        if (state.mode === 'lessonsQuiz') {
-          const assignmentId = allTasksForSubject[0].assignmentId
-          if (assignmentId === undefined) {
-            console.error(
-              'Can not find assignment id for subject: ',
-              task.subject,
-            )
-            return
-          }
-          console.log('starting an assignment')
-          WaniKaniApi.startAssignment(assignmentId)
-        }
-      }
+      // if (state.mode === 'quiz') return
+      //
+      // if (allTasksForSubject.every(task => task.completed)) {
+      //   const incorrect_meaning_answers =
+      //     allTasksForSubject.find(task => task.type === 'meaning')
+      //       ?.numberOfErrors ?? 0
+      //   const incorrect_reading_answers =
+      //     allTasksForSubject.find(task => task.type === 'reading')
+      //       ?.numberOfErrors ?? 0
+      //   console.log(
+      //     'quiz result for subject: ',
+      //     task.subject.id,
+      //     '\n\tincorrect_meanings: ',
+      //     incorrect_meaning_answers,
+      //     '\n\tincorrect_readings: ',
+      //     incorrect_reading_answers,
+      //   )
+      //   if (state.mode === 'review') {
+      //     console.log('creating review')
+      //     WaniKaniApi.createReview({
+      //       subject_id: task.subject.id,
+      //       incorrect_meaning_answers,
+      //       incorrect_reading_answers,
+      //     })
+      //   }
+      //   if (state.mode === 'lessonsQuiz') {
+      //     const assignmentId = allTasksForSubject[0].assignmentId
+      //     if (assignmentId === undefined) {
+      //       console.error(
+      //         'Can not find assignment id for subject: ',
+      //         task.subject,
+      //       )
+      //       return
+      //     }
+      //     console.log('starting an assignment')
+      //     WaniKaniApi.startAssignment(assignmentId)
+      //   }
+      // }
     },
     answeredIncorrectly(
       state,
@@ -209,7 +212,12 @@ export const quizSlice = createSlice({
           task.type === action.payload.type,
       )
       if (task === undefined) {
-        console.error('Can not find task: ', task)
+        console.error(
+          'Can not find task for id:',
+          action.payload.id,
+          'and type:',
+          action.payload.type,
+        )
         return
       }
       task.numberOfErrors++
@@ -219,16 +227,36 @@ export const quizSlice = createSlice({
       if (index > -1) {
         state.tasks.splice(index, 1)
         // Push failed item 1...5 positions forward
+        // TODO: adjust
         const randomNumber = 1 + Math.floor(Math.random() * 4)
         const newPos = Math.min(index + randomNumber, state.tasks.length)
         state.tasks.splice(newPos, 0, task)
       }
     },
+    markTaskPairAsReported(
+      state,
+      action: PayloadAction<{ taskPair: QuizTask[] }>,
+    ) {
+      const tasks = state.tasks.filter(
+        task => task.subject.id === action.payload.taskPair[0].subject.id,
+      )
+
+      if (tasks === undefined) {
+        console.error('Can not find tasks for:', action.payload.taskPair)
+        return
+      }
+      tasks.forEach(task => (task.reported = true))
+    },
   },
 })
 
-export const { reset, init, answeredCorrectly, answeredIncorrectly } =
-  quizSlice.actions
+export const {
+  reset,
+  init,
+  answeredCorrectly,
+  answeredIncorrectly,
+  markTaskPairAsReported,
+} = quizSlice.actions
 
 export const selectStatus = (state: RootState) => state.quizSlice.status
 export const selectProgress = createSelector(
@@ -258,6 +286,44 @@ export const selectNextTask = createSelector(
   (state: RootState) => state.quizSlice.index,
   (state: RootState) => state.quizSlice.tasks,
   (index, tasks): QuizTask | undefined => tasks[index + 1],
+)
+export const selectTaskPairsForReport = createSelector(
+  (state: RootState) => state.quizSlice.tasks,
+  (state: RootState) => state.quizSlice.mode,
+  (tasks, mode) => {
+    // We have nothing to report in quiz mode
+    if (mode === 'quiz') return []
+
+    const completedNotReported = tasks.filter(
+      task => task.completed && !task.reported,
+    )
+    const completedNotReportedMeanings = completedNotReported.filter(
+      task => task.type === 'meaning',
+    )
+    const completedNotReportedReadings = completedNotReported.filter(
+      task => task.type === 'reading',
+    )
+    const readyForReportPairs = completedNotReportedMeanings.map(task => {
+      if (
+        task.subject.type === 'radical' ||
+        task.subject.type === 'kana_vocabulary'
+      ) {
+        return [task]
+      }
+      const answeredReadingPair = completedNotReportedReadings.find(
+        readingTask => readingTask.subject.id === task.subject.id,
+      )
+      if (answeredReadingPair !== undefined) {
+        return [task, answeredReadingPair]
+      }
+
+      return undefined
+    })
+    const definedTaskPairs = readyForReportPairs.filter(
+      (taskPair): taskPair is QuizTask[] => taskPair !== undefined,
+    )
+    return definedTaskPairs
+  },
 )
 
 export default quizSlice.reducer

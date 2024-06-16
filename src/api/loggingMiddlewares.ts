@@ -1,6 +1,7 @@
 import {
   Middleware,
   MiddlewareAPI,
+  isFulfilled,
   isPending,
   isRejectedWithValue,
 } from '@reduxjs/toolkit'
@@ -22,6 +23,9 @@ export const rtkQueryErrorLogger: Middleware =
         `\n  error.data: "${errorData}"`,
         `\n  payload: ${payload}`,
       )
+    }
+    if (isFulfilled(action)) {
+      console.log('Fulfilled action:', action.meta.arg)
     }
 
     return next(action)

@@ -18,7 +18,7 @@ import { AntDesign } from '@expo/vector-icons'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { useAppSelector } from '@/src/hooks/redux'
-import { selectAssignments } from '@/src/redux/assignmentsSlice'
+import { selectAssignments } from '@/src/api/wanikaniApi'
 
 export default function Index() {
   const params = useLocalSearchParams<{
@@ -35,13 +35,13 @@ export default function Index() {
   }, [params.assignmentIds])
   console.log('[lessons] assignmentIds: ', assignmentIds)
 
-  const assignments = useAppSelector(selectAssignments(assignmentIds))
+  const assignments = useAppSelector(selectAssignments(assignmentIds ?? []))
 
   const subjectIds = useMemo(() => {
     return assignments.map(el => el.subject_id)
   }, [assignments])
 
-  const { subjects, subjectSliceStatus } = useSubjectCache(subjectIds)
+  const { subjects, isLoading } = useSubjectCache(subjectIds)
   const parentPagerView = useRef<PagerView>(null)
 
   const openQuiz = useCallback(() => {
@@ -55,7 +55,7 @@ export default function Index() {
     return <Text>Couldn't get parameters</Text>
   }
 
-  if (subjectSliceStatus === 'loading') {
+  if (isLoading) {
     return <FullPageLoading />
   }
 

@@ -3,8 +3,9 @@ import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
-import { selectStatus, selectSubject } from '@/src/redux/subjectsSlice'
+import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { SubjectUtils } from '@/src/types/subject'
+import { useMemo } from 'react'
 import { Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
@@ -15,9 +16,11 @@ type GlyphTileProps = {
 
 export const GlyphTile = ({ id, variant = 'normal' }: GlyphTileProps) => {
   const { styles } = useStyles(glyphTileStylesheet)
-  const subject = useAppSelector(selectSubject(id))
-  const status = useAppSelector(selectStatus)
-  if (subject === undefined && status === 'loading') {
+
+  const { subjects, isLoading } = useSubjectCache([id], false)
+  const subject = useMemo(() => subjects[0], [subjects])
+
+  if (subject === undefined && isLoading) {
     return <FullPageLoading />
   }
 

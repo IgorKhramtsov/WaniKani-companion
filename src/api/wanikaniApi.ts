@@ -4,6 +4,10 @@ import { Preferences } from '../types/preferences'
 import { Review } from '../types/review'
 import { Assignment } from '../types/assignment'
 import { ReviewStatistic } from '../types/reviewStatistic'
+import { Subject } from '../types/subject'
+import { CreateReviewParams } from '../types/createReviewParams'
+import { createSelector } from '@reduxjs/toolkit'
+import { RootState } from '../redux/store'
 
 // TODO: maybe refactor in future to look more like a data source which is
 // injected to redux store?
@@ -29,7 +33,7 @@ export const wanikaniApi = createApi({
       headers.set('Wanikani-Revision', '20170710')
     },
   }),
-  tagTypes: ['User'],
+  tagTypes: ['User', 'Subject', 'Reviews', 'Lessons'],
   endpoints: build => ({
     getUser: build.query<User, void>({
       query: () => 'user',
@@ -69,11 +73,125 @@ export const wanikaniApi = createApi({
           .catch(patchResult.undo)
       },
     }),
+    getSubjects: build.query<Subject[], number[]>({
+      query: (ids: number[]) => ({
+        url: 'subjects',
+        params: { ids: ids.join(',') },
+      }),
+      transformResponse: (response: ApiResponse<ApiResponse<Subject>[]>) => {
+        return response.data
+          .map(el => {
+            const type = el.object
+            if (isValidSubjectType(type)) {
+              return { ...el.data, id: el.id, type } as Subject
+            } else {
+              console.error('Unknown subject type: ', type)
+              return undefined
+            }
+          })
+          .filter((el): el is Subject => el !== undefined)
+      },
+      providesTags: result =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Subject' as const, id })),
+              'Subject',
+            ]
+          : ['Subject'],
+    }),
+    getReviews: build.query<Assignment[], void>({
+      query: () => ({
+        url: 'assignments',
+        params: { immediately_available_for_review: true },
+      }),
+      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) =>
+        response.data.map(el => ({ ...el.data, id: el.id })),
+      providesTags: ['Reviews'],
+    }),
+    getLessons: build.query<Assignment[], void>({
+      query: () => ({
+        url: 'assignments',
+        params: { immediately_available_for_lessons: true },
+      }),
+      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) =>
+        response.data.map(el => ({ ...el.data, id: el.id })),
+      providesTags: ['Lessons'],
+    }),
+    startAssignment: build.mutation<Assignment, number>({
+      query: (id: number) => ({
+        method: 'PUT',
+        url: `assignments/${id}/start`,
+      }),
+      transformResponse: (response: ApiResponse<Assignment>) => ({
+        ...response.data,
+        id: response.id,
+      }),
+      invalidatesTags: ['Lessons'],
+    }),
+    createReview: build.mutation<
+      [Review, CreateReviewResourcesUpdated],
+      CreateReviewParams
+    >({
+      query: (params: CreateReviewParams) => ({
+        method: 'POST',
+        url: `reviews`,
+        body: { review: params },
+      }),
+      transformResponse: (response: CreateReviewApiResponse) => [
+        response.data,
+        response.resources_updated,
+      ],
+      invalidatesTags: ['Reviews'],
+    }),
   }),
 })
 
-export const { useGetUserQuery, useSetUserPreferencesMutation } = wanikaniApi
+export const {
+  useGetUserQuery,
+  useGetLessonsQuery,
+  useGetReviewsQuery,
+  useGetSubjectsQuery,
 
+  useSetUserPreferencesMutation,
+  useCreateReviewMutation,
+  useStartAssignmentMutation,
+} = wanikaniApi
+
+const lessonsSelector = createSelector(
+  wanikaniApi.endpoints.getLessons.select(undefined),
+  result => result.data ?? [],
+)
+const reviewsSelector = createSelector(
+  wanikaniApi.endpoints.getReviews.select(undefined),
+  result => result.data ?? [],
+)
+
+export const selectReviewsBatch = (state: RootState) => reviewsSelector(state)
+
+const innerSelectLessonsBatch = createSelector(
+  lessonsSelector,
+  (_: RootState, batchSize: number) => batchSize,
+  (lessons, batchSize) => lessons.slice(0, batchSize),
+)
+
+export const selectLessonsBatch = (batchSize: number) => (state: RootState) =>
+  innerSelectLessonsBatch(state, batchSize)
+
+const innerSelectAssignments = createSelector(
+  lessonsSelector,
+  reviewsSelector,
+  (_: RootState, ids: number[]) => ids,
+  (lessons, reviews, ids) =>
+    lessons.concat(reviews).filter(el => ids.includes(el.id)),
+)
+
+export const selectAssignments = (ids: number[]) => (state: RootState) =>
+  innerSelectAssignments(state, ids)
+
+export const selectLessonsCount = (state: RootState) =>
+  lessonsSelector(state).length
+export const selectReviewsCount = (state: RootState) =>
+  reviewsSelector(state).length
 
 /**
  * Checks if a given type is a valid SubjectType.
