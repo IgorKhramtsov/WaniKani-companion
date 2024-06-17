@@ -9,7 +9,6 @@ import {
   selectCurrentTask,
   selectNextTask,
   selectProgress,
-  selectStatus,
   selectTaskPairsForReport,
 } from '@/src/redux/quizSlice'
 import { Link } from 'expo-router'
@@ -32,6 +31,7 @@ import {
   useStartAssignmentMutation,
 } from '@/src/api/wanikaniApi'
 import { CreateReviewParams } from '@/src/types/createReviewParams'
+import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 
 interface BaseProps {
   mode: QuizMode
@@ -81,7 +81,12 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     return assignments.map(assignment => assignment.subject_id)
   }, [props, assignments])
 
-  const { subjects, isLoading } = useSubjectCache(resolvedSubjectIds)
+  // Hydrate subjectsSlice with data
+  const { isLoading } = useSubjectCache(resolvedSubjectIds)
+  // Select enriched data from the subjectsSlice
+  const enrichedSubjects = useAppSelector(
+    selectEnrichedSubjects(resolvedSubjectIds),
+  )
 
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
@@ -102,24 +107,23 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   useEffect(() => {
     if (isSubjectProps(props)) {
       console.log('[QuizPage]: dispatching init for quiz')
-      // TODO: dispatch only required data
-      dispatch(init({ subjects, mode: props.mode }))
+      dispatch(init({ enrichedSubjects, mode: props.mode }))
     } else if (isAssignmentProps(props)) {
-      if (subjects.length === 0 || assignments.length === 0) {
+      if (enrichedSubjects.length === 0 || assignments.length === 0) {
         console.log('[QuizPage]: subjects or assignments are empty. Waiting.')
         return
       } else {
         console.log(
           '[QuizPage]: dispatching init with assignments and subjects',
         )
-        dispatch(init({ subjects, assignments, mode: props.mode }))
+        dispatch(init({ enrichedSubjects, assignments, mode: props.mode }))
       }
     } else {
       throw new Error(
         'Invalid state. QuizPage should be passed either subject or assignment props.',
       )
     }
-  }, [subjects, dispatch, assignments, props])
+  }, [enrichedSubjects, dispatch, assignments, props])
 
   useEffect(() => {
     for (const taskPair of taskPairsForReport) {
@@ -144,8 +148,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             return
           }
           if (
-            meaningTask.subject.type === 'kanji' ||
-            meaningTask.subject.type === 'vocabulary'
+            meaningTask.subject.subject.type === 'kanji' ||
+            meaningTask.subject.subject.type === 'vocabulary'
           ) {
             if (readingTask === undefined) {
               if (__DEV__) {
@@ -157,7 +161,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             }
           }
           const params: CreateReviewParams = {
-            subject_id: meaningTask.subject.id,
+            subject_id: meaningTask.subject.subject.id,
             incorrect_meaning_answers: meaningTask.numberOfErrors,
             incorrect_reading_answers: readingTask?.numberOfErrors ?? 0,
           }
@@ -249,7 +253,11 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
           // the next task's input node when current one is leaving the scene)
           <Animated.View
             pointerEvents='none'
-            key={nextTask.subject.id + nextTask.type + nextTask.numberOfErrors}
+            key={
+              nextTask.subject.subject.id +
+              nextTask.type +
+              nextTask.numberOfErrors
+            }
             style={{
               height: '100%',
               width: '100%',
@@ -263,7 +271,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         {currentTask && (
           <Animated.View
             key={
-              currentTask.subject.id +
+              currentTask.subject.subject.id +
               currentTask.type +
               currentTask.numberOfErrors
             }

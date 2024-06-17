@@ -3,7 +3,6 @@ import typography from '@/src/constants/typography'
 import { useAppDispatch } from '@/src/hooks/redux'
 import {
   QuizTask,
-  QuizTaskUtils,
   answeredCorrectly,
   answeredIncorrectly,
 } from '@/src/redux/quizSlice'
@@ -27,11 +26,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import { isMeaningCorrect, isReadingCorrect } from './utils'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
 import { MeaningPage } from '../lessons/MeaningPage'
 import { ReadingPage } from '../lessons/ReadingPage'
 import wanakana from 'wanakana'
+import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
 
 type TaskState = 'correct' | 'incorrect' | 'notAnswered'
 type CardState = 'input' | 'viewInfo'
@@ -108,7 +107,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       //  same as web app works)
       if (taskState !== 'notAnswered') {
         const args = {
-          id: task.subject.id,
+          id: task.subject.subject.id,
           type: task.type,
         }
         if (taskState === 'incorrect') {
@@ -119,20 +118,24 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         onSubmit?.()
         return
       }
-
       if (input.length === 0) return
-      const result = QuizTaskUtils.isReadingTask(task)
-        ? isReadingCorrect(input, task.subject)
-        : isMeaningCorrect(input, task.subject)
-      if (result.status === 'correct') {
+
+      const checkResult = checkAnswer({
+        taskType: task.type,
+        input,
+        subject: task.subject,
+        userSynonyms: [],
+      })
+
+      if (checkResult.status === 'correct') {
         setTaskState('correct')
-      } else if (result.status === 'correctWithHint') {
+      } else if (checkResult.status === 'correctWithHint') {
         setTaskState('correct')
-        setHint(result.hint)
-      } else if (result.status === 'incorrect') {
+        setHint(checkResult.message)
+      } else if (checkResult.status === 'incorrect') {
         setTaskState('incorrect')
-      } else if (result.status === 'hint') {
-        setHint(result.hint)
+      } else if (checkResult.status === 'hint') {
+        setHint(checkResult.message)
       }
     },
     [dispatch, task, taskState, onSubmit],
@@ -144,7 +147,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   }, [cardState])
 
   const subject = task.subject
-  const subjectColor = SubjectUtils.getAssociatedColor(subject)
+  const subjectColor = SubjectUtils.getAssociatedColor(subject.subject)
   const infoButtonVisible = taskState !== 'notAnswered'
 
   const turnBackButton = (
@@ -202,7 +205,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
             <ReadingPage
               topContent={turnBackButton}
               bottomContent={<View style={{ height: 24 }} />}
-              subject={task.subject}
+              subject={task.subject.subject}
             />
           )}
           {task.type === 'meaning' && (
@@ -212,7 +215,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
               // (subjects library view)
               showMeaning={true}
               bottomContent={<View style={{ height: 24 }} />}
-              subject={task.subject}
+              subject={task.subject.subject}
             />
           )}
         </View>
@@ -277,7 +280,7 @@ export const CardInputVariant = ({
     [setInput, task.type],
   )
 
-  const subject = task.subject
+  const subject = task.subject.subject
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
   const taskStateColor =

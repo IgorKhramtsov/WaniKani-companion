@@ -9,12 +9,19 @@ import {
 import { plugins } from './checkAnswerPlugin'
 import { EnrichedSubject } from './types/enrichedSubject'
 
-export const checkAnswer = (
-  taskType: TaskType,
-  input: string,
-  subject: EnrichedSubject,
-  userSynonyms: string[],
-): AnswerCheckResult => {
+type CheckAnswerParams = {
+  taskType: TaskType
+  input: string
+  subject: EnrichedSubject
+  userSynonyms: string[]
+}
+
+export const checkAnswer = ({
+  taskType,
+  input,
+  subject,
+  userSynonyms,
+}: CheckAnswerParams): AnswerCheckResult => {
   let normalizedInput = normalizeString(input)
   const checkResult =
     taskType === 'meaning'

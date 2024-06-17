@@ -12,6 +12,7 @@ import { RootState } from './store'
 import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
 import { TaskType } from '../types/quizTaskType'
+import { EnrichedSubject } from '../utils/answerChecker/types/enrichedSubject'
 
 interface BaseQuizTask {
   numberOfErrors: number
@@ -22,11 +23,11 @@ interface BaseQuizTask {
 }
 
 interface QuizReadingTask extends BaseQuizTask {
-  subject: Vocabulary | Kanji
+  subject: EnrichedSubject<Vocabulary | Kanji>
   type: 'reading'
 }
 interface QuizMeaningTask extends BaseQuizTask {
-  subject: Subject
+  subject: EnrichedSubject<Subject>
   type: 'meaning'
 }
 
@@ -43,7 +44,7 @@ export namespace QuizTaskUtils {
 }
 
 const createReadingTask = (
-  subject: Vocabulary | Kanji,
+  subject: EnrichedSubject<Vocabulary | Kanji>,
   assignmentId?: number,
 ): QuizTask => ({
   subject,
@@ -55,7 +56,7 @@ const createReadingTask = (
 })
 
 const createMeaningTask = (
-  subject: Subject,
+  subject: EnrichedSubject<Subject>,
   assignmentId?: number,
 ): QuizTask => ({
   subject,
@@ -95,7 +96,7 @@ export const quizSlice = createSlice({
       state,
       action: PayloadAction<{
         assignments?: Assignment[]
-        subjects: Subject[]
+        enrichedSubjects: EnrichedSubject[]
         mode: QuizMode
       }>,
     ) {
@@ -103,17 +104,23 @@ export const quizSlice = createSlice({
         '[QuizSlice] INIT mode: ',
         action.payload.mode,
         'subjects: ',
-        action.payload.subjects.length,
+        action.payload.enrichedSubjects.length,
         ' assignments: ',
         action.payload?.assignments?.length,
       )
-      if (action.payload.subjects.length === 0) return
+      if (action.payload.enrichedSubjects.length === 0) return
 
-      const createTasksFor = (subject: Subject, assignment?: Assignment) => {
-        if (
-          SubjectUtils.isVocabulary(subject) ||
-          SubjectUtils.isKanji(subject)
-        ) {
+      const createTasksFor = (
+        subject: EnrichedSubject,
+        assignment?: Assignment,
+      ) => {
+        const isReadingTaskRequired = (
+          subject: EnrichedSubject,
+        ): subject is EnrichedSubject<Vocabulary | Kanji> =>
+          SubjectUtils.isVocabulary(subject.subject) ||
+          SubjectUtils.isKanji(subject.subject)
+
+        if (isReadingTaskRequired(subject)) {
           state.tasks.push(createReadingTask(subject, assignment?.id))
         }
         state.tasks.push(createMeaningTask(subject, assignment?.id))
@@ -122,8 +129,8 @@ export const quizSlice = createSlice({
       state.mode = action.payload.mode
       if (action.payload.assignments !== undefined) {
         for (const assignment of action.payload.assignments) {
-          const subject = action.payload.subjects.find(
-            subject => subject.id === assignment.subject_id,
+          const subject = action.payload.enrichedSubjects.find(
+            subject => subject.subject.id === assignment.subject_id,
           )
           if (subject === undefined) {
             console.error('Can not find subject for assignment: ', assignment)
@@ -135,7 +142,7 @@ export const quizSlice = createSlice({
         // If there are no assignments - we might be in a quiz mode. Create
         // tasks just based on subjects.
 
-        for (const subject of action.payload.subjects) {
+        for (const subject of action.payload.enrichedSubjects) {
           createTasksFor(subject)
         }
       }
@@ -149,11 +156,11 @@ export const quizSlice = createSlice({
       action: PayloadAction<{ id: number; type: TaskType }>,
     ) {
       const allTasksForSubject = state.tasks.filter(
-        task => task.subject.id === action.payload.id,
+        task => task.subject.subject.id === action.payload.id,
       )
       const task = allTasksForSubject.find(
         task =>
-          task.subject.id === action.payload.id &&
+          task.subject.subject.id === action.payload.id &&
           task.type === action.payload.type,
       )
       if (task === undefined) {
@@ -169,7 +176,7 @@ export const quizSlice = createSlice({
     ) {
       const task = state.tasks.find(
         task =>
-          task.subject.id === action.payload.id &&
+          task.subject.subject.id === action.payload.id &&
           task.type === action.payload.type,
       )
       if (task === undefined) {
@@ -199,7 +206,9 @@ export const quizSlice = createSlice({
       action: PayloadAction<{ taskPair: QuizTask[] }>,
     ) {
       const tasks = state.tasks.filter(
-        task => task.subject.id === action.payload.taskPair[0].subject.id,
+        task =>
+          task.subject.subject.id ===
+          action.payload.taskPair[0].subject.subject.id,
       )
 
       if (tasks === undefined) {
@@ -266,13 +275,14 @@ export const selectTaskPairsForReport = createSelector(
     )
     const readyForReportPairs = completedNotReportedMeanings.map(task => {
       if (
-        task.subject.type === 'radical' ||
-        task.subject.type === 'kana_vocabulary'
+        task.subject.subject.type === 'radical' ||
+        task.subject.subject.type === 'kana_vocabulary'
       ) {
         return [task]
       }
       const answeredReadingPair = completedNotReportedReadings.find(
-        readingTask => readingTask.subject.id === task.subject.id,
+        readingTask =>
+          readingTask.subject.subject.id === task.subject.subject.id,
       )
       if (answeredReadingPair !== undefined) {
         return [task, answeredReadingPair]
