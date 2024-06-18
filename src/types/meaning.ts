@@ -5,16 +5,15 @@ export interface Meaning {
   /**
    * A singular subject meaning.
    */
-  meaning: string;
-  
+  meaning: string
+
   /**
    * Indicates priority in the WaniKani system.
    */
-  primary: boolean;
-  
+  primary: boolean
+
   /**
    * Indicates if the meaning is used to evaluate user input for correctness.
    */
-  accepted_answer: boolean;
+  accepted_answer: boolean
 }
-

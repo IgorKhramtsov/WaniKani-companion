@@ -7,6 +7,7 @@ import { CheckAnswerPlugin } from '../checkAnswerPlugin'
 const findMatchedMeaning = (subject: Subject, response: string) => {
   // TODO: use levenshtein distance to find the closest match
   return subject.meanings
+    .filter(e => e.accepted_answer)
     .map(e => e.meaning)
     .find(e => {
       const normalizedE = e.toLowerCase()
@@ -23,8 +24,8 @@ export const plugin: CheckAnswerPlugin = {
       !checkResult.passed &&
       taskType === 'meaning' &&
       subject.subject.meanings &&
-      subject.subject.meanings.some(t =>
-        t.meaning.toLowerCase().startsWith('to '),
+      subject.subject.meanings.some(
+        el => el.accepted_answer && el.meaning.toLowerCase().startsWith('to '),
       ) &&
       !response.toLowerCase().startsWith('to ')
     )
