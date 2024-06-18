@@ -1,8 +1,6 @@
 import { Subject } from '@/src/types/subject'
-import { Kanji } from '@/src/types/kanji'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { CheckAnswerPluginInput } from '../../checkAnswerPlugin'
-import { Radical } from '@/src/types/radical'
 import plugin from '../checkThatVerbStartsWithToPlugin'
 
 describe('checkThatVerbStartsWithToPlugin', () => {

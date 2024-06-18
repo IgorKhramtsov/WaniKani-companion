@@ -1,7 +1,7 @@
 import { CheckAnswerPluginInput } from '../../checkAnswerPlugin'
 import { plugin } from '../checkImpossibleKanaPlugin'
 
-describe('CheckAnswerPlugin', () => {
+describe('checkImpossibleKanaPlugin', () => {
   const createCheckAnswerInput = (
     response: string,
     taskType: string,
