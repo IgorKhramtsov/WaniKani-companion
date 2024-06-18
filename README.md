@@ -61,3 +61,7 @@ NOTES:
 
 1. Undocumented api for fetching data for review - https://www.wanikani.com/subjects/review/items?ids=512-68-2617
    this data probably contain additional auxiliary_meanings/auxiliary_readings
+
+   NOTE: I once got this warning, so it might be useful to scrape it as well.
+   https://www.wanikani.com/subjects/review/items?ids=7616
+   {"type":"warn","message":"This vocab has an unusual spelling, so watch out for that!","reading":"とうか"}

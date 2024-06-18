@@ -29,15 +29,15 @@ const cloneAndSplice = <T>(n: T[], t: number, e: number, ...i: T[]) => {
 
 const createMissingNPermutations = (
   matrix: string[][],
-  iteration: number = 0,
+  endIndex: number = 0,
 ) => {
-  const lastRow = matrix[matrix.length - 1] // Row or col?
+  const lastRow = matrix[matrix.length - 1]
   const pushAndProcess = (row: string[], i: number = 0) => {
     matrix.push(row)
     createMissingNPermutations(matrix, i)
   }
   lastRow.forEach((e, i) => {
-    if (!e.startsWith('n') || i < iteration) return
+    if (!e.startsWith('n') || i < endIndex) return
 
     const next = lastRow[i + 1]
     if (e === 'n') {
@@ -60,14 +60,18 @@ const createMissingNPermutations = (
 
   return matrix
 }
-const createTooManyNPermutations = (matrix: string[][], iteration = 0) => {
+
+const createTooManyNPermutations = (
+  matrix: string[][],
+  endIndex: number = 0,
+) => {
   const lastRow = matrix[matrix.length - 1]
   const pushAndProcess = (row: string[], i: number = 0) => {
     matrix.push(row)
     createTooManyNPermutations(matrix, i)
   }
   lastRow.forEach((e, i) => {
-    if ('n' !== e || i < iteration) return
+    if (e !== 'n' || i < endIndex) return
 
     const next = lastRow[i + 1]
     if (next && /^n[aeou]$/.test(next)) {
@@ -141,7 +145,7 @@ export const plugin: CheckAnswerPlugin = {
     }
 
     const readingsContainingN = getReadingsContainingN(
-      subject.readings.map(e => e.reading),
+      subject.readings.filter(e => e.accepted_answer).map(e => e.reading),
     )
     if (readingsContainingN.length > 0) {
       const n = findIndexOfReadingWithTooFewNs(response, readingsContainingN)

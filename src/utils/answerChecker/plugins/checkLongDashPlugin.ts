@@ -25,11 +25,13 @@ const matchedLongDashReading = (
   subject: Kanji | Vocabulary,
   userInput: string,
 ) => {
-  return subject.readings.find(
-    e =>
-      containsLongDash(e.reading) &&
-      reponseMatchesConvertedReading(e.reading, userInput),
-  )
+  return subject.readings
+    .filter(e => e.accepted_answer)
+    .find(
+      e =>
+        containsLongDash(e.reading) &&
+        reponseMatchesConvertedReading(e.reading, userInput),
+    )
 }
 
 const containsLongDash = (e: string) => {
