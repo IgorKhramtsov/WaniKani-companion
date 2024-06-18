@@ -8,7 +8,7 @@ import { toNiceEmphasis } from '@/src/types/reading'
 const answeredAlternateReading = (subject: Kanji, response: string) => {
   const primaryReading = SubjectUtils.getPrimaryReadingType(subject)
   const alternativeReadings = subject.readings.filter(
-    r => r.reading !== primaryReading,
+    r => r.type !== primaryReading,
   )
   return alternativeReadings.some(r => r.reading === response)
 }

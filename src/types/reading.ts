@@ -4,9 +4,9 @@ export type ReadingType = (typeof readingTypeStrings)[number]
 export const toNiceEmphasis = (type: ReadingType): string => {
   switch (type) {
     case 'onyomi':
-      return 'on\u2019yomi'
+      return 'on’yomi'
     case 'kunyomi':
-      return 'kun\u2019yomi'
+      return 'kun’yomi'
     case 'nanori':
       return 'nanori'
   }
