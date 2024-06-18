@@ -33,7 +33,6 @@ const containsInvalidAdjacentCharacters = (response: string) => {
   )
 }
 
-// TEST: んいん instead of にん
 const containsInvalidStartingCharacter = (response: string) => {
   return /^[んゃゅょぁぃぅぇぉっゎンャュョァィゥェォヵヶッヮ]/.test(response)
 }
