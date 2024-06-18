@@ -25,7 +25,7 @@ export const plugin: CheckAnswerPlugin = {
     if (hasMatchedMeaning(response, subject)) {
       return {
         status: 'hint',
-        message: 'This is a kanji, so it doesn\u2019t start with "to".',
+        message: 'This is a kanji, so it doesn’t start with "to".',
       }
     }
   },
