@@ -1,10 +1,10 @@
 import { Kanji } from '@/src/types/kanji'
 import { EnrichedSubject } from '../../types/enrichedSubject'
 import { CheckAnswerPluginInput } from '../../checkAnswerPlugin'
-import plugin from '../checkKanjiReadingsPlugin'
 import { Vocabulary } from '@/src/types/vocabulary'
+import plugin from '../checkKanjiReadingsPlugin'
 
-describe('CheckAnswerPlugin', () => {
+describe('checkKanjiReadingsPlugin', () => {
   const checkResultFailed = { passed: false }
   const checkResultPassed = { passed: true }
 

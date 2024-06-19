@@ -3,7 +3,7 @@ import { EnrichedSubject } from '../../types/enrichedSubject'
 import { CheckAnswerPluginInput } from '../../checkAnswerPlugin'
 import plugin from '../checkLongDashPlugin'
 
-describe('CheckAnswerPlugin', () => {
+describe('checkLongDashPlugin', () => {
   const subjectVocab: EnrichedSubject<Vocabulary> = {
     subject: {
       type: 'vocabulary',

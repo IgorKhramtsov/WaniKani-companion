@@ -1,12 +1,12 @@
 import { TaskType } from '@/src/types/quizTaskType'
 import { EnrichedSubject } from '../../types/enrichedSubject'
 import { CheckAnswerPluginInput } from '../../checkAnswerPlugin'
-import plugin from '../checkRelatedMeaningsAndReadingsPlugin'
 import { Radical } from '@/src/types/radical'
 import { Kanji } from '@/src/types/kanji'
 import { Vocabulary } from '@/src/types/vocabulary'
+import plugin from '../checkRelatedMeaningsAndReadingsPlugin'
 
-describe('CheckAnswerPlugin', () => {
+describe('checkRelatedMeaningsAndReadingsPlugin', () => {
   const createCheckAnswerInput = (
     response: string,
     taskType: TaskType,
