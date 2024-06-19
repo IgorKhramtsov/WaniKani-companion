@@ -35,7 +35,7 @@ const matchedLongDashReading = (
 }
 
 const containsLongDash = (e: string) => {
-  return e.indexOf('ー') !== -1
+  return e.includes('ー')
 }
 
 const reponseMatchesConvertedReading = (reading: string, response: string) => {
@@ -86,6 +86,30 @@ const charactersMatchWithTypos = (
   return soundAlikeMatch && isLongDash && !hasSoundAlikeMatchForReading
 }
 
+/**
+ * Plugin to check for long vowel sounds in Japanese readings using the chōonpu (ー).
+ *
+ * This plugin evaluates user input for reading tasks to ensure that long vowel sounds
+ * indicated by the chōonpu (ー) are correctly used. It provides hints when a long vowel
+ * sound is expected but not correctly typed by the user.
+ *
+ * The plugin performs the following checks:
+ *
+ * - Ensures that the task type is 'reading'.
+ * - Checks if the subject is either Kanji or Vocabulary.
+ * - Identifies if the correct reading contains a long vowel sound indicated by 'ー'.
+ * - Converts long vowel marks to the corresponding vowel sounds for comparison.
+ * - Compare reading with input with typos (お - う) for the long vowel sound.
+ * - Provides a hint if the user input matches the reading except for the long vowel sound.
+ *
+ * @example
+ * // Provides a hint for user input missing a long vowel sound
+ * plugin.evaluate({
+ *   response: 'らあめん',
+ *   subject: { subject: { type: 'kanji', readings: [{ reading: 'らーめん', accepted_answer: true }] } }
+ * });
+ * // Returns: { status: 'hint', message: 'Try typing “ra-menn” to get that long ー.' }
+ */
 export const plugin: CheckAnswerPlugin = {
   shouldEvaluate: ({ taskType }) => {
     return taskType === 'reading'
