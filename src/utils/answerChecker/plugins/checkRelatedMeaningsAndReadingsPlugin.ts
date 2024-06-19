@@ -6,16 +6,6 @@ import { TaskType } from '@/src/types/quizTaskType'
 import { SubjectType, SubjectUtils } from '@/src/types/subject'
 import { EnrichedSubject } from '../types/enrichedSubject'
 
-// TODO: we have to provide additional data for this plugin.
-// The data needed is:
-//  - composition items
-//  - amalgamation items
-// Then characters field of the current subject should be compared with the
-// same field in those items and reading/meaning extracted for matched items.
-// Those readings and meanings should be used to check the user response in
-// case they are different from this subject's reading/meaning.
-//
-
 type RelatedSubjectsType = 'radicals' | 'kanji' | 'vocabulary'
 
 const normalize = (input: string, taskType: TaskType) =>
@@ -46,7 +36,7 @@ const hasMatchingAnswers = (
   correctAnswers: string[],
   taskType: TaskType,
   response: string,
-) => normalizeArray(correctAnswers, taskType).indexOf(response) !== -1
+) => normalizeArray(correctAnswers, taskType).includes(response)
 
 const hasMatchingMeanings = (
   enrichedSubject: EnrichedSubject,
@@ -91,7 +81,10 @@ const messages: Record<
         : hasMatchingMeanings(enrichedSubject, 'vocabulary', response)
           ? 'Oops, we want the kanji meaning, not the vocabulary meaning.'
           : undefined,
-    reading: () => undefined,
+    reading: (enrichedSubject, reponse) =>
+      hasMatchingReadings(enrichedSubject, 'vocabulary', reponse)
+        ? 'Oops, we want the kanji reading, not the vocabulary reading.'
+        : undefined,
   },
   vocabulary: {
     meaning: (enrichedSubject, response) =>
