@@ -202,9 +202,11 @@ export const quizSlice = createSlice({
       const index = state.tasks.indexOf(task)
       if (index > -1) {
         state.tasks.splice(index, 1)
-        // Push failed item 1...5 positions forward
-        // TODO: adjust
-        const randomNumber = 1 + Math.floor(Math.random() * 4)
+        const minPushDistance = 3
+        const maxPushDistance = 9
+        const randomNumber =
+          minPushDistance +
+          Math.floor(Math.random() * (maxPushDistance - minPushDistance))
         const newPos = Math.min(index + randomNumber, state.tasks.length)
         state.tasks.splice(newPos, 0, task)
       }
