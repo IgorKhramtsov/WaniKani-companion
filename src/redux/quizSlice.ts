@@ -13,6 +13,7 @@ import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
 import { TaskType } from '../types/quizTaskType'
 import { EnrichedSubject } from '../utils/answerChecker/types/enrichedSubject'
+import _ from 'lodash'
 
 interface BaseQuizTask {
   numberOfErrors: number
@@ -110,6 +111,9 @@ export const quizSlice = createSlice({
       )
       if (action.payload.enrichedSubjects.length === 0) return
 
+      const readingTasks: QuizTask[] = []
+      const meaningTasks: QuizTask[] = []
+
       const createTasksFor = (
         subject: EnrichedSubject,
         assignment?: Assignment,
@@ -121,9 +125,9 @@ export const quizSlice = createSlice({
           SubjectUtils.isKanji(subject.subject)
 
         if (isReadingTaskRequired(subject)) {
-          state.tasks.push(createReadingTask(subject, assignment?.id))
+          readingTasks.push(createReadingTask(subject, assignment?.id))
         }
-        state.tasks.push(createMeaningTask(subject, assignment?.id))
+        meaningTasks.push(createMeaningTask(subject, assignment?.id))
       }
 
       state.mode = action.payload.mode
@@ -147,7 +151,11 @@ export const quizSlice = createSlice({
         }
       }
 
-      // TODO: shuffle
+      // TODO: Respect user's setting of review ordering
+      state.tasks = getShuffledTasks(
+        _.shuffle(readingTasks),
+        _.shuffle(meaningTasks),
+      )
 
       state.status = 'idle'
     },
@@ -219,6 +227,35 @@ export const quizSlice = createSlice({
     },
   },
 })
+
+const getShuffledTasks = (
+  readingTasks: QuizTask[],
+  meaningTasks: QuizTask[],
+): QuizTask[] => {
+  const resultArray: QuizTask[] = []
+  let taskToPush =
+    Math.random() <= 0.5 ? readingTasks.pop() : meaningTasks.pop()
+  do {
+    if (taskToPush !== undefined) {
+      resultArray.push(taskToPush)
+    }
+
+    const lastTaskType = resultArray[resultArray.length - 1]?.type
+
+    let preferableSupplyArray =
+      lastTaskType === 'reading' ? readingTasks : meaningTasks
+    let secondarySupplyArray =
+      lastTaskType === 'reading' ? meaningTasks : readingTasks
+
+    const preferableTask =
+      Math.random() <= 0.7
+        ? preferableSupplyArray.pop()
+        : secondarySupplyArray.pop()
+    taskToPush = preferableTask ?? readingTasks.pop() ?? meaningTasks.pop()
+  } while (taskToPush !== undefined)
+
+  return resultArray
+}
 
 export const {
   reset,
