@@ -36,7 +36,7 @@ export const normalizeString = (response: string) =>
 export const questionTypeAndResponseMatch = (
   taskType: TaskType,
   response: string,
-) =>
+): boolean =>
   (taskType === 'reading' && !isNonKanaPresent(response)) ||
   (taskType === 'meaning' && !isKanaPresent(response))
 

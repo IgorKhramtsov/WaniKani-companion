@@ -31,8 +31,14 @@ import { MeaningPage } from '../lessons/MeaningPage'
 import { ReadingPage } from '../lessons/ReadingPage'
 import wanakana from 'wanakana'
 import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
+import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAnswerUtils'
 
-type TaskState = 'correct' | 'incorrect' | 'notAnswered'
+// Wrapper that will force component to be re-rendered even when the state is
+// the same. This allows to show incorrect animation for subsequent warnings.
+type TaskStateWrapper = {
+  state: TaskState
+}
+type TaskState = 'correct' | 'incorrect' | 'notAnswered' | 'warning'
 type CardState = 'input' | 'viewInfo'
 
 type CardProps = {
@@ -47,7 +53,9 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
 
-  const [taskState, setTaskState] = useState<TaskState>('notAnswered')
+  const [taskState, setTaskState] = useState<TaskStateWrapper>({
+    state: 'notAnswered',
+  })
   const [hint, setHint] = useState<string | undefined>(undefined)
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
@@ -96,7 +104,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   }))
 
   useEffect(() => {
-    if (taskState === 'incorrect') {
+    if (taskState.state === 'incorrect') {
       waveInfoButton()
     }
   }, [taskState, waveInfoButton])
@@ -105,12 +113,12 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     (input: string) => {
       // Second submit will actually submit the task and move to the next (the
       //  same as web app works)
-      if (taskState !== 'notAnswered') {
+      if (taskState.state === 'correct' || taskState.state === 'incorrect') {
         const args = {
           id: task.subject.subject.id,
           type: task.type,
         }
-        if (taskState === 'incorrect') {
+        if (taskState.state === 'incorrect') {
           dispatch(answeredIncorrectly(args))
         } else {
           dispatch(answeredCorrectly(args))
@@ -120,6 +128,11 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       }
       if (input.length === 0) return
 
+      if (!questionTypeAndResponseMatch(task.type, input)) {
+        setTaskState({ state: 'warning' })
+        return
+      }
+
       const checkResult = checkAnswer({
         taskType: task.type,
         input,
@@ -128,13 +141,14 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       })
 
       if (checkResult.status === 'correct') {
-        setTaskState('correct')
+        setTaskState({ state: 'correct' })
       } else if (checkResult.status === 'correctWithHint') {
-        setTaskState('correct')
+        setTaskState({ state: 'correct' })
         setHint(checkResult.message)
       } else if (checkResult.status === 'incorrect') {
-        setTaskState('incorrect')
+        setTaskState({ state: 'incorrect' })
       } else if (checkResult.status === 'hint') {
+        setTaskState({ state: 'warning' })
         setHint(checkResult.message)
       }
     },
@@ -148,7 +162,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const subject = task.subject
   const subjectColor = SubjectUtils.getAssociatedColor(subject.subject)
-  const infoButtonVisible = taskState !== 'notAnswered'
+  const infoButtonVisible = taskState.state !== 'notAnswered'
 
   const turnBackButton = (
     <View style={styles.cardViewActionContainerBack}>
@@ -211,7 +225,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           {task.type === 'meaning' && (
             <MeaningPage
               topContent={turnBackButton}
-              // TODO: use another page layout after it is implemented
+              // TODO: use another page layout when it is implemented
               // (subjects library view)
               showMeaning={true}
               bottomContent={<View style={{ height: 24 }} />}
@@ -227,7 +241,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>
   submit: (input: string) => void
-  taskState: TaskState
+  taskState: TaskStateWrapper
   task: QuizTask
   hint: string | undefined
 }
@@ -262,7 +276,7 @@ export const CardInputVariant = ({
   useEffect(() => {
     // TODO: add confetti animation of emojis for correct answer
     // https://shopify.engineering/building-arrives-confetti-in-react-native-with-reanimated
-    if (taskState === 'incorrect') {
+    if (taskState.state === 'incorrect' || taskState.state === 'warning') {
       shakeInput()
     }
   }, [shakeInput, taskState])
@@ -284,12 +298,11 @@ export const CardInputVariant = ({
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
   const taskStateColor =
-    taskState === 'correct'
+    taskState.state === 'correct'
       ? Colors.correctGreen
-      : taskState === 'incorrect'
+      : taskState.state === 'incorrect'
         ? Colors.incorrectRed
         : undefined
-  // const taskStateTextColor = taskState === 'notAnswered' ? undefined : 'white'
   const taskStateTextColor = 'white'
 
   return (
