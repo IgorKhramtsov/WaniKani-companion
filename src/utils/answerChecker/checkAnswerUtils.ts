@@ -155,7 +155,7 @@ const levenshteinTolerances: Record<number, number> = {
   0: 0,
   1: 0,
   2: 0,
-  3: 0,
+  3: 1, // Allow one mistake for 3-letter words (tas -> task)
   4: 1,
   5: 1,
   6: 2,
