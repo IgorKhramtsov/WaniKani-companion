@@ -12,7 +12,7 @@ import {
   selectTaskPairsForReport,
 } from '@/src/redux/quizSlice'
 import { Link } from 'expo-router'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
@@ -82,7 +82,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   }, [props, assignments])
 
   // Hydrate subjectsSlice with data
-  const { isLoading } = useSubjectCache(resolvedSubjectIds)
+  const { isLoading: isSubjectCacheLoading } =
+    useSubjectCache(resolvedSubjectIds)
   // Select enriched data from the subjectsSlice
   const enrichedSubjects = useAppSelector(
     selectEnrichedSubjects(resolvedSubjectIds),
@@ -94,15 +95,16 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const taskPairsForReport = useAppSelector(selectTaskPairsForReport)
   const [startAssignment] = useStartAssignmentMutation()
   const [createReview] = useCreateReviewMutation()
+  // Prevent old slice state from being used before we hydrated it with new
+  // data.
+  const [initiated, setInitiated] = useState(false)
+
+  const isLoading = useMemo(() => {
+    return isSubjectCacheLoading || !initiated
+  }, [isSubjectCacheLoading, initiated])
 
   const progressValue = useSharedValue(0)
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
-
-  useEffect(() => {
-    // TODO: find a way to prevent exit animation from happening upon entering
-    // the review page. (Right now because of the reset - it happens)
-    dispatch(reset())
-  }, [dispatch])
 
   useEffect(() => {
     if (isSubjectProps(props)) {
@@ -123,6 +125,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         'Invalid state. QuizPage should be passed either subject or assignment props.',
       )
     }
+    setInitiated(true)
   }, [enrichedSubjects, dispatch, assignments, props])
 
   useEffect(() => {
