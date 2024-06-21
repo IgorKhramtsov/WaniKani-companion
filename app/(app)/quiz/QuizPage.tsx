@@ -241,12 +241,14 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       disabled={!isKeyboardVisible}
       onPress={Keyboard.dismiss}
       accessible={false}>
-      <View style={styles.progressIndicatorContainer}>
-        <Animated.View
-          style={[styles.progressIndicator, progressAnimatedStyle]}>
-          <Animated.View style={[styles.progressIndicatorHighlight]} />
-        </Animated.View>
-      </View>
+      {currentTask !== undefined && (
+        <View style={styles.progressIndicatorContainer}>
+          <Animated.View
+            style={[styles.progressIndicator, progressAnimatedStyle]}>
+            <Animated.View style={[styles.progressIndicatorHighlight]} />
+          </Animated.View>
+        </View>
+      )}
       <View style={styles.pageContainer}>
         {nextTask && (
           // Show next task in order to keep the keyboard always open (we focus
