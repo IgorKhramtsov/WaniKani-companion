@@ -311,7 +311,12 @@ export const CardInputVariant = ({
         <Text style={styles.glyphText}>{subject.characters}</Text>
         <Text style={styles.taskText}>
           {subjectName}{' '}
-          <Text style={[styles.taskText, { fontWeight: '500' }]}>
+          <Text
+            style={[
+              styles.taskText,
+              { fontWeight: '500' },
+              task.type === 'reading' ? styles.taskTextReading : {},
+            ]}>
             {taskName}
           </Text>
         </Text>
@@ -393,6 +398,11 @@ const stylesheet = createStyleSheet({
     ...typography.titleB,
     fontWeight: '400',
     color: 'white',
+  },
+  taskTextReading: {
+    textDecorationStyle: 'solid',
+    textDecorationLine: 'underline',
+    textDecorationColor: 'white',
   },
   hintContainer: {
     alignItems: 'center',
