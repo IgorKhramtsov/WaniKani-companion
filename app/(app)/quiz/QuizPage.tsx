@@ -5,20 +5,21 @@ import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
   init,
   markTaskPairAsReported,
-  reset,
   selectCurrentTask,
   selectNextTask,
   selectProgress,
   selectTaskPairsForReport,
 } from '@/src/redux/quizSlice'
 import { Link } from 'expo-router'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CardView } from './CardView'
@@ -229,6 +230,41 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     }
   }, [])
 
+  const transitionDuration = 500
+  const nextTaskTransformStyle = {
+    translateY: 32,
+    scale: 0.9,
+  }
+
+  const transitionProgress = useSharedValue(0)
+
+  useEffect(() => {
+    // Trigger transition when currentTask changes
+    transitionProgress.value = 0
+    transitionProgress.value = withTiming(1, { duration: transitionDuration })
+  }, [currentTask, transitionProgress])
+
+  const currentTaskStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: interpolate(
+            transitionProgress.value,
+            [0, 1],
+            [nextTaskTransformStyle.translateY, 0],
+          ),
+        },
+        {
+          scale: interpolate(
+            transitionProgress.value,
+            [0, 1],
+            [nextTaskTransformStyle.scale, 1],
+          ),
+        },
+      ],
+    }
+  })
+
   if (isLoading) {
     return <FullPageLoading />
   }
@@ -256,7 +292,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         {nextTask && (
           // Show next task in order to keep the keyboard always open (we focus
           // the next task's input node when current one is leaving the scene)
-          <Animated.View
+          <View
             pointerEvents='none'
             key={
               nextTask.subject.subject.id +
@@ -268,10 +304,13 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               width: '100%',
               zIndex: 0,
               position: 'absolute',
-              transform: [{ translateY: -4 }, { translateX: 3 }],
+              transform: [
+                { translateY: nextTaskTransformStyle.translateY },
+                { scale: nextTaskTransformStyle.scale },
+              ],
             }}>
             <CardView task={nextTask} textInputRef={nextInputRef} />
-          </Animated.View>
+          </View>
         )}
         {currentTask && (
           <Animated.View
@@ -285,12 +324,24 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               width: '100%',
               position: 'absolute',
             }}
-            exiting={RollOutRight.duration(500)}>
-            <CardView
-              task={currentTask}
-              textInputRef={currentInputRef}
-              onSubmit={() => nextInputRef.current?.focus()}
-            />
+            exiting={RollOutRight.duration(transitionDuration)}>
+            <Animated.View
+              // To avoid conflicts with styling and exiting animation - we
+              // need to introduce separate AnimatedViews for them
+              style={[
+                {
+                  height: '100%',
+                  width: '100%',
+                  position: 'absolute',
+                },
+                currentTaskStyle,
+              ]}>
+              <CardView
+                task={currentTask}
+                textInputRef={currentInputRef}
+                onSubmit={() => nextInputRef.current?.focus()}
+              />
+            </Animated.View>
           </Animated.View>
         )}
         {!currentTask && completionTitle && completionCopy && (
