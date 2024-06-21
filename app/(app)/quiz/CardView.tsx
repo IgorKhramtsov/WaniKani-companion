@@ -170,7 +170,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         style={{ alignItems: 'center', zIndex: 31 }}
         onPress={switchCard}>
         <View style={{ transform: [{ rotateZ: '180deg' }] }}>
-          <FontAwesome name='share' size={32} color='black' />
+          <FontAwesome name='share' size={24} color='black' />
         </View>
       </Pressable>
     </View>
@@ -191,11 +191,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
             <Pressable
               style={{ alignItems: 'center', zIndex: 31 }}
               onPress={switchCard}>
-              <AntDesign name='questioncircleo' size={24} color='white' />
-              <View style={{ height: 4 }} />
-              <Text style={[styles.hintText, { color: 'white' }]}>
-                need help
-              </Text>
+              <AntDesign name='infocirlceo' size={24} color='white' />
             </Pressable>
           )}
         </Animated.View>
@@ -378,8 +374,8 @@ const stylesheet = createStyleSheet({
   },
   cardViewActionContainer: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     zIndex: 5,
   },
   cardViewActionContainerBack: {
