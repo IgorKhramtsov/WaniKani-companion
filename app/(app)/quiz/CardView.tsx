@@ -33,6 +33,7 @@ import wanakana from 'wanakana'
 import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
 import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAnswerUtils'
 import FloatingEmojis, { FloatingEmojisRef } from './FloatingEmojis'
+import * as Haptics from 'expo-haptics'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -279,10 +280,16 @@ export const CardInputVariant = ({
 
   useEffect(() => {
     if (taskState.state === 'incorrect' || taskState.state === 'warning') {
+      if (taskState.state === 'incorrect') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      } else if (taskState.state === 'warning') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      }
       shakeInput()
     }
     if (taskState.state === 'correct') {
       showCorrectFeedback()
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
   }, [shakeInput, taskState, showCorrectFeedback])
 
