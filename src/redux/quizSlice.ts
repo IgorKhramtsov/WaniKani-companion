@@ -131,6 +131,9 @@ export const quizSlice = createSlice({
       }
 
       state.mode = action.payload.mode
+      state.index = 0
+      state.tasks = []
+
       if (action.payload.assignments !== undefined) {
         for (const assignment of action.payload.assignments) {
           const subject = action.payload.enrichedSubjects.find(
@@ -152,6 +155,9 @@ export const quizSlice = createSlice({
       }
 
       // TODO: Respect user's setting of review ordering
+      // TODO: localize reading and meaning tasks. Right now it is possible
+      // that reading task for the subject will be the first task and meaning
+      // task for the same subject will be the last task in the queue.
       state.tasks = getShuffledTasks(
         _.shuffle(readingTasks),
         _.shuffle(meaningTasks),

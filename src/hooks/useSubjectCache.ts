@@ -75,14 +75,12 @@ export const useSubjectCache = (
         subjectsToFetch.push(...subject.amalgamation_subject_ids)
       }
     })
+
+    if (subjectsToFetch.length > 0) {
+      console.log('[useSubjectCache] dependencies detected: ', subjectsToFetch)
+    }
     return subjectsToFetch
   }, [cacheDependencies, subjects, subjectIdsSafe.length])
-  if (dependencySubjectIds.length > 0) {
-    console.log(
-      '[useSubjectCache] dependencies detected: ',
-      dependencySubjectIds,
-    )
-  }
 
   const { isLoading: dependenciesIsLoading } =
     useFetchSubjectsAndHydrate(dependencySubjectIds)
