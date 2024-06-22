@@ -8,7 +8,7 @@ import {
 } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
-import { Fragment, useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -32,6 +32,7 @@ import { ReadingPage } from '../lessons/ReadingPage'
 import wanakana from 'wanakana'
 import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
 import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAnswerUtils'
+import FloatingEmojis, { FloatingEmojisRef } from './FloatingEmojis'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -48,6 +49,8 @@ type CardProps = {
 }
 
 const flipCardAnimationDuration = 500
+
+// TODO: When report is created - the currentTask gets dismissed.
 
 export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const { styles } = useStyles(stylesheet)
@@ -251,6 +254,11 @@ export const CardInputVariant = ({
 }: CardInputVariantProps) => {
   const { styles } = useStyles(stylesheet)
   const [input, setInput] = useState('')
+  const floatingEmojisRef = useRef<FloatingEmojisRef>(null)
+
+  const showCorrectFeedback = useCallback(() => {
+    floatingEmojisRef.current?.spawnEmojis(16)
+  }, [floatingEmojisRef])
 
   const shakeAnimation = useSharedValue(0)
 
@@ -270,12 +278,13 @@ export const CardInputVariant = ({
   }))
 
   useEffect(() => {
-    // TODO: add confetti animation of emojis for correct answer
-    // https://shopify.engineering/building-arrives-confetti-in-react-native-with-reanimated
     if (taskState.state === 'incorrect' || taskState.state === 'warning') {
       shakeInput()
     }
-  }, [shakeInput, taskState])
+    if (taskState.state === 'correct') {
+      showCorrectFeedback()
+    }
+  }, [shakeInput, taskState, showCorrectFeedback])
 
   const setInputAndConvert = useCallback(
     (input: string) => {
@@ -326,26 +335,28 @@ export const CardInputVariant = ({
         </Animated.View>
       )}
       <Animated.View style={[styles.textInputBox, animatedStyle]}>
-        <TextInput
-          ref={textInputRef}
-          style={[
-            styles.textInput,
-            {
-              backgroundColor: taskStateColor,
-              color: taskStateTextColor,
-            },
-          ]}
-          textAlign={'center'}
-          onChangeText={input => setInputAndConvert(input)}
-          onSubmitEditing={_ => submit(input)}
-          value={input}
-          blurOnSubmit={false}
-          placeholder='Your Response'
-          autoCorrect={false}
-          autoComplete={'off'}
-          // TODO: can not set semi-transparent color of placeholder text
-          // (although it looks like the default color is semi-transparent)
-        />
+        <FloatingEmojis ref={floatingEmojisRef}>
+          <TextInput
+            ref={textInputRef}
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: taskStateColor,
+                color: taskStateTextColor,
+              },
+            ]}
+            textAlign={'center'}
+            onChangeText={input => setInputAndConvert(input)}
+            onSubmitEditing={_ => submit(input)}
+            value={input}
+            blurOnSubmit={false}
+            placeholder='Your Response'
+            autoCorrect={false}
+            autoComplete={'off'}
+            // TODO: can not set semi-transparent color of placeholder text
+            // (although it looks like the default color is semi-transparent)
+          />
+        </FloatingEmojis>
       </Animated.View>
     </Fragment>
   )
