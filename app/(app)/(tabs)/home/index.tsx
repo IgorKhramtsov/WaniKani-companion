@@ -23,6 +23,7 @@ import {
   selectLessonsCount,
   selectReviewsBatch,
   selectReviewsCount,
+  useGetLessonsCompletedTodayQuery,
   useGetLessonsQuery,
   useGetReviewsQuery,
 } from '@/src/api/wanikaniApi'
@@ -46,14 +47,31 @@ export default function Index() {
     isLoading: reviewsIsLoading,
     error: reviewsError,
   } = useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
+  const {
+    data: lessonsCompletedToday,
+    refetch: refetchLessonsCompletedToday,
+    isLoading: lessonsCompletedTodayIsLoading,
+    error: lessonsCompletedTodayError,
+  } = useGetLessonsCompletedTodayQuery(undefined, {
+    refetchOnMountOrArgChange: 15 * 60,
+  })
 
   const isLoading = useMemo(
-    () => lessonsIsLoading || reviewsIsLoading || settingsIsLoading,
-    [lessonsIsLoading, reviewsIsLoading, settingsIsLoading],
+    () =>
+      lessonsIsLoading ||
+      reviewsIsLoading ||
+      settingsIsLoading ||
+      lessonsCompletedTodayIsLoading,
+    [
+      lessonsIsLoading,
+      reviewsIsLoading,
+      settingsIsLoading,
+      lessonsCompletedTodayIsLoading,
+    ],
   )
   const error = useMemo(
-    () => lessonsError ?? reviewsError,
-    [lessonsError, reviewsError],
+    () => lessonsError ?? reviewsError ?? lessonsCompletedTodayError,
+    [lessonsError, reviewsError, lessonsCompletedTodayError],
   )
   const errorMessage = useMemo(() => {
     if (!error) return undefined
@@ -65,6 +83,13 @@ export default function Index() {
       return error.message
     }
   }, [error])
+
+  const availableLessonsCount = useMemo(
+    () =>
+      Math.min(lessonsCount, settings.max_lessons_per_day ?? 15) -
+      (lessonsCompletedToday?.length ?? 0),
+    [lessonsCount, settings.max_lessons_per_day, lessonsCompletedToday],
+  )
 
   const allLessons = useAppSelector(selectLessons)
   const lessonSubjects = useMemo(
@@ -110,7 +135,8 @@ export default function Index() {
   const refresh = useCallback(() => {
     refetchLessons()
     refetchReviews()
-  }, [refetchLessons, refetchReviews])
+    refetchLessonsCompletedToday()
+  }, [refetchLessons, refetchReviews, refetchLessonsCompletedToday])
 
   // useFocusEffect(
   //   useCallback(() => {
@@ -149,7 +175,7 @@ export default function Index() {
           loading={isLoading}
           title='Lessons'
           suptitle="Today's"
-          assignmentsCount={lessonsCount}
+          assignmentsCount={availableLessonsCount}
           message='We cooked up these lessons just for you.'
           actions={
             <View>

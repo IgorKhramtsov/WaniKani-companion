@@ -8,6 +8,7 @@ import { Subject } from '../types/subject'
 import { CreateReviewParams } from '../types/createReviewParams'
 import { createSelector } from '@reduxjs/toolkit'
 import { RootState } from '../redux/store'
+import { getLocalStartOfDayInUTC, isToday } from '../utils/dateUtils'
 
 // TODO: maybe refactor in future to look more like a data source which is
 // injected to redux store?
@@ -118,6 +119,23 @@ export const wanikaniApi = createApi({
         response.data.map(el => ({ ...el.data, id: el.id })),
       providesTags: ['Lessons'],
     }),
+    getLessonsCompletedToday: build.query<Assignment[], void>({
+      query: () => ({
+        url: 'assignments',
+        params: { updated_after: getLocalStartOfDayInUTC(), started: true },
+      }),
+      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) => {
+        const assignments: Assignment[] = response.data.map(el => ({
+          ...el.data,
+          id: el.id,
+        }))
+        const assignmentsCreatedToday = assignments.filter(el =>
+          isToday(el.started_at),
+        )
+        return assignmentsCreatedToday
+      },
+      providesTags: ['Lessons'],
+    }),
     startAssignment: build.mutation<Assignment, number>({
       query: (id: number) => ({
         method: 'PUT',
@@ -150,6 +168,7 @@ export const wanikaniApi = createApi({
 export const {
   useGetUserQuery,
   useGetLessonsQuery,
+  useGetLessonsCompletedTodayQuery,
   useGetReviewsQuery,
   useGetSubjectsQuery,
 
