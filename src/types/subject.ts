@@ -111,6 +111,13 @@ export namespace SubjectUtils {
   export const getPrimaryReadingType = (subject: Kanji) =>
     subject.readings.find(el => el.primary)?.type
 
+  export const compareByLevelAndLessonPosition = (a: Subject, b: Subject) => {
+    if (a.level !== b.level) {
+      return a.level - b.level
+    }
+    return a.lesson_position - b.lesson_position
+  }
+
   export function isRadical(subject: Subject): subject is Radical {
     return subject.type === 'radical'
   }

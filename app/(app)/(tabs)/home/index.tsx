@@ -2,9 +2,9 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import React, { useCallback, useMemo } from 'react'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
-import { Link, useFocusEffect } from 'expo-router'
+import { Link } from 'expo-router'
 import typography from '@/src/constants/typography'
-import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
+import { useAppSelector } from '@/src/hooks/redux'
 import Animated, {
   LightSpeedInLeft,
   LightSpeedInRight,
@@ -19,7 +19,7 @@ import { appStyles } from '@/src/constants/styles'
 import { RefreshControl } from 'react-native-gesture-handler'
 import { Colors } from '@/src/constants/Colors'
 import {
-  selectLessonsBatch,
+  selectLessons,
   selectLessonsCount,
   selectReviewsBatch,
   selectReviewsCount,
@@ -27,6 +27,9 @@ import {
   useGetReviewsQuery,
 } from '@/src/api/wanikaniApi'
 import { useSettings } from '@/src/hooks/useSettings'
+import { useSubjectCache } from '@/src/hooks/useSubjectCache'
+import { Assignment } from '@/src/types/assignment'
+import { Subject, SubjectUtils } from '@/src/types/subject'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -63,8 +66,35 @@ export default function Index() {
     }
   }, [error])
 
-  const lessonsBatch = useAppSelector(
-    selectLessonsBatch(settings.lessons_batch_size ?? 5),
+  const allLessons = useAppSelector(selectLessons)
+  const lessonSubjects = useMemo(
+    () => allLessons.map(l => l.subject_id),
+    [allLessons],
+  )
+
+  const { subjects } = useSubjectCache(lessonSubjects, false)
+
+  const sortedAssignments = useMemo(() => {
+    const pairedAssignments = allLessons
+      .map(lesson => ({
+        lesson,
+        subject: subjects.find(e => e.id === lesson.subject_id),
+      }))
+      .filter(
+        (e): e is { lesson: Assignment; subject: Subject } =>
+          e.subject !== undefined,
+      )
+
+    return pairedAssignments
+      .sort((a, b) =>
+        SubjectUtils.compareByLevelAndLessonPosition(a.subject, b.subject),
+      )
+      .map(e => e.lesson)
+  }, [allLessons, subjects])
+
+  const lessonsBatch = useMemo(
+    () => sortedAssignments.slice(0, settings.lessons_batch_size ?? 5),
+    [sortedAssignments, settings.lessons_batch_size],
   )
   const reviewBatch = useAppSelector(selectReviewsBatch)
 

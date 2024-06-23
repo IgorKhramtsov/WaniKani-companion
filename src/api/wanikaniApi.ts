@@ -158,7 +158,7 @@ export const {
   useStartAssignmentMutation,
 } = wanikaniApi
 
-const lessonsSelector = createSelector(
+export const selectLessons = createSelector(
   wanikaniApi.endpoints.getLessons.select(undefined),
   result => result.data ?? [],
 )
@@ -169,17 +169,8 @@ const reviewsSelector = createSelector(
 
 export const selectReviewsBatch = (state: RootState) => reviewsSelector(state)
 
-const innerSelectLessonsBatch = createSelector(
-  lessonsSelector,
-  (_: RootState, batchSize: number) => batchSize,
-  (lessons, batchSize) => lessons.slice(0, batchSize),
-)
-
-export const selectLessonsBatch = (batchSize: number) => (state: RootState) =>
-  innerSelectLessonsBatch(state, batchSize)
-
 const innerSelectAssignments = createSelector(
-  lessonsSelector,
+  selectLessons,
   reviewsSelector,
   (_: RootState, ids: number[]) => ids,
   (lessons, reviews, ids): Assignment[] =>
@@ -190,7 +181,7 @@ export const selectAssignments = (ids: number[]) => (state: RootState) =>
   innerSelectAssignments(state, ids)
 
 export const selectLessonsCount = (state: RootState) =>
-  lessonsSelector(state).length
+  selectLessons(state).length
 export const selectReviewsCount = (state: RootState) =>
   reviewsSelector(state).length
 

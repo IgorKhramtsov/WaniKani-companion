@@ -25,6 +25,7 @@ export default function Index() {
     assignmentIds: string
   }>()
   const { styles } = useStyles(stylesheet)
+  const parentPagerView = useRef<PagerView>(null)
 
   const assignmentIds = useMemo(() => {
     console.log(
@@ -42,7 +43,10 @@ export default function Index() {
   }, [assignments])
 
   const { subjects, isLoading } = useSubjectCache(subjectIds)
-  const parentPagerView = useRef<PagerView>(null)
+  const sortedSubjects = useMemo(
+    () => subjects.sort(SubjectUtils.compareByLevelAndLessonPosition),
+    [subjects],
+  )
 
   const openQuiz = useCallback(() => {
     router.replace({
@@ -62,10 +66,10 @@ export default function Index() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
       <PagerView ref={parentPagerView} style={styles.pagerView} initialPage={0}>
-        {subjects.map((subject, index) => {
+        {sortedSubjects.map((subject, index) => {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
-          const isLast = index === subjects.length - 1
+          const isLast = index === sortedSubjects.length - 1
           console.log('[lessons] building subject #', index)
           // console.log('\n\nSUBJECT DATA', JSON.stringify(subject, null, 2))
           const getBottomContent = ({
@@ -88,7 +92,7 @@ export default function Index() {
             return (
               <View>
                 {((index > 0 && direction === 'prev') ||
-                  (index < subjects.length && direction === 'next')) && (
+                  (index < sortedSubjects.length && direction === 'next')) && (
                   <Button title={buttonTitle} onPress={onPress} />
                 )}
 
@@ -185,7 +189,7 @@ export default function Index() {
         })}
       </PagerView>
       <View style={styles.subjectQueueContainer}>
-        {subjects.map((subject, index) => (
+        {sortedSubjects.map((subject, index) => (
           // TODO: probably we should move that to bottomContent of the pages
           <Pressable
             key={subject.id}
