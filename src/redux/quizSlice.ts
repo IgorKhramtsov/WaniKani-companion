@@ -134,9 +134,14 @@ export const quizSlice = createSlice({
       state.index = 0
       state.tasks = []
 
+      // Shuffle subjects so that we have radicals kanji and vocabulary mixed
+      const shuffledEnrichedSubjects = _.shuffle(
+        action.payload.enrichedSubjects,
+      )
+
       if (action.payload.assignments !== undefined) {
         for (const assignment of action.payload.assignments) {
-          const subject = action.payload.enrichedSubjects.find(
+          const subject = shuffledEnrichedSubjects.find(
             subject => subject.subject.id === assignment.subject_id,
           )
           if (subject === undefined) {
@@ -149,19 +154,13 @@ export const quizSlice = createSlice({
         // If there are no assignments - we might be in a quiz mode. Create
         // tasks just based on subjects.
 
-        for (const subject of action.payload.enrichedSubjects) {
+        for (const subject of shuffledEnrichedSubjects) {
           createTasksFor(subject)
         }
       }
 
       // TODO: Respect user's setting of review ordering
-      // TODO: localize reading and meaning tasks. Right now it is possible
-      // that reading task for the subject will be the first task and meaning
-      // task for the same subject will be the last task in the queue.
-      state.tasks = getShuffledTasks(
-        _.shuffle(readingTasks),
-        _.shuffle(meaningTasks),
-      )
+      state.tasks = getShuffledTasks(readingTasks, meaningTasks)
 
       state.status = 'idle'
     },
