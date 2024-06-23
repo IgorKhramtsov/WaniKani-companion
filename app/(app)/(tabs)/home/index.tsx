@@ -26,9 +26,11 @@ import {
   useGetLessonsQuery,
   useGetReviewsQuery,
 } from '@/src/api/wanikaniApi'
+import { useSettings } from '@/src/hooks/useSettings'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
+  const { settings, isLoading: settingsIsLoading } = useSettings()
   const lessonsCount = useAppSelector(selectLessonsCount)
   const reviewsCount = useAppSelector(selectReviewsCount)
   const {
@@ -43,8 +45,8 @@ export default function Index() {
   } = useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
 
   const isLoading = useMemo(
-    () => lessonsIsLoading || reviewsIsLoading,
-    [lessonsIsLoading, reviewsIsLoading],
+    () => lessonsIsLoading || reviewsIsLoading || settingsIsLoading,
+    [lessonsIsLoading, reviewsIsLoading, settingsIsLoading],
   )
   const error = useMemo(
     () => lessonsError ?? reviewsError,
@@ -61,7 +63,9 @@ export default function Index() {
     }
   }, [error])
 
-  const lessonsBatch = useAppSelector(selectLessonsBatch(5))
+  const lessonsBatch = useAppSelector(
+    selectLessonsBatch(settings.lessons_batch_size ?? 5),
+  )
   const reviewBatch = useAppSelector(selectReviewsBatch)
 
   const lessonIdsBatch = useMemo(
