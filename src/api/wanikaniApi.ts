@@ -182,7 +182,7 @@ const innerSelectAssignments = createSelector(
   lessonsSelector,
   reviewsSelector,
   (_: RootState, ids: number[]) => ids,
-  (lessons, reviews, ids) =>
+  (lessons, reviews, ids): Assignment[] =>
     lessons.concat(reviews).filter(el => ids.includes(el.id)),
 )
 

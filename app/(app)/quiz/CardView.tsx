@@ -51,8 +51,6 @@ type CardProps = {
 
 const flipCardAnimationDuration = 500
 
-// TODO: When report is created - the currentTask gets dismissed.
-
 export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()

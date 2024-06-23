@@ -68,14 +68,17 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const currentInputRef = useRef<TextInput>(null)
   const nextInputRef = useRef<TextInput>(null)
 
-  let assignmentIds: number[] = []
-  if (isAssignmentProps(props)) {
-    assignmentIds = props.assignmentIds
-  }
+  let assignmentIds = useMemo(() => {
+    if (isAssignmentProps(props)) {
+      return props.assignmentIds
+    }
+    return []
+  }, [props])
 
   const assignments = useAppSelector(selectAssignments(assignmentIds))
 
   const resolvedSubjectIds = useMemo(() => {
+    console.log('[QuizPage] resolving subjectIds')
     if (isSubjectProps(props)) {
       return props.subjectIds
     }
@@ -108,6 +111,12 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
   useEffect(() => {
+    // When new report is created, the api slice will invalidate Reviews cache
+    // by fetching them again, this will trigger reviews selector which will
+    // trigger this function and re-initiate the quiz slice in the middle of
+    // review. This is a workaround to not initialize it twice.
+    if (initiated) return
+
     if (isSubjectProps(props)) {
       console.log('[QuizPage]: dispatching init for quiz')
       dispatch(init({ enrichedSubjects, mode: props.mode }))
@@ -127,7 +136,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       )
     }
     setInitiated(true)
-  }, [enrichedSubjects, dispatch, assignments, props])
+  }, [enrichedSubjects, dispatch, assignments, props, initiated])
 
   useEffect(() => {
     for (const taskPair of taskPairsForReport) {
