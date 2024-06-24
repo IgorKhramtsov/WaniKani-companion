@@ -3,6 +3,7 @@ import { Subject, SubjectUtils } from '../types/subject'
 import { useGetSubjectsQuery } from '../api/wanikaniApi'
 import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
+import _ from 'lodash'
 
 type Result = {
   subjects: Subject[]
@@ -14,21 +15,36 @@ const useFetchSubjectsAndHydrate = (
 ): Result => {
   const dispatch = useAppDispatch()
   const subjectIdsSafe = useMemo(() => {
-    return subjectIds ?? []
+    return _.uniq(subjectIds ?? [])
   }, [subjectIds])
+  console.log(
+    '[useSubjectCache] hydrate:',
+    subjectIdsSafe.slice(0, 3),
+    subjectIdsSafe.length,
+  )
 
   const subjects = useAppSelector(selectSubjects(subjectIdsSafe))
 
   const missingIds = useMemo(() => {
-    return subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
+    const ids = subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
+    if (ids.length > 0) {
+      console.log('[useSubjectCache] fetching missing subjects:', ids)
+    }
+    return ids
   }, [subjectIdsSafe, subjects])
-  if (missingIds.length > 0) {
-    console.log('[useSubjectCache] fetching missing subjects: ', missingIds)
-  }
 
-  const { data: missingSubjects, isLoading: mainIsLoading } =
+  const { data: missingSubjectsFromQuery, isLoading: mainIsLoading } =
     // Do not fetch if there is nothing to fetch
     useGetSubjectsQuery(missingIds, { skip: missingIds.length === 0 })
+
+  // If at first we requested N subjects but later we requested N-1 subjects -
+  // the useGetSubjectsQuery query won't be fired as missingIds is empty, but
+  // missingSubjectsFromQuery will contain old data (N) which will cause a bug
+  // in isLoading memo calculation (because N-1 < N)
+  const missingSubjects = useMemo(() => {
+    if (missingIds.length > 0) return missingSubjectsFromQuery
+    return []
+  }, [missingIds, missingSubjectsFromQuery])
 
   // Populate slice cache
   useEffect(() => {
@@ -43,6 +59,16 @@ const useFetchSubjectsAndHydrate = (
     // is already fetched due to race condition.
     const subjectsSliceIsHydrating =
       subjects.length < (missingSubjects?.length ?? 0)
+    console.log(
+      '[useSubjectCache] hydrate slice:',
+      subjects.length,
+      missingSubjects?.length,
+    )
+    console.log(
+      '[useSubjectCache] hydrate isLoading: ',
+      subjectsSliceIsHydrating,
+      mainIsLoading,
+    )
     return subjectsSliceIsHydrating || mainIsLoading
   }, [subjects.length, missingSubjects?.length, mainIsLoading])
 
@@ -54,8 +80,13 @@ export const useSubjectCache = (
   cacheDependencies: boolean = true,
 ): Result => {
   const subjectIdsSafe = useMemo(() => {
-    return subjectIds ?? []
+    return _.uniq(subjectIds ?? [])
   }, [subjectIds])
+  console.log(
+    '[useSubjectCache]:',
+    subjectIdsSafe.slice(0, 3),
+    subjectIdsSafe.length,
+  )
 
   const { subjects, isLoading: mainIsLoading } =
     useFetchSubjectsAndHydrate(subjectIdsSafe)
@@ -77,7 +108,11 @@ export const useSubjectCache = (
     })
 
     if (subjectsToFetch.length > 0) {
-      console.log('[useSubjectCache] dependencies detected: ', subjectsToFetch)
+      console.log(
+        '[useSubjectCache] dependencies detected:',
+        subjectsToFetch.slice(0, 3),
+        subjectsToFetch.length,
+      )
     }
     return subjectsToFetch
   }, [cacheDependencies, subjects, subjectIdsSafe.length])
@@ -86,6 +121,11 @@ export const useSubjectCache = (
     useFetchSubjectsAndHydrate(dependencySubjectIds)
 
   const isLoading = useMemo(() => {
+    console.log(
+      '[useSubjectCache] isLoading:',
+      mainIsLoading,
+      dependenciesIsLoading,
+    )
     return mainIsLoading || dependenciesIsLoading
   }, [mainIsLoading, dependenciesIsLoading])
 
