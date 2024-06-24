@@ -27,6 +27,7 @@ export const Colors = {
   grayEA: '#EAEAEA',
   grayDA: '#DADADA',
   correctGreen: '#88CC01',
+  green: '#5BA733',
   quizGreen: '#34D399',
   incorrectRed: '#DC3545',
   destructiveRed: '#FF3B30',

@@ -195,9 +195,23 @@ const innerSelectAssignments = createSelector(
   (lessons, reviews, ids): Assignment[] =>
     lessons.concat(reviews).filter(el => ids.includes(el.id)),
 )
+const innerSelectAssignment = createSelector(
+  selectLessons,
+  reviewsSelector,
+  (_: RootState, id: number | undefined) => id,
+  (lessons, reviews, id): Assignment | undefined => {
+    if (id === undefined) return undefined
+
+    return lessons.concat(reviews).find(el => el.id === id)
+  },
+)
 
 export const selectAssignments = (ids: number[]) => (state: RootState) =>
   innerSelectAssignments(state, ids)
+
+export const selectAssignment =
+  (id: number | undefined) => (state: RootState) =>
+    innerSelectAssignment(state, id)
 
 export const selectLessonsCount = (state: RootState) =>
   selectLessons(state).length

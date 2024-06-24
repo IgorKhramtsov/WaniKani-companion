@@ -1,3 +1,5 @@
+// NOTE: AI generated
+
 import React from 'react'
 import { Text, TextStyle, View } from 'react-native'
 import renderers from './renderers'

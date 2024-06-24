@@ -104,6 +104,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const [initiated, setInitiated] = useState(false)
 
   const isLoading = useMemo(() => {
+    console.log('[QuizPage]: isLoading', isSubjectCacheLoading, initiated)
     return isSubjectCacheLoading || !initiated
   }, [isSubjectCacheLoading, initiated])
 

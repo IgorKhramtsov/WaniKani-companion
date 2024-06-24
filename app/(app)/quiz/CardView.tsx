@@ -1,14 +1,22 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
-import { useAppDispatch } from '@/src/hooks/redux'
+import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
   QuizTask,
   answeredCorrectly,
   answeredIncorrectly,
+  selectTaskPair,
 } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  Fragment,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -26,7 +34,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import { AntDesign, FontAwesome } from '@expo/vector-icons'
+import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons'
 import { MeaningPage } from '../lessons/MeaningPage'
 import { ReadingPage } from '../lessons/ReadingPage'
 import wanakana from 'wanakana'
@@ -34,6 +42,12 @@ import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
 import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAnswerUtils'
 import FloatingEmojis, { FloatingEmojisRef } from './FloatingEmojis'
 import * as Haptics from 'expo-haptics'
+import AnimatedToastWrapper, {
+  AnimatedToastWrapperRef,
+} from './AnimatedToastWrapper'
+import { appStyles } from '@/src/constants/styles'
+import { selectAssignment } from '@/src/api/wanikaniApi'
+import { srsStageToMilestone } from '@/src/types/assignment'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -254,6 +268,14 @@ export const CardInputVariant = ({
   const { styles } = useStyles(stylesheet)
   const [input, setInput] = useState('')
   const floatingEmojisRef = useRef<FloatingEmojisRef>(null)
+  const toastRef = useRef<AnimatedToastWrapperRef>(null)
+
+  const assignment = useAppSelector(selectAssignment(task.assignmentId))
+  const taskPair = useAppSelector(selectTaskPair(task))
+
+  const showToast = useCallback((content: ReactNode) => {
+    toastRef.current?.show(content)
+  }, [])
 
   const showCorrectFeedback = useCallback(() => {
     floatingEmojisRef.current?.spawnEmojis(16)
@@ -275,6 +297,43 @@ export const CardInputVariant = ({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeAnimation.value }],
   }))
+
+  useEffect(() => {
+    // Show toast only before report (task answered correctly)
+    if (taskState.state !== 'correct') return
+    // Show toast only if pair task is completed
+    if (taskPair !== false && !(taskPair?.completed ?? true)) return
+    if (!assignment || taskPair === undefined) return
+    const hasFailed =
+      task.numberOfErrors > 0 ||
+      (taskPair === false ? false : taskPair.numberOfErrors > 0)
+    console.log('taskPair', taskPair)
+    console.log('task', task)
+
+    const newStage = assignment.srs_stage + (hasFailed ? -1 : 1)
+    const newStageName = srsStageToMilestone(newStage)
+
+    const backgroundColor = hasFailed ? Colors.incorrectRed : Colors.green
+    const iconName = hasFailed
+      ? 'arrow-down-circle-outline'
+      : 'arrow-up-circle-outline'
+    showToast(
+      <View style={[styles.toastContent, { backgroundColor }]}>
+        <Ionicons name={iconName} size={24} color='white' />
+        <View style={{ width: 8 }} />
+        <Text style={styles.toastText}>{newStageName}</Text>
+      </View>,
+    )
+  }, [
+    assignment,
+    taskPair,
+    showToast,
+    styles.toastContent,
+    styles.toastText,
+    taskState.state,
+    task.numberOfErrors,
+    task,
+  ])
 
   useEffect(() => {
     if (taskState.state === 'incorrect' || taskState.state === 'warning') {
@@ -318,7 +377,9 @@ export const CardInputVariant = ({
   return (
     <Fragment>
       <View style={styles.cardTextContainer}>
-        <Text style={styles.glyphText}>{subject.characters}</Text>
+        <AnimatedToastWrapper ref={toastRef}>
+          <Text style={styles.glyphText}>{subject.characters}</Text>
+        </AnimatedToastWrapper>
         <Text style={styles.taskText}>
           {subjectName}{' '}
           <Text
@@ -432,5 +493,18 @@ const stylesheet = createStyleSheet({
     height: 48,
     minWidth: '80%',
     borderRadius: 8,
+  },
+  toastContent: {
+    ...appStyles.row,
+    backgroundColor: Colors.green,
+    padding: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  toastText: {
+    ...typography.body,
+    lineHeight: typography.body.fontSize * 1.1,
+    color: 'white',
+    fontWeight: '600',
   },
 })

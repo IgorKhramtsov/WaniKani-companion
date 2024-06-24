@@ -342,4 +342,36 @@ export const selectTaskPairsForReport = createSelector(
   },
 )
 
+export const selectTaskPair = (task: QuizTask) =>
+  createSelector(
+    (state: RootState) => state.quizSlice.tasks,
+    (tasks): QuizTask | undefined | false => {
+      if (task.type === 'meaning') {
+        if (
+          task.subject.subject.type === 'radical' ||
+          task.subject.subject.type === 'kana_vocabulary'
+        ) {
+          return false
+        }
+
+        const readingTask = tasks.find(
+          readingTask =>
+            readingTask.subject.subject.id === task.subject.subject.id &&
+            readingTask.type === 'reading',
+        )
+
+        return readingTask
+      } else {
+        // This is reading task. Look for meaning pair
+        const meaningTask = tasks.find(
+          meaningTask =>
+            meaningTask.subject.subject.id === task.subject.subject.id &&
+            meaningTask.type === 'meaning',
+        )
+
+        return meaningTask
+      }
+    },
+  )
+
 export default quizSlice.reducer
