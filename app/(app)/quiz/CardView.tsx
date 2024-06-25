@@ -192,6 +192,15 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     </View>
   )
 
+  const nextButton = (
+    <View style={styles.viewInfoNextButtonContainer}>
+      <View style={{ height: 16 }} />
+      <Pressable style={styles.viewInfoNextButton} onPress={() => submit('')}>
+        <Text style={styles.viewInfoNextButtonText}>Next</Text>
+      </Pressable>
+    </View>
+  )
+
   return (
     <View style={{ flexGrow: 1 }}>
       <Animated.View
@@ -230,7 +239,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           {task.type === 'reading' && (
             <ReadingPage
               topContent={turnBackButton}
-              bottomContent={<View style={{ height: 24 }} />}
+              bottomContent={nextButton}
               subject={task.subject.subject}
             />
           )}
@@ -240,7 +249,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
               // TODO: use another page layout when it is implemented
               // (subjects library view)
               showMeaning={true}
-              bottomContent={<View style={{ height: 24 }} />}
+              bottomContent={nextButton}
               subject={task.subject.subject}
             />
           )}
@@ -460,9 +469,23 @@ const stylesheet = createStyleSheet({
     zIndex: 5,
   },
   viewInfoContainer: {
-    // backgroundColor: 'white',
-    // margin: 16,
     flex: 1,
+  },
+  viewInfoNextButtonContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewInfoNextButton: {
+    backgroundColor: Colors.blue,
+    alignItems: 'center',
+    padding: 8,
+    minWidth: '100%',
+    borderRadius: 4,
+  },
+  viewInfoNextButtonText: {
+    ...typography.callout,
+    color: 'white',
+    textTransform: 'uppercase',
   },
   cardTextContainer: {
     alignItems: 'center',
