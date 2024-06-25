@@ -16,7 +16,7 @@ export const Page = ({ children, topContent, bottomContent }: Props) => {
   const { styles } = useStyles(pageStylesheet)
 
   return (
-    <ScrollView style={[styles.pageView]}>
+    <ScrollView contentContainerStyle={styles.pageView}>
       {topContent && topContent}
       {children}
       {bottomContent && bottomContent}
@@ -43,8 +43,7 @@ export const PageSection = ({ children, title }: PageSectionProps) => {
 
 const pageStylesheet = createStyleSheet({
   pageView: {
-    paddingTop: 20,
-    paddingHorizontal: 20,
+    padding: 20,
   },
   titleText: {
     ...typography.titleB,
