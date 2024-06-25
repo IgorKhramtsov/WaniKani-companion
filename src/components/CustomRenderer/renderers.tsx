@@ -23,6 +23,11 @@ const renderers = {
   kanji: getGenericRenderer(Colors.pink),
   radical: getGenericRenderer(Colors.blue),
   reading: getGenericRenderer(Colors.gray55),
+  ja: ({ text, style }: { text: string; style?: TextStyle }) => (
+    <Text accessibilityLanguage='ja' style={style}>
+      {text}
+    </Text>
+  ),
 }
 
 const styles = StyleSheet.create({
