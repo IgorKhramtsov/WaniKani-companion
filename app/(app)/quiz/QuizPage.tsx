@@ -302,7 +302,9 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         {nextTask && (
           // Show next task in order to keep the keyboard always open (we focus
           // the next task's input node when current one is leaving the scene)
-          <View
+          // NOTE: The sub-tree should be the same as for the currentTask to
+          // support seamless focus move for the keyboard.
+          <Animated.View
             pointerEvents='none'
             key={
               nextTask.subject.subject.id +
@@ -319,8 +321,10 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                 { scale: nextTaskTransformStyle.scale },
               ],
             }}>
-            <CardView task={nextTask} textInputRef={nextInputRef} />
-          </View>
+            <Animated.View>
+              <CardView task={nextTask} textInputRef={nextInputRef} />
+            </Animated.View>
+          </Animated.View>
         )}
         {currentTask && (
           <Animated.View
