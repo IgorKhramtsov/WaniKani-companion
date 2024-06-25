@@ -11,7 +11,7 @@ export default function RootLayout() {
           headerTitle: () => (
             <View>
               <Image
-                source={require('@/assets/images/wanikani.png')}
+                source={require('@/assets/images/wanikani-companion.png')}
                 style={styles.image}
               />
             </View>
@@ -24,7 +24,7 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   image: {
-    height: 32,
+    height: 42,
     resizeMode: 'contain',
   },
 })
