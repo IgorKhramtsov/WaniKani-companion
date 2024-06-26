@@ -9,8 +9,11 @@ import {
   selectNextTask,
   selectProgress,
   selectTaskPairsForReport,
+  selectWrapUpEnabled,
+  selectWrapUpRemainingTasks,
+  toggleWrapUp,
 } from '@/src/redux/quizSlice'
-import { Link } from 'expo-router'
+import { Link, useNavigation } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
@@ -33,6 +36,8 @@ import {
 } from '@/src/api/wanikaniApi'
 import { CreateReviewParams } from '@/src/types/createReviewParams'
 import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
+import { MenuView } from '@react-native-menu/menu'
+import { FontAwesome6 } from '@expo/vector-icons'
 
 interface BaseProps {
   mode: QuizMode
@@ -93,6 +98,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     selectEnrichedSubjects(resolvedSubjectIds),
   )
 
+  const wrapUpEnabled = useAppSelector(selectWrapUpEnabled)
+  const wrapUpRemaningTasks = useAppSelector(selectWrapUpRemainingTasks)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
@@ -138,6 +145,33 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     }
     setInitiated(true)
   }, [enrichedSubjects, dispatch, assignments, props, initiated])
+
+  const navigation = useNavigation()
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <MenuView
+          onPressAction={({ nativeEvent }) => {
+            if (nativeEvent.event === 'wrap-up') {
+              dispatch(toggleWrapUp())
+            }
+          }}
+          actions={[
+            {
+              id: 'wrap-up',
+              attributes: {
+                disabled: wrapUpRemaningTasks.length === 0,
+              },
+              title: wrapUpEnabled
+                ? 'Cancel Wrap Up'
+                : `Wrap Up (${wrapUpRemaningTasks.length})`,
+            },
+          ]}>
+          <FontAwesome6 name='ellipsis' size={24} color='black' />
+        </MenuView>
+      ),
+    })
+  }, [dispatch, navigation, wrapUpEnabled, wrapUpRemaningTasks.length])
 
   useEffect(() => {
     for (const taskPair of taskPairsForReport) {

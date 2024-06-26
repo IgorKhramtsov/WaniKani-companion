@@ -8,7 +8,6 @@ import { Subject, SubjectUtils } from '../types/subject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
-// import { WaniKaniApi } from '../api/wanikani'
 import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
 import { TaskType } from '../types/quizTaskType'
@@ -68,31 +67,27 @@ const createMeaningTask = (
   assignmentId,
 })
 
-export interface ReviewSlice {
-  tasks: QuizTask[]
-  index: number
+export interface QuizSlice {
+  remainingTasks: QuizTask[]
+  completedTasks: QuizTask[]
   mode: QuizMode
   status: 'idle' | 'loading' | 'failed'
   error?: SerializedError
+  wrapUpEnabled: boolean
 }
 
-const initialState: ReviewSlice = {
-  tasks: [],
-  index: 0,
+const initialState: QuizSlice = {
+  remainingTasks: [],
+  completedTasks: [],
   status: 'loading',
   mode: 'quiz',
+  wrapUpEnabled: false,
 }
 
 export const quizSlice = createSlice({
   name: 'subjects',
   initialState,
   reducers: {
-    reset(state) {
-      state.tasks = []
-      state.index = 0
-      state.status = 'loading'
-      console.log('[QuizSlice] RESET')
-    },
     init(
       state,
       action: PayloadAction<{
@@ -130,10 +125,6 @@ export const quizSlice = createSlice({
         meaningTasks.push(createMeaningTask(subject, assignment?.id))
       }
 
-      state.mode = action.payload.mode
-      state.index = 0
-      state.tasks = []
-
       // Shuffle subjects so that we have radicals kanji and vocabulary mixed
       const shuffledAssignments = _.shuffle(action.payload.assignments)
 
@@ -160,68 +151,75 @@ export const quizSlice = createSlice({
         }
       }
 
+      const newState = Object.assign({}, initialState)
       // TODO: Respect user's setting of review ordering
-      state.tasks = getShuffledTasks(readingTasks, meaningTasks)
-
-      state.status = 'idle'
+      newState.mode = action.payload.mode
+      newState.remainingTasks = getShuffledTasks(readingTasks, meaningTasks)
+      newState.status = 'idle'
+      return newState
+    },
+    toggleWrapUp(state) {
+      state.wrapUpEnabled = !state.wrapUpEnabled
     },
     answeredCorrectly(
       state,
       action: PayloadAction<{ id: number; type: TaskType }>,
     ) {
-      const allTasksForSubject = state.tasks.filter(
-        task => task.subject.subject.id === action.payload.id,
-      )
-      const task = allTasksForSubject.find(
+      const task = state.remainingTasks.find(
         task =>
-          task.subject.subject.id === action.payload.id &&
-          task.type === action.payload.type,
+          task.type === action.payload.type &&
+          task.subject.subject.id === action.payload.id,
       )
       if (task === undefined) {
-        console.error('Can not find task: ', task)
+        console.error(
+          'answeredCorrectly can not find task for: id -',
+          action.payload.id,
+          'type -',
+          action.payload.type,
+        )
         return
       }
+      state.remainingTasks.splice(state.remainingTasks.indexOf(task), 1)
       task.completed = true
-      state.index++
+      state.completedTasks.push(task)
     },
     answeredIncorrectly(
       state,
       action: PayloadAction<{ id: number; type: TaskType }>,
     ) {
-      const task = state.tasks.find(
+      const task = state.remainingTasks.find(
         task =>
-          task.subject.subject.id === action.payload.id &&
-          task.type === action.payload.type,
+          task.type === action.payload.type &&
+          task.subject.subject.id === action.payload.id,
       )
       if (task === undefined) {
         console.error(
-          'Can not find task for id:',
+          'answeredIncorrectly can not find task for: id -',
           action.payload.id,
-          'and type:',
+          'type -',
           action.payload.type,
         )
         return
       }
+      state.remainingTasks.splice(state.remainingTasks.indexOf(task), 1)
       task.numberOfErrors++
 
-      // Remove task and push it to the end of the queue
-      const index = state.tasks.indexOf(task)
-      if (index > -1) {
-        state.tasks.splice(index, 1)
-        const minPushDistance = 3
-        const maxPushDistance = 9
-        const randomNumber =
-          minPushDistance +
-          Math.floor(Math.random() * (maxPushDistance - minPushDistance))
-        const newPos = Math.min(index + randomNumber, state.tasks.length)
-        state.tasks.splice(newPos, 0, task)
-      }
+      // TODO: fix task pushing in wrap up mode
+      // TODO: improve task pushing to avoid introduction of single reading
+      // task among meaning tasks
+      const minPushDistance = 3
+      const maxPushDistance = 9
+      const randomNumber =
+        minPushDistance +
+        Math.floor(Math.random() * (maxPushDistance - minPushDistance))
+      const newPos = Math.min(randomNumber, state.remainingTasks.length)
+      state.remainingTasks.splice(newPos, 0, task)
     },
     markTaskPairAsReported(
       state,
       action: PayloadAction<{ taskPair: QuizTask[] }>,
     ) {
-      const tasks = state.tasks.filter(
+      const tasks = state.completedTasks.filter(
         task =>
           task.subject.subject.id ===
           action.payload.taskPair[0].subject.subject.id,
@@ -266,85 +264,108 @@ const getShuffledTasks = (
 }
 
 export const {
-  reset,
   init,
+  toggleWrapUp,
   answeredCorrectly,
   answeredIncorrectly,
   markTaskPairAsReported,
 } = quizSlice.actions
 
+export const selectWrapUpRemainingTasks = createSelector(
+  (state: RootState) => state.quizSlice.remainingTasks,
+  (state: RootState) => state.quizSlice.completedTasks,
+  (remainingTasks: QuizTask[], completedTasks: QuizTask[]) => {
+    const completedSubjectIds = completedTasks.map(
+      task => task.subject.subject.id,
+    )
+    return remainingTasks.filter(task =>
+      completedSubjectIds.includes(task.subject.subject.id),
+    )
+  },
+)
+
+const selectRemainingTasks = createSelector(
+  (state: RootState) => state.quizSlice.remainingTasks,
+  selectWrapUpRemainingTasks,
+  (state: RootState) => state.quizSlice.wrapUpEnabled,
+  (
+    remainingTasks: QuizTask[],
+    remainingWrapUpTasks: QuizTask[],
+    wrapUpEnabled: boolean,
+  ) => {
+    if (wrapUpEnabled) {
+      return remainingWrapUpTasks
+    }
+    return remainingTasks
+  },
+)
+
 export const selectStatus = (state: RootState) => state.quizSlice.status
+export const selectWrapUpEnabled = (state: RootState) =>
+  state.quizSlice.wrapUpEnabled
 export const selectProgress = createSelector(
-  (state: RootState) => state.quizSlice.tasks,
-  tasks => {
-    const completed = tasks.filter(task => task.completed).length
-    const total = tasks.length
+  selectRemainingTasks,
+  (state: RootState) => state.quizSlice.completedTasks,
+  (state: RootState) => state.quizSlice.wrapUpEnabled,
+  (remainingTasks, completedTasks) => {
+    const completed = completedTasks.length
+    const remaining = remainingTasks.length
+    const total = remaining + completed
     if (total === 0) return 0
 
     return Math.floor((completed / total) * 100)
   },
 )
 export const selectCurrentTask = createSelector(
-  (state: RootState) => state.quizSlice.index,
-  (state: RootState) => state.quizSlice.tasks,
-  (index, tasks) => {
-    console.log(
-      'Selecting current task. index: ',
-      index,
-      ' tasks: ',
-      tasks.length,
-    )
-    return tasks[index]
-  },
+  selectRemainingTasks,
+  remainingTasks => remainingTasks[0],
 )
 export const selectNextTask = createSelector(
-  (state: RootState) => state.quizSlice.index,
-  (state: RootState) => state.quizSlice.tasks,
-  (index, tasks): QuizTask | undefined => tasks[index + 1],
+  selectRemainingTasks,
+  (remainingTasks): QuizTask | undefined => remainingTasks[1],
 )
 export const selectTaskPairsForReport = createSelector(
-  (state: RootState) => state.quizSlice.tasks,
+  (state: RootState) => state.quizSlice.completedTasks,
   (state: RootState) => state.quizSlice.mode,
   (tasks, mode) => {
     // We have nothing to report in quiz mode
     if (mode === 'quiz') return []
 
-    const completedNotReported = tasks.filter(
-      task => task.completed && !task.reported,
-    )
-    const completedNotReportedMeanings = completedNotReported.filter(
+    const notReportedTasks = tasks.filter(task => !task.reported)
+    const notReportedMeaningTasks = notReportedTasks.filter(
       task => task.type === 'meaning',
     )
-    const completedNotReportedReadings = completedNotReported.filter(
+    const notReportedReadings = notReportedTasks.filter(
       task => task.type === 'reading',
     )
-    const readyForReportPairs = completedNotReportedMeanings.map(task => {
+    const readyForReportPairs = notReportedMeaningTasks.map(task => {
       if (
         task.subject.subject.type === 'radical' ||
         task.subject.subject.type === 'kana_vocabulary'
       ) {
         return [task]
       }
-      const answeredReadingPair = completedNotReportedReadings.find(
+      const answeredReadingPair = notReportedReadings.find(
         readingTask =>
           readingTask.subject.subject.id === task.subject.subject.id,
       )
       if (answeredReadingPair !== undefined) {
         return [task, answeredReadingPair]
+      } else {
+        // The pair task is not completed yet
       }
 
       return undefined
     })
-    const definedTaskPairs = readyForReportPairs.filter(
+    return readyForReportPairs.filter(
       (taskPair): taskPair is QuizTask[] => taskPair !== undefined,
     )
-    return definedTaskPairs
   },
 )
 
 export const selectTaskPair = (task: QuizTask) =>
   createSelector(
-    (state: RootState) => state.quizSlice.tasks,
+    (state: RootState) => state.quizSlice.completedTasks,
     (tasks): QuizTask | undefined | false => {
       if (task.type === 'meaning') {
         if (

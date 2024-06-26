@@ -92,8 +92,6 @@ export const CardInputVariant = ({
     const hasFailed =
       task.numberOfErrors > 0 ||
       (taskPair === false ? false : taskPair.numberOfErrors > 0)
-    console.log('taskPair', taskPair)
-    console.log('task', task)
 
     const newStage = assignment.srs_stage + (hasFailed ? -1 : 1)
     const newStageName = srsStageToMilestone(newStage)
