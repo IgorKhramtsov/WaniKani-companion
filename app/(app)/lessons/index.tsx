@@ -34,13 +34,20 @@ export default function Index() {
     )
     return params.assignmentIds?.split(',').map(el => parseInt(el))
   }, [params.assignmentIds])
-  console.log('[lessons] assignmentIds:', assignmentIds)
+  useEffect(
+    () => console.log('[lessons] assignmentIds:', assignmentIds),
+    [assignmentIds],
+  )
 
   const assignments = useAppSelector(selectAssignments(assignmentIds ?? []))
 
   const subjectIds = useMemo(() => {
     return assignments.map(el => el.subject_id)
   }, [assignments])
+
+  useEffect(() => {
+    console.log('[lessons] useEffect subjectIds:', subjectIds)
+  }, [subjectIds])
 
   const { subjects, isLoading } = useSubjectCache(subjectIds)
   const sortedSubjects = useMemo(

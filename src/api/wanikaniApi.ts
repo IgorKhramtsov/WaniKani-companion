@@ -15,13 +15,14 @@ import { getLocalStartOfDayInUTC, isToday } from '../utils/dateUtils'
 //
 // TODO: add api key verification (by making empty request to server) to check
 // permissions and disable app's features if not authorized.
+//
+// TODO: Rewrite to React Query (tanstack)
 let apiKey: string | undefined
 export const setApiKey = (key: string) => {
   apiKey = key
 }
 export const getApiKey = () => apiKey
 
-// TODO: rewrite axios api to rtk query
 export const wanikaniApi = createApi({
   reducerPath: 'wanikaniApi',
   baseQuery: fetchBaseQuery({
@@ -74,13 +75,32 @@ export const wanikaniApi = createApi({
           .catch(patchResult.undo)
       },
     }),
-    getSubjects: build.query<Subject[], number[]>({
-      query: (ids: number[]) => ({
-        url: 'subjects',
-        params: { ids: ids.join(',') },
-      }),
+    getSubjects: build.query<
+      { data: Subject[]; hasMore: boolean; totalCount: number },
+      { ids?: number[]; updatedAfter?: string; pageAfterId?: number }
+    >({
+      query: ({ ids, updatedAfter, pageAfterId }) => {
+        const params: {
+          ids?: string
+          updated_after?: string
+          page_after_id?: number
+        } = {}
+        if (ids && ids.length > 0) {
+          params['ids'] = ids.join(',')
+        }
+        if (updatedAfter) {
+          params['updated_after'] = updatedAfter
+        }
+        if (pageAfterId) {
+          params['page_after_id'] = pageAfterId
+        }
+        return {
+          url: 'subjects',
+          params,
+        }
+      },
       transformResponse: (response: ApiResponse<ApiResponse<Subject>[]>) => {
-        return response.data
+        const data = response.data
           .map(el => {
             const type = el.object
             if (isValidSubjectType(type)) {
@@ -91,12 +111,21 @@ export const wanikaniApi = createApi({
             }
           })
           .filter((el): el is Subject => el !== undefined)
+
+        return {
+          data,
+          totalCount: response.total_count,
+          hasMore: response.pages.next_url !== null,
+        }
       },
       providesTags: result =>
         // TODO: check if this caching works correctly
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Subject' as const, id })),
+              ...result.data.map(({ id }) => ({
+                type: 'Subject' as const,
+                id,
+              })),
               'Subject',
             ]
           : ['Subject'],
@@ -235,6 +264,12 @@ interface ApiResponse<T> {
   object: 'assignment' | string
   url: string
   data_updated_at: Date | null
+  total_count: number
+  pages: {
+    per_page: number
+    next_url: string | null
+    previous_url: string | null
+  }
   data: T
 }
 

@@ -9,6 +9,7 @@ import {
   loggerMiddleware,
   rtkQueryErrorLogger,
 } from '../api/loggingMiddlewares'
+import devToolsEnhancer from 'redux-devtools-expo-dev-plugin'
 
 export const store = configureStore({
   middleware: getDefaultMiddleware =>
@@ -29,6 +30,9 @@ export const store = configureStore({
     [wanikaniApi.reducerPath]: wanikaniApi.reducer,
     [localSettingsApi.reducerPath]: localSettingsApi.reducer,
   },
+  devTools: false,
+  enhancers: getDefaultEnhancers =>
+    getDefaultEnhancers().concat(devToolsEnhancer()),
 })
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

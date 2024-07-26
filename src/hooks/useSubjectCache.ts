@@ -1,16 +1,18 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Subject, SubjectUtils } from '../types/subject'
-import { useGetSubjectsQuery } from '../api/wanikaniApi'
 import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
 import _ from 'lodash'
+import { useSQLiteContext } from 'expo-sqlite'
+import { getSubjects } from '../utils/dbHelper'
+import { useAsyncFetch } from './useAsyncFetch'
 
 type Result = {
   subjects: Subject[]
   isLoading: boolean
 }
 
-const useFetchSubjectsAndHydrate = (
+const useFetchSubjectsAndHydrate_v2 = (
   subjectIds: number[] | undefined,
 ): Result => {
   const dispatch = useAppDispatch()
@@ -18,59 +20,77 @@ const useFetchSubjectsAndHydrate = (
     return _.uniq(subjectIds ?? [])
   }, [subjectIds])
   console.log(
-    '[useSubjectCache] hydrate:',
+    '[useSubjectCache_hydrate] hydrate:',
     subjectIdsSafe.slice(0, 3),
     subjectIdsSafe.length,
   )
 
   const subjects = useAppSelector(selectSubjects(subjectIdsSafe))
 
-  const missingIds = useMemo(() => {
+  useEffect(() => {
+    console.log('[useSubjectCache_hydrate] hydrate useEffect: subjects')
+  }, [subjects])
+
+  useEffect(() => {
+    console.log('[useSubjectCache_hydrate] hydrate useEffect: subjectIdsSafe')
+  }, [subjectIdsSafe])
+
+  const sliceMissingIds = useMemo(() => {
+    console.log('[useSubjectCache_hydrate] useMemo: sliceMissingIds')
     const ids = subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
     if (ids.length > 0) {
-      console.log('[useSubjectCache] fetching missing subjects:', ids)
+      console.log('[useSubjectCache_hydrate] slice missing ids:', ids)
     }
     return ids
   }, [subjectIdsSafe, subjects])
 
-  const { data: missingSubjectsFromQuery, isLoading: mainIsLoading } =
-    // Do not fetch if there is nothing to fetch
-    useGetSubjectsQuery(missingIds, { skip: missingIds.length === 0 })
-
-  // If at first we requested N subjects but later we requested N-1 subjects -
-  // the useGetSubjectsQuery query won't be fired as missingIds is empty, but
-  // missingSubjectsFromQuery will contain old data (N) which will cause a bug
-  // in isLoading memo calculation (because N-1 < N)
-  const missingSubjects = useMemo(() => {
-    if (missingIds.length > 0) return missingSubjectsFromQuery
-    return []
-  }, [missingIds, missingSubjectsFromQuery])
-
-  // Populate slice cache
   useEffect(() => {
-    if (missingSubjects) {
-      dispatch(subjectsReceived(missingSubjects))
+    console.log('[useSubjectCache_hydrate] useEffect: sliceMissingIds')
+  }, [sliceMissingIds])
+
+  const db = useSQLiteContext()
+  const fetchFunc = useCallback(
+    () => getSubjects(db, sliceMissingIds),
+    [db, sliceMissingIds],
+  )
+
+  useEffect(() => {
+    console.log('[useSubjectCache_hydrate] useEffect: fetchFunc')
+  }, [fetchFunc])
+
+  const { data: dbSubjects, isLoading: dbIsLoading } = useAsyncFetch(
+    [],
+    fetchFunc,
+    sliceMissingIds.length === 0,
+  )
+
+  useEffect(() => {
+    if (dbIsLoading) return
+
+    if (dbSubjects.length > 0) {
+      console.log('[useSubjectCache_hydrate] hydrate slice:', dbSubjects.length)
+      dispatch(subjectsReceived(dbSubjects))
     }
-  }, [dispatch, missingSubjects])
+  }, [dispatch, dbSubjects, dbIsLoading])
 
   const isLoading = useMemo(() => {
     // Ensures that subjects slice state gets hydrated before the UI is
     // rendered. This is required to prevent GlyphTile from fetching data that
     // is already fetched due to race condition.
     const subjectsSliceIsHydrating =
-      subjects.length < (missingSubjects?.length ?? 0)
+      subjects.length < (sliceMissingIds?.length ?? 0)
     console.log(
-      '[useSubjectCache] hydrate slice:',
+      '[useSubjectCache_hydrate] hydrate slice:',
       subjects.length,
-      missingSubjects?.length,
+      sliceMissingIds?.length,
     )
     console.log(
-      '[useSubjectCache] hydrate isLoading: ',
+      '[useSubjectCache_hydrate] hydrate isLoading: ',
       subjectsSliceIsHydrating,
-      mainIsLoading,
+      dbIsLoading,
     )
-    return subjectsSliceIsHydrating || mainIsLoading
-  }, [subjects.length, missingSubjects?.length, mainIsLoading])
+    return dbIsLoading || subjectsSliceIsHydrating
+  }, [dbIsLoading, subjects, sliceMissingIds])
 
   return { subjects, isLoading }
 }
@@ -79,17 +99,24 @@ export const useSubjectCache = (
   subjectIds: number[] | undefined,
   cacheDependencies: boolean = true,
 ): Result => {
+  useEffect(() => {
+    console.log('[useSubjectCache] input: ', subjectIds, cacheDependencies)
+  }, [subjectIds, cacheDependencies])
   const subjectIdsSafe = useMemo(() => {
     return _.uniq(subjectIds ?? [])
   }, [subjectIds])
   console.log(
-    '[useSubjectCache]:',
+    '[useSubjectCache] trigger:',
     subjectIdsSafe.slice(0, 3),
     subjectIdsSafe.length,
   )
 
+  useEffect(() => {
+    console.log('[useSubjectCache]: useEffect subjectIdsSafe')
+  }, [subjectIdsSafe])
+
   const { subjects, isLoading: mainIsLoading } =
-    useFetchSubjectsAndHydrate(subjectIdsSafe)
+    useFetchSubjectsAndHydrate_v2(subjectIdsSafe)
 
   // Memoize subjects' dependencies (to prevent infinite loop)
   const dependencySubjectIds = useMemo(() => {
@@ -118,7 +145,7 @@ export const useSubjectCache = (
   }, [cacheDependencies, subjects, subjectIdsSafe.length])
 
   const { isLoading: dependenciesIsLoading } =
-    useFetchSubjectsAndHydrate(dependencySubjectIds)
+    useFetchSubjectsAndHydrate_v2(dependencySubjectIds)
 
   const isLoading = useMemo(() => {
     console.log(

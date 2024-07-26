@@ -118,12 +118,18 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const progressValue = useSharedValue(0)
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
+  const isReadyToInit = useMemo(() => {
+    return resolvedSubjectIds.length === enrichedSubjects.length
+  }, [enrichedSubjects.length, resolvedSubjectIds.length])
+
   useEffect(() => {
     // When new report is created, the api slice will invalidate Reviews cache
     // by fetching them again, this will trigger reviews selector which will
     // trigger this function and re-initiate the quiz slice in the middle of
     // review. This is a workaround to not initialize it twice.
     if (initiated) return
+    // We don't want to initialize the slice if we don't have all the data yet.
+    if (!isReadyToInit) return
 
     if (isSubjectProps(props)) {
       console.log('[QuizPage]: dispatching init for quiz')
@@ -144,7 +150,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       )
     }
     setInitiated(true)
-  }, [enrichedSubjects, dispatch, assignments, props, initiated])
+  }, [enrichedSubjects, dispatch, assignments, props, initiated, isReadyToInit])
 
   const navigation = useNavigation()
   useEffect(() => {
