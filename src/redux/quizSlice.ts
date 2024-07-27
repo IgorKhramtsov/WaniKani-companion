@@ -155,6 +155,24 @@ export const quizSlice = createSlice({
       // TODO: Respect user's setting of review ordering
       newState.mode = action.payload.mode
       newState.remainingTasks = getShuffledTasks(readingTasks, meaningTasks)
+      // Print out number of subsequent tasks of the same type
+      // User reduce to create arrays of {TaskType, count}
+      const taskTypeCount = newState.remainingTasks.reduce(
+        (acc, task) => {
+          if (acc.length === 0 || acc[acc.length - 1].taskType !== task.type) {
+            acc.push({ taskType: task.type, count: 1 })
+          } else {
+            acc[acc.length - 1].count++
+          }
+          return acc
+        },
+        [] as { taskType: TaskType; count: number }[],
+      )
+      console.log(
+        '[quizSlice] taskTypeCount after shuffle:',
+        taskTypeCount.map(e => `${e.taskType}: ${e.count}`),
+      )
+      console.log('tasksLen:', newState.remainingTasks.length)
       newState.status = 'idle'
       return newState
     },
@@ -238,9 +256,13 @@ const getShuffledTasks = (
   readingTasks: QuizTask[],
   meaningTasks: QuizTask[],
 ): QuizTask[] => {
+  const minNumberOfSubsequentTasks = 5
+  const maxNumberOfSubsequentTasks = 10
+
   const resultArray: QuizTask[] = []
   let taskToPush =
     Math.random() <= 0.5 ? readingTasks.pop() : meaningTasks.pop()
+  let subsequentTaskOfTheSameType = 1
   do {
     if (taskToPush !== undefined) {
       resultArray.push(taskToPush)
@@ -253,11 +275,24 @@ const getShuffledTasks = (
     let secondarySupplyArray =
       lastTaskType === 'reading' ? meaningTasks : readingTasks
 
-    const preferableTask =
-      Math.random() <= 0.7
-        ? preferableSupplyArray.pop()
-        : secondarySupplyArray.pop()
+    const preferableTask = (() => {
+      if (subsequentTaskOfTheSameType < minNumberOfSubsequentTasks) {
+        return preferableSupplyArray.pop()
+      } else if (subsequentTaskOfTheSameType >= maxNumberOfSubsequentTasks) {
+        return secondarySupplyArray.pop()
+      } else {
+        return Math.random() <= 0.7
+          ? preferableSupplyArray.pop()
+          : secondarySupplyArray.pop()
+      }
+    })()
+
     taskToPush = preferableTask ?? readingTasks.pop() ?? meaningTasks.pop()
+    if (lastTaskType === taskToPush?.type) {
+      subsequentTaskOfTheSameType++
+    } else {
+      subsequentTaskOfTheSameType = 1
+    }
   } while (taskToPush !== undefined)
 
   return resultArray
