@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
   init,
   markTaskPairAsReported,
+  selectAllTasksDebug,
   selectCurrentTask,
   selectNextTask,
   selectProgress,
@@ -15,7 +16,14 @@ import {
 } from '@/src/redux/quizSlice'
 import { Link, useNavigation } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Keyboard, Pressable, Text, View } from 'react-native'
+import {
+  FlatList,
+  Keyboard,
+  Pressable,
+  Text,
+  TextStyle,
+  View,
+} from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -36,7 +44,7 @@ import {
 } from '@/src/api/wanikaniApi'
 import { CreateReviewParams } from '@/src/types/createReviewParams'
 import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
-import { MenuView } from '@react-native-menu/menu'
+import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { FontAwesome6 } from '@expo/vector-icons'
 
 interface BaseProps {
@@ -104,11 +112,13 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
   const taskPairsForReport = useAppSelector(selectTaskPairsForReport)
+  const allTasksDebug = useAppSelector(selectAllTasksDebug)
   const [startAssignment] = useStartAssignmentMutation()
   const [createReview] = useCreateReviewMutation()
   // Prevent old slice state from being used before we hydrated it with new
   // data.
   const [initiated, setInitiated] = useState(false)
+  const [debugViewEnabled, setDebugViewEnabled] = useState(false)
 
   const isLoading = useMemo(() => {
     console.log('[QuizPage]: isLoading', isSubjectCacheLoading, initiated)
@@ -154,30 +164,45 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
   const navigation = useNavigation()
   useEffect(() => {
+    const menuActios: MenuAction[] = []
+    menuActios.push({
+      id: 'wrap-up',
+      attributes: {
+        disabled: wrapUpRemaningTasks.length === 0,
+      },
+      title: wrapUpEnabled
+        ? 'Cancel Wrap Up'
+        : `Wrap Up (${wrapUpRemaningTasks.length})`,
+    })
+    if (__DEV__) {
+      menuActios.push({
+        id: 'debug-view-all',
+        title: debugViewEnabled ? 'Disable Debug View' : 'Enable Debug View',
+      })
+    }
+
     navigation.setOptions({
       headerRight: () => (
         <MenuView
           onPressAction={({ nativeEvent }) => {
             if (nativeEvent.event === 'wrap-up') {
               dispatch(toggleWrapUp())
+            } else if (nativeEvent.event === 'debug-view-all') {
+              setDebugViewEnabled(!debugViewEnabled)
             }
           }}
-          actions={[
-            {
-              id: 'wrap-up',
-              attributes: {
-                disabled: wrapUpRemaningTasks.length === 0,
-              },
-              title: wrapUpEnabled
-                ? 'Cancel Wrap Up'
-                : `Wrap Up (${wrapUpRemaningTasks.length})`,
-            },
-          ]}>
+          actions={menuActios}>
           <FontAwesome6 name='ellipsis' size={24} color='black' />
         </MenuView>
       ),
     })
-  }, [dispatch, navigation, wrapUpEnabled, wrapUpRemaningTasks.length])
+  }, [
+    debugViewEnabled,
+    dispatch,
+    navigation,
+    wrapUpEnabled,
+    wrapUpRemaningTasks.length,
+  ])
 
   useEffect(() => {
     for (const taskPair of taskPairsForReport) {
@@ -317,6 +342,40 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
   if (isLoading) {
     return <FullPageLoading />
+  }
+
+  if (__DEV__ && debugViewEnabled) {
+    return (
+      <View style={styles.pageContainer}>
+        <FlatList
+          data={allTasksDebug}
+          ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+          renderItem={el => {
+            const typeStyle =
+              el.item.type === 'meaning'
+                ? { color: 'black' }
+                : { color: 'blue' }
+            return (
+              <View>
+                <Text style={typography.body}>
+                  <Text>{el.item.completed ? '✅' : '❌'} </Text>
+                  <Text style={typeStyle}>
+                    {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
+                  </Text>
+                  <Text>{el.item.subject.subject.characters}</Text>
+                  <Text>
+                    {el.item.numberOfErrors > 0
+                      ? `(${el.item.numberOfErrors})`
+                      : ''}
+                  </Text>
+                  <Text>{el.item.reported ? '📝' : ''}</Text>
+                </Text>
+              </View>
+            )
+          }}
+        />
+      </View>
+    )
   }
 
   // TODO: The cursor for TextInput is not in the middle when placeholder is in

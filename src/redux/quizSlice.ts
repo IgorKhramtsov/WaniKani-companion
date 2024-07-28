@@ -319,6 +319,15 @@ export const selectWrapUpRemainingTasks = createSelector(
   },
 )
 
+export const selectAllTasksDebug = createSelector(
+  (state: RootState) => state.quizSlice.completedTasks,
+  (state: RootState) => state.quizSlice.remainingTasks,
+  (completedTasks: QuizTask[], remainingTasks: QuizTask[]) => [
+    ...completedTasks,
+    ...remainingTasks,
+  ],
+)
+
 const selectRemainingTasks = createSelector(
   (state: RootState) => state.quizSlice.remainingTasks,
   selectWrapUpRemainingTasks,
