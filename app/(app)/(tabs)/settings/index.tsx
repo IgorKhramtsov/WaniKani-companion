@@ -10,6 +10,9 @@ import { useSession } from '@/src/context/authContext'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { useSettings } from '@/src/hooks/useSettings'
+import { useTabPress } from '@/src/hooks/useTabPress'
+import { useEffect, useState } from 'react'
+import Toast from 'react-native-root-toast'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -27,6 +30,34 @@ export default function Index() {
   const { styles } = useStyles(stylesheet)
   const { signOut } = useSession()
   const { settings, setProperty, isLoading } = useSettings()
+  const [debugEnableCounter, setDebugEnableCounter] = useState(0)
+
+  useTabPress(() => {
+    setDebugEnableCounter(c => c + 1)
+  })
+
+  useEffect(() => {
+    if (debugEnableCounter > 5) {
+      setDebugEnableCounter(0)
+      setProperty('enable_debug_mode', !settings.debug_mode_enabled)
+      Toast.show(
+        'Debug mode is now ' + (settings.debug_mode_enabled ? 'on' : 'off'),
+        {
+          containerStyle: {
+            paddingHorizontal: 32,
+          },
+          duration: Toast.durations.LONG,
+          position: -100,
+          backgroundColor: Colors.blue,
+          shadowColor: Colors.grayC5,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        },
+      )
+    }
+  }, [debugEnableCounter, setProperty, settings.debug_mode_enabled])
 
   if (isLoading) return <FullPageLoading />
   if (!settings) return <Text>Couldn't get user preferences</Text>

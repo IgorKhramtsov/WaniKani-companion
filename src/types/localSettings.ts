@@ -7,13 +7,21 @@ export const voiceTypeStrings = [
 ] as const
 export type VoiceType = (typeof voiceTypeStrings)[number]
 
-export interface LocalSettings {
+interface DebugSettings {
+  debug_mode_enabled: boolean
+}
+
+interface Settings {
   max_lessons_per_day: number
   default_voice: VoiceType
   interleave_advanced_lessons: boolean
 }
 
+export type LocalSettings = Settings & DebugSettings
+
 export const localSettingsDefautlValue: LocalSettings = {
+  debug_mode_enabled: false,
+
   max_lessons_per_day: 15,
   default_voice: 'random',
   interleave_advanced_lessons: true,

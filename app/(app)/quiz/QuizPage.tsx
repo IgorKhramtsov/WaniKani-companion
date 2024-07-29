@@ -16,14 +16,7 @@ import {
 } from '@/src/redux/quizSlice'
 import { Link, useNavigation } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  FlatList,
-  Keyboard,
-  Pressable,
-  Text,
-  TextStyle,
-  View,
-} from 'react-native'
+import { FlatList, Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -46,6 +39,7 @@ import { CreateReviewParams } from '@/src/types/createReviewParams'
 import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { FontAwesome6 } from '@expo/vector-icons'
+import { useSettings } from '@/src/hooks/useSettings'
 
 interface BaseProps {
   mode: QuizMode
@@ -76,8 +70,11 @@ const isSubjectProps = (
 
 export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const { completionCopy, completionTitle } = props
-  const dispatch = useAppDispatch()
+
   const { styles } = useStyles(stylesheet)
+  const dispatch = useAppDispatch()
+  const navigation = useNavigation()
+  const { settings } = useSettings()
   const currentInputRef = useRef<TextInput>(null)
   const nextInputRef = useRef<TextInput>(null)
 
@@ -162,7 +159,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     setInitiated(true)
   }, [enrichedSubjects, dispatch, assignments, props, initiated, isReadyToInit])
 
-  const navigation = useNavigation()
   useEffect(() => {
     const menuActios: MenuAction[] = []
     menuActios.push({
@@ -174,7 +170,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         ? 'Cancel Wrap Up'
         : `Wrap Up (${wrapUpRemaningTasks.length})`,
     })
-    if (__DEV__) {
+    if (settings.debug_mode_enabled) {
       menuActios.push({
         id: 'debug-view-all',
         title: debugViewEnabled ? 'Disable Debug View' : 'Enable Debug View',
@@ -197,6 +193,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       ),
     })
   }, [
+    settings.debug_mode_enabled,
     debugViewEnabled,
     dispatch,
     navigation,
@@ -344,7 +341,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     return <FullPageLoading />
   }
 
-  if (__DEV__ && debugViewEnabled) {
+  if (settings.debug_mode_enabled && debugViewEnabled) {
     return (
       <View style={styles.pageContainer}>
         <FlatList
