@@ -71,6 +71,12 @@ const getAllSubjects = async (db: SQLiteDatabase): Promise<Subject[]> => {
   return subjects
 }
 
+const resetDb = async (db: SQLiteDatabase) => {
+  await db.withExclusiveTransactionAsync(async txn => {
+    txn.runAsync('DROP TABLE IF EXISTS subjects')
+  })
+}
+
 export const dbHelper = {
   createTable,
   saveSubject,
@@ -78,6 +84,7 @@ export const dbHelper = {
   getSubject,
   getSubjects,
   getAllSubjects,
+  resetDb,
 }
 
 export {
@@ -87,4 +94,5 @@ export {
   getSubject,
   getSubjects,
   getAllSubjects,
+  resetDb,
 }
