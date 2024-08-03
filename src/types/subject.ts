@@ -133,6 +133,10 @@ export namespace SubjectUtils {
     return subject.type === 'kana_vocabulary'
   }
 
+  export function hasReading(subject: Subject): subject is Kanji | Vocabulary {
+    return isKanji(subject) || isVocabulary(subject)
+  }
+
   export function map<T>(
     subject: Subject,
     mapping: Record<Subject['type'], T>,

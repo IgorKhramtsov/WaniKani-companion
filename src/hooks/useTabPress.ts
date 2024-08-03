@@ -1,31 +1,36 @@
-// src: https://github.com/tonkeeper/wallet/blob/7452e11f8c6313f5a1f60bbc93e1b6a5e858470e/packages/router/src/hooks/useTabPress.ts
+// useScrollToTop from react-navigation
 
 import {
   EventArg,
+  NavigationContext,
   NavigationProp,
-  useNavigation,
+  ParamListBase,
   useRoute,
 } from '@react-navigation/core'
-import { useEffect, useRef } from 'react'
+import * as React from 'react'
 
-export const useTabPress = (fn: () => void) => {
-  const navigation = useNavigation()
+/// A hook that will invoke [onTabPressFn] on tab press to run custom logic
+/// such as scroll to top.
+export const useTabPress = (onTabPressFn: () => void) => {
+  const navigation = React.useContext(NavigationContext)
   const route = useRoute()
 
-  const fnRef = useRef(fn)
-  fnRef.current = fn
+  const fnRef = React.useRef(onTabPressFn)
+  fnRef.current = onTabPressFn
 
-  useEffect(() => {
-    let tabNavigations: Omit<
-      NavigationProp<ReactNavigation.RootParamList>,
-      'getState'
-    >[] = []
+  if (navigation === undefined) {
+    throw new Error(
+      "Couldn't find a navigation object. Is your component inside NavigationContainer?",
+    )
+  }
+
+  React.useEffect(() => {
+    const tabNavigations: NavigationProp<ParamListBase>[] = []
     let currentNavigation = navigation
-
     // If the screen is nested inside multiple tab navigators, we should scroll to top for any of them
     // So we need to find all the parent tab navigators and add the listeners there
     while (currentNavigation) {
-      if (currentNavigation.getState()?.type === 'tab') {
+      if (currentNavigation.getState().type === 'tab') {
         tabNavigations.push(currentNavigation)
       }
 
@@ -46,15 +51,19 @@ export const useTabPress = (fn: () => void) => {
           // We should scroll to top only when the screen is focused
           const isFocused = navigation.isFocused()
 
+          // In a nested stack navigator, tab press resets the stack to first screen
+          // So we should scroll to top only when we are on first screen
           const isFirst =
             tabNavigations.includes(navigation) ||
-            navigation.getState()?.routes[0].key === route.key
+            navigation.getState().routes[0].key === route.key
 
-          // TODO: scroll to the top if the screen isn't yet before executing
-          // the function.
-          if (isFocused && isFirst && !e.defaultPrevented) {
-            fnRef.current()
-          }
+          // Run the operation in the next frame so we're sure all listeners have been run
+          // This is necessary to know if preventDefault() has been called
+          requestAnimationFrame(() => {
+            if (isFocused && isFirst && !e.defaultPrevented) {
+              fnRef.current()
+            }
+          })
         },
       )
     })

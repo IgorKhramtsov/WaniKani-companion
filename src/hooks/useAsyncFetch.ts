@@ -1,20 +1,17 @@
 import { useEffect, useState } from 'react'
 
-type FetchResult<T> = { data: T; isLoading: boolean }
+type FetchResult<T> = { data: T | undefined; isLoading: boolean }
 
 export const useAsyncFetch = <T>(
-  initialValue: T,
   fetchFunc: () => Promise<T>,
   skip: boolean = false,
 ): FetchResult<T> => {
-  const [data, setData] = useState<T>(initialValue)
+  const [data, setData] = useState<T | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
 
-  // TODO: figure out why initialValue is always new
-  // useEffect(() => {
-  //   console.log('[useAsyncFetch]: useEffect initialValue')
-  // }, [initialValue])
-  //
+  useEffect(() => {
+    console.log('[useAsyncFetch]: useEffect: fetchFunc')
+  }, [fetchFunc])
 
   useEffect(() => {
     if (skip) return

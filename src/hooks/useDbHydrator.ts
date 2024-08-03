@@ -22,7 +22,7 @@ export const useDbHydrator = (enabled: boolean) => {
     [],
   )
 
-  const lastUpdate = useAsyncFetch(undefined, fetchLastUpdate)
+  const lastUpdate = useAsyncFetch(fetchLastUpdate)
 
   const shouldLoad = useMemo(() => {
     if (!enabled) return false

@@ -1,9 +1,18 @@
-import { Subject } from '../types/subject'
+import { Subject, SubjectUtils } from '../types/subject'
 import { SQLiteDatabase } from 'expo-sqlite'
+import wanakana from 'wanakana'
 
 const createTable = async (db: SQLiteDatabase) => {
   await db.runAsync(
-    'CREATE TABLE IF NOT EXISTS subjects (id INTEGER PRIMARY KEY, data TEXT)',
+    `CREATE TABLE IF NOT EXISTS subjects (
+      id INTEGER PRIMARY KEY,
+      data TEXT,
+      meanings TEXT NOT NULL,
+      readings TEXT,
+      meaning_mnemonic TEXT NOT NULL,
+      reading_mnemonic TEXT,
+      characters TEXT
+    )`,
   )
 }
 
@@ -20,10 +29,28 @@ const saveSubjects = async (db: SQLiteDatabase, subjects: Subject[]) => {
   try {
     await db.runAsync(
       [
-        'INSERT OR REPLACE INTO subjects (id, data) VALUES',
-        Array(subjects.length).fill('(?, ?)').join(', '),
+        `INSERT OR REPLACE INTO subjects (
+          id, 
+          data,
+          meanings,
+          readings,
+          meaning_mnemonic,
+          reading_mnemonic,
+          characters
+        ) VALUES`,
+        Array(subjects.length).fill('(?, ?, ?, ?, ?, ?, ?)').join(', '),
       ].join(' '),
-      subjects.flatMap(s => [s.id, JSON.stringify(s)]),
+      subjects.flatMap(s => [
+        s.id,
+        JSON.stringify(s),
+        s.meanings.map(e => e.meaning).join(','),
+        SubjectUtils.hasReading(s)
+          ? s.readings.map(e => e.reading).join(',')
+          : null,
+        s.meaning_mnemonic,
+        SubjectUtils.hasReading(s) ? s.reading_mnemonic : null,
+        s.characters,
+      ]),
     )
   } catch (e) {
     console.error('Failed to save subjects. ', e)
@@ -71,10 +98,44 @@ const getAllSubjects = async (db: SQLiteDatabase): Promise<Subject[]> => {
   return subjects
 }
 
+const searchSubjects = async (
+  db: SQLiteDatabase,
+  query: string,
+): Promise<Subject[]> => {
+  const queryJp = wanakana.toHiragana(query, { IMEMode: 'toHiragana' })
+  try {
+    // TODO: mnemonic search should show snippet of the found entry. This might
+    // result in a lot of results. We could experiment with ranking, for that
+    // the sqlite's FTS might be useful(https://www.youtube.com/watch?v=eXMA_2dEMO0)
+    //
+    // LOWER(meaning_mnemonic) LIKE ? OR
+    // LOWER(reading_mnemonic) LIKE ? OR
+    // `%${query}%`,
+    // `%${query}%`,
+    const results = await db.getAllAsync<{ data: string }>(
+      `SELECT data FROM subjects WHERE 
+        (',' || LOWER(meanings) || ',') LIKE ? OR 
+        (',' || LOWER(readings) || ',') LIKE ? OR 
+        characters LIKE ?
+        LIMIT 50
+`,
+      [`%,%${query}%,%`, `%,%${queryJp}%,%`, `%${queryJp}%`],
+    )
+    return results.map(row => JSON.parse(row.data))
+  } catch (e) {
+    console.error('Failed to search subjects. ', e)
+  }
+  return []
+}
+
 const resetDb = async (db: SQLiteDatabase) => {
-  await db.withExclusiveTransactionAsync(async txn => {
-    txn.runAsync('DROP TABLE IF EXISTS subjects')
-  })
+  try {
+    await db.withExclusiveTransactionAsync(async txn => {
+      await txn.runAsync('DROP TABLE IF EXISTS subjects')
+    })
+  } catch (e) {
+    console.error('Failed to reset db', e)
+  }
 }
 
 export const dbHelper = {
@@ -84,6 +145,7 @@ export const dbHelper = {
   getSubject,
   getSubjects,
   getAllSubjects,
+  searchSubjects,
   resetDb,
 }
 
@@ -94,5 +156,6 @@ export {
   getSubject,
   getSubjects,
   getAllSubjects,
+  searchSubjects,
   resetDb,
 }

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Toast from 'react-native-root-toast'
 import { useSQLiteContext } from 'expo-sqlite'
 import { dbHelper } from '@/src/utils/dbHelper'
+import { asyncStorageHelper } from '@/src/utils/asyncStorageHelper'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -35,8 +36,19 @@ export default function Index() {
   const [debugEnableCounter, setDebugEnableCounter] = useState(0)
 
   const db = useSQLiteContext()
-  const resetDb = useCallback(() => {
-    dbHelper.resetDb(db)
+  const resetDb = useCallback(async () => {
+    await dbHelper.resetDb(db)
+    await asyncStorageHelper.clearSubjectsLastUpdate()
+    Toast.show('Database has been reset', {
+      duration: Toast.durations.LONG,
+      position: -100,
+      backgroundColor: Colors.pink,
+      shadowColor: Colors.grayC5,
+      shadow: true,
+      animation: true,
+      hideOnPress: true,
+      delay: 0,
+    })
   }, [db])
 
   useTabPress(() => {

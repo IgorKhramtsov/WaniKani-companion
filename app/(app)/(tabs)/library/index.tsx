@@ -2,46 +2,74 @@ import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { FontAwesome } from '@expo/vector-icons'
-import { Keyboard, Pressable, Text, View } from 'react-native'
-import { TextInput } from 'react-native-gesture-handler'
+import { Keyboard, Pressable, View } from 'react-native'
+import { FlatList, TextInput } from 'react-native-gesture-handler'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { useTabPress } from '@/src/hooks/useTabPress'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSubjectSearch } from '@/src/hooks/useSubjectSearch'
+import { SubjectListItem } from './SubjectListItem'
+import { LoadingIndicator } from '@/src/components/LoadingIndicator'
 
 const Index = () => {
   const { styles } = useStyles(stylesheet)
+  const scrollViewRef = React.useRef<FlatList>(null)
   const searchInputRef = React.useRef<TextInput>(null)
-  const [searchInput, setSearchInput] = React.useState('')
+  const [scrollOffset, setScrollOffset] = React.useState(0)
+  const [query, setQuery] = React.useState('')
 
+  const { subjects, isLoading } = useSubjectSearch(query)
   useTabPress(() => {
-    searchInputRef.current?.focus()
+    if (scrollOffset > 0) {
+      scrollViewRef.current?.scrollToOffset({ offset: 0 })
+    } else {
+      searchInputRef.current?.focus()
+    }
   })
 
   return (
-    <SafeAreaView>
+    <SafeAreaView edges={['top']}>
       <Pressable
         style={{ height: '100%' }}
-        disabled={false}
+        disabled={true}
         onPress={Keyboard.dismiss}
         accessible={false}>
         <View style={styles.pageContainer}>
-          <View style={styles.search}>
-            <FontAwesome name='search' size={16} color={Colors.gray88} />
-            <View style={{ width: 8 }} />
-            <TextInput
-              ref={searchInputRef}
-              textAlignVertical='center'
-              multiline={false}
-              style={styles.searchInput}
-              placeholder='Search'
-              autoCorrect={false}
-              autoComplete='off'
-              onChangeText={setSearchInput}
-            />
-          </View>
           <View style={{ flex: 1 }}>
-            <Text>Search for kanji</Text>
+            <LoadingIndicator loading={isLoading}>
+              <FlatList
+                ref={scrollViewRef}
+                onScroll={e => setScrollOffset(e.nativeEvent.contentOffset.y)}
+                ListHeaderComponent={
+                  <View style={styles.search}>
+                    <FontAwesome
+                      name='search'
+                      size={16}
+                      color={Colors.gray88}
+                    />
+                    <View style={{ width: 8 }} />
+                    <TextInput
+                      ref={searchInputRef}
+                      textAlignVertical='center'
+                      multiline={false}
+                      style={styles.searchInput}
+                      placeholder='Search'
+                      autoCorrect={false}
+                      autoComplete='off'
+                      onChangeText={setQuery}
+                    />
+                  </View>
+                }
+                contentContainerStyle={{
+                  marginHorizontal: 30,
+                  paddingBottom: 16,
+                }}
+                data={subjects}
+                renderItem={({ item }) => <SubjectListItem subject={item} />}
+                ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+              />
+            </LoadingIndicator>
           </View>
         </View>
       </Pressable>
@@ -53,7 +81,6 @@ export default Index
 const stylesheet = createStyleSheet({
   pageContainer: {
     flex: 1,
-    marginHorizontal: 30,
     justifyContent: 'center',
   },
   search: {

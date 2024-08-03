@@ -59,7 +59,6 @@ const useFetchSubjectsAndHydrate_v2 = (
   }, [fetchFunc])
 
   const { data: dbSubjects, isLoading: dbIsLoading } = useAsyncFetch(
-    [],
     fetchFunc,
     sliceMissingIds.length === 0,
   )
@@ -67,7 +66,7 @@ const useFetchSubjectsAndHydrate_v2 = (
   useEffect(() => {
     if (dbIsLoading) return
 
-    if (dbSubjects.length > 0) {
+    if (dbSubjects && dbSubjects.length > 0) {
       console.log('[useSubjectCache_hydrate] hydrate slice:', dbSubjects.length)
       dispatch(subjectsReceived(dbSubjects))
     }
