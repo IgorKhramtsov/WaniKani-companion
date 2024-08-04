@@ -5,12 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Pressable, Text, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import { CompositionPage } from './CompositionPage'
-import { MeaningPage } from './MeaningPage'
-import { ReadingPage } from './ReadingPage'
-import { ContextPage } from './ContextPage'
-import { ExamplesPage } from './ExamplesPage'
-import { GlyphTile } from './GlyphTile'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
@@ -19,6 +13,12 @@ import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { useAppSelector } from '@/src/hooks/redux'
 import { selectAssignments } from '@/src/api/wanikaniApi'
+import { SubjectTile } from '@/src/components/SubjectTile'
+import { CompositionPage } from '@/src/components/CompositionPage'
+import { MeaningPage } from '@/src/components/MeaningPage'
+import { ReadingPage } from '@/src/components/ReadingPage'
+import { ContextPage } from '@/src/components/ContextPage'
+import { ExamplesPage } from '@/src/components/ExamplesPage'
 
 export default function Index() {
   const params = useLocalSearchParams<{
@@ -202,7 +202,11 @@ export default function Index() {
             key={subject.id}
             onPress={() => parentPagerView.current?.setPage(index)}>
             <View style={styles.subjectQueueItem}>
-              <GlyphTile id={subject.id} variant={'compact'} />
+              <SubjectTile
+                isPressable={false}
+                id={subject.id}
+                variant={'compact'}
+              />
             </View>
           </Pressable>
         ))}

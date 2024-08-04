@@ -6,7 +6,7 @@ import { Kanji } from './kanji'
 import { Meaning } from './meaning'
 import { PronunciationAudio } from './pronunciationAudio'
 import { Radical } from './radical'
-import { Reading } from './reading'
+import { Reading, ReadingType } from './reading'
 import { Vocabulary } from './vocabulary'
 
 export type Subject = Radical | Kanji | Vocabulary | KanaVocabulary
@@ -96,6 +96,25 @@ export namespace SubjectUtils {
 
   export const getPrimaryReadings = (subject: Kanji | Vocabulary): Reading[] =>
     subject.readings.filter(el => el.primary)
+
+  export const getReadingsByType = (
+    subject: Kanji | Vocabulary,
+  ): Record<ReadingType, Reading[]> => {
+    const readingsByType: Record<ReadingType, Reading[]> = {
+      kunyomi: [],
+      onyomi: [],
+      nanori: [],
+    }
+    subject.readings.forEach(reading => {
+      const type = reading.type
+      if (!type) {
+        console.warn('Reading type is missing', reading)
+        return
+      }
+      readingsByType[type].push(reading)
+    })
+    return readingsByType
+  }
 
   export const getPrononciationAudioForReading = (
     subject: Vocabulary | KanaVocabulary,

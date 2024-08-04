@@ -9,30 +9,48 @@ import typography from '@/src/constants/typography'
 import { Hint } from './Hint'
 import { Radical } from '@/src/types/radical'
 import { KanaVocabulary } from '@/src/types/kanaVocabulary'
+import { Fragment } from 'react'
 
 interface BaseProps {
-  topContent?: React.ReactNode
-  bottomContent?: React.ReactNode
   /*
    * whether to show the meaning (for review card)
    */
   showMeaning?: boolean
+  showOtherMeanings?: boolean
 }
 
 interface Props extends BaseProps {
   subject: Subject
 }
 
-export const MeaningPage = ({ subject, ...args }: Props) => {
+interface PageProps {
+  topContent?: React.ReactNode
+  bottomContent?: React.ReactNode
+}
+
+export const MeaningPage = ({
+  subject,
+  topContent,
+  bottomContent,
+  ...props
+}: Props & PageProps) => {
+  return (
+    <Page topContent={topContent} bottomContent={bottomContent}>
+      <MeaningSection subject={subject} {...props} />
+    </Page>
+  )
+}
+
+export const MeaningSection = ({ subject, ...props }: Props) => {
   if (SubjectUtils.isKanji(subject)) {
-    return KanjiPage({ subject, ...args })
+    return KanjiSection({ subject, ...props })
   } else if (
     SubjectUtils.isVocabulary(subject) ||
     SubjectUtils.isKanaVocabulary(subject)
   ) {
-    return VocabularyPage({ subject, ...args })
+    return VocabularySection({ subject, ...props })
   } else if (SubjectUtils.isRadical(subject)) {
-    return RadicalPage({ subject, ...args })
+    return RadicalSection({ subject, ...props })
   } else {
     return <Text>unknown subject</Text>
   }
@@ -42,11 +60,10 @@ interface VocabularyProps extends BaseProps {
   subject: Vocabulary | KanaVocabulary
 }
 
-export const VocabularyPage = ({
+export const VocabularySection = ({
   subject,
   showMeaning,
-  topContent,
-  bottomContent,
+  showOtherMeanings = true,
 }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
@@ -56,7 +73,7 @@ export const VocabularyPage = ({
   )
 
   return (
-    <Page topContent={topContent} bottomContent={bottomContent}>
+    <Fragment>
       {showMeaning && (
         <View>
           <PageSection title='Meaning'>
@@ -65,7 +82,7 @@ export const VocabularyPage = ({
           <View style={{ height: 16 }} />
         </View>
       )}
-      {otherMeanings.length > 0 && (
+      {showOtherMeanings && otherMeanings.length > 0 && (
         <View>
           <PageSection title='Other meanings'>
             <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
@@ -74,7 +91,9 @@ export const VocabularyPage = ({
         </View>
       )}
       <PageSection title='Word Type'>
-        <Text style={typography.body}>{subject.parts_of_speech}</Text>
+        <Text style={typography.body}>
+          {subject.parts_of_speech.join(', ')}
+        </Text>
       </PageSection>
       <View style={{ height: 16 }} />
       <PageSection title='Meaning Explanation'>
@@ -82,7 +101,7 @@ export const VocabularyPage = ({
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
       </PageSection>
-    </Page>
+    </Fragment>
   )
 }
 
@@ -90,12 +109,7 @@ interface KanjiProps extends BaseProps {
   subject: Kanji
 }
 
-export const KanjiPage = ({
-  subject,
-  showMeaning,
-  topContent,
-  bottomContent,
-}: KanjiProps) => {
+export const KanjiSection = ({ subject, showMeaning }: KanjiProps) => {
   const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
   const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
@@ -103,7 +117,7 @@ export const KanjiPage = ({
   )
 
   return (
-    <Page topContent={topContent} bottomContent={bottomContent}>
+    <Fragment>
       {showMeaning && (
         <View>
           <PageSection title='Meaning'>
@@ -127,7 +141,7 @@ export const KanjiPage = ({
         <View style={{ height: 16 }} />
         <Hint>{subject.meaning_hint}</Hint>
       </PageSection>
-    </Page>
+    </Fragment>
   )
 }
 
@@ -135,17 +149,12 @@ interface RadicalProps extends BaseProps {
   subject: Radical
 }
 
-export const RadicalPage = ({
-  subject,
-  showMeaning,
-  topContent,
-  bottomContent,
-}: RadicalProps) => {
+export const RadicalSection = ({ subject, showMeaning }: RadicalProps) => {
   const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
   return (
-    <Page topContent={topContent} bottomContent={bottomContent}>
+    <Fragment>
       {showMeaning && (
         <View>
           <PageSection title='Meaning'>
@@ -159,7 +168,7 @@ export const RadicalPage = ({
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
       </PageSection>
-    </Page>
+    </Fragment>
   )
 }
 

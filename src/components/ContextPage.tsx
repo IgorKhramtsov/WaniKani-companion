@@ -4,20 +4,36 @@ import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import typography from '@/src/constants/typography'
 import { KanaVocabulary } from '@/src/types/kanaVocabulary'
+import { Fragment } from 'react'
 
-type Props = {
-  subject: Vocabulary | KanaVocabulary
+interface PageProps {
   topContent?: React.ReactNode
   bottomContent?: React.ReactNode
 }
 
-export const ContextPage = ({ subject, bottomContent, topContent }: Props) => {
+type Props = {
+  subject: Vocabulary | KanaVocabulary
+}
+
+export const ContextPage = ({
+  subject,
+  bottomContent,
+  topContent,
+}: Props & PageProps) => {
+  return (
+    <Page bottomContent={bottomContent} topContent={topContent}>
+      <ContextSection subject={subject} />
+    </Page>
+  )
+}
+
+export const ContextSection = ({ subject }: Props) => {
   const { styles } = useStyles(stylesheet)
 
   // console.log('\n\nContext', subject.context_sentences)
 
   return (
-    <Page bottomContent={bottomContent} topContent={topContent}>
+    <Fragment>
       <PageSection title='Context Sentences'>
         <FlatList
           scrollEnabled={false}
@@ -34,7 +50,7 @@ export const ContextPage = ({ subject, bottomContent, topContent }: Props) => {
           )}
         />
       </PageSection>
-    </Page>
+    </Fragment>
   )
 }
 

@@ -18,6 +18,8 @@ const getDarker = (baseColor: string, strength: number) =>
 const getLighter = (baseColor: string, strength: number) =>
   tinycolor(baseColor).lighten(strength).toString()
 export const Colors = {
+  black: '#000',
+  white: '#fff',
   pink,
   blue,
   purple,

@@ -9,8 +9,8 @@ import { useTabPress } from '@/src/hooks/useTabPress'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useSubjectSearch } from '@/src/hooks/useSubjectSearch'
-import { SubjectListItem } from './SubjectListItem'
 import { LoadingIndicator } from '@/src/components/LoadingIndicator'
+import { SubjectTile } from '@/src/components/SubjectTile'
 
 const Index = () => {
   const { styles } = useStyles(stylesheet)
@@ -40,6 +40,7 @@ const Index = () => {
             <LoadingIndicator loading={isLoading}>
               <FlatList
                 ref={scrollViewRef}
+                data={subjects}
                 onScroll={e => setScrollOffset(e.nativeEvent.contentOffset.y)}
                 ListHeaderComponent={
                   <View style={styles.search}>
@@ -65,8 +66,13 @@ const Index = () => {
                   marginHorizontal: 30,
                   paddingBottom: 16,
                 }}
-                data={subjects}
-                renderItem={({ item }) => <SubjectListItem subject={item} />}
+                renderItem={({ item }) => (
+                  <SubjectTile
+                    key={item.id}
+                    variant='extended'
+                    subject={item}
+                  />
+                )}
                 ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
               />
             </LoadingIndicator>
