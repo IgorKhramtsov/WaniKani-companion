@@ -2,12 +2,15 @@ import { getApiKey, setApiKey } from '@/src/api/wanikaniApi'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSession } from '@/src/context/authContext'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
+import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
+import { QueryClient } from '@tanstack/react-query'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
 import { Redirect, Stack } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
 import { useEffect } from 'react'
 import { Text, View } from 'react-native'
 import * as Progress from 'react-native-progress'
+
 
 export default function RootLayout() {
   const { apiKey, isLoading: isSessionLoading } = useSession()
@@ -30,8 +33,8 @@ export default function RootLayout() {
   const {
     isLoading: isHydrating,
     progress: hydrationProgress,
-    subjectsTotalCount: hydrationTotalCount,
-    subjectsFetched: hydrationDoneCount,
+    totalCount: hydrationTotalCount,
+    objectsFetched: hydrationDoneCount,
   } = useDbHydrator(getApiKey() != null)
 
   if (isSessionLoading) {

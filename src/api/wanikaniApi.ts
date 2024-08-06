@@ -17,6 +17,9 @@ import { getLocalStartOfDayInUTC, isToday } from '../utils/dateUtils'
 // permissions and disable app's features if not authorized.
 //
 // TODO: Rewrite to React Query (tanstack)
+//
+// TODO: update assignments table of local db with data after completing
+// review/lesson
 let apiKey: string | undefined
 export const setApiKey = (key: string) => {
   apiKey = key
@@ -35,7 +38,14 @@ export const wanikaniApi = createApi({
       headers.set('Wanikani-Revision', '20170710')
     },
   }),
-  tagTypes: ['User', 'Subject', 'Reviews', 'Lessons'],
+  tagTypes: [
+    'User',
+    'Subject',
+    'Assignment',
+    'ReviewStatistic',
+    'Reviews',
+    'Lessons',
+  ],
   endpoints: build => ({
     getUser: build.query<User, void>({
       query: () => 'user',
@@ -130,6 +140,96 @@ export const wanikaniApi = createApi({
             ]
           : ['Subject'],
     }),
+    getAssignments: build.query<
+      { data: Assignment[]; hasMore: boolean; totalCount: number },
+      { updatedAfter?: string; pageAfterId?: number }
+    >({
+      query: ({ updatedAfter, pageAfterId }) => {
+        const params: {
+          ids?: string
+          updated_after?: string
+          page_after_id?: number
+        } = {}
+        if (updatedAfter) {
+          params['updated_after'] = updatedAfter
+        }
+        if (pageAfterId) {
+          params['page_after_id'] = pageAfterId
+        }
+        return {
+          url: 'assignments',
+          params,
+        }
+      },
+      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) => {
+        const data = response.data.map(
+          el => ({ ...el.data, id: el.id }) as Assignment,
+        )
+
+        return {
+          data,
+          totalCount: response.total_count,
+          hasMore: response.pages.next_url !== null,
+        }
+      },
+      providesTags: result =>
+        // TODO: check if this caching works correctly
+        result
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: 'Assignment' as const,
+                id,
+              })),
+              'Assignment',
+            ]
+          : ['Assignment'],
+    }),
+    getReviewStatistics: build.query<
+      { data: ReviewStatistic[]; hasMore: boolean; totalCount: number },
+      { updatedAfter?: string; pageAfterId?: number }
+    >({
+      query: ({ updatedAfter, pageAfterId }) => {
+        const params: {
+          ids?: string
+          updated_after?: string
+          page_after_id?: number
+        } = {}
+        if (updatedAfter) {
+          params['updated_after'] = updatedAfter
+        }
+        if (pageAfterId) {
+          params['page_after_id'] = pageAfterId
+        }
+        return {
+          url: 'review_statistics',
+          params,
+        }
+      },
+      transformResponse: (
+        response: ApiResponse<ApiResponse<ReviewStatistic>[]>,
+      ) => {
+        const data = response.data.map(
+          el => ({ ...el.data, id: el.id }) as ReviewStatistic,
+        )
+
+        return {
+          data,
+          totalCount: response.total_count,
+          hasMore: response.pages.next_url !== null,
+        }
+      },
+      providesTags: result =>
+        // TODO: check if this caching works correctly
+        result
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: 'ReviewStatistic' as const,
+                id,
+              })),
+              'ReviewStatistic',
+            ]
+          : ['ReviewStatistic'],
+    }),
     getReviews: build.query<Assignment[], void>({
       query: () => ({
         url: 'assignments',
@@ -200,6 +300,8 @@ export const {
   useGetLessonsCompletedTodayQuery,
   useGetReviewsQuery,
   useGetSubjectsQuery,
+  useGetAssignmentsQuery,
+  useGetReviewStatisticsQuery,
 
   useSetUserPreferencesMutation,
   useCreateReviewMutation,

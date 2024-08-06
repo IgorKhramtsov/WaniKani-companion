@@ -118,6 +118,7 @@ export const KanjiSection = ({ subject, variant }: KanjiProps) => {
                 primaryReadingType === type ? Colors.black : Colors.gray88
               return (
                 <View
+                  key={type}
                   style={{
                     padding: 4,
                     paddingHorizontal: 8,

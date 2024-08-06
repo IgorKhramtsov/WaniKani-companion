@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { asyncStorageHelper } from '../utils/asyncStorageHelper'
 import { useAsyncFetch } from './useAsyncFetch'
 import { wanikaniApi } from '../api/wanikaniApi'
@@ -7,23 +7,30 @@ import { dbHelper } from '../utils/dbHelper'
 
 const timeDiffTrigger = 1000 * 60 * 60 * 24 // 24 hours
 
+// TODO: try to abstract fetch logic instead of duplicating it for every
+// endpoint (after TanStack Query migration)
 export const useDbHydrator = (enabled: boolean) => {
-  const [subjectsFetched, setSubjectsFetched] = useState<number>(0)
+  const [objectsFetched, setObjectsFetched] = useState<number>(0)
   const [subjectsTotalCount, setSubjectsTotalCount] = useState<
     number | undefined
   >(undefined)
-  const [lastSubjectId, setLastSubjectId] = useState<number | undefined>(
-    undefined,
-  )
+  const [assignmentsTotalCount, setAssignmentsTotalCount] = useState<
+    number | undefined
+  >(undefined)
+  const [reviewStatisticsTotalCount, setReviewStatisticsTotalCount] = useState<
+    number | undefined
+  >(undefined)
+  const [subjectIdToFetchAfter, setSubjectIdToFetchAfter] = useState<
+    number | undefined
+  >(undefined)
+  const [assignmentIdToFetchAfter, setAssignmentIdToFetchAfter] = useState<
+    number | undefined
+  >(undefined)
+  const [reviewStatisticIdToFetchAfter, setReviewStatisticIdToFetchAfter] =
+    useState<number | undefined>(undefined)
   const [updateStart, setUpdateStart] = useState<Date | undefined>(undefined)
 
-  const fetchLastUpdate = useCallback(
-    () => asyncStorageHelper.getSubjectsLastUpdate(),
-    [],
-  )
-
-  const lastUpdate = useAsyncFetch(fetchLastUpdate)
-
+  const lastUpdate = useAsyncFetch(() => asyncStorageHelper.getLastUpdateTime())
   const shouldLoad = useMemo(() => {
     if (!enabled) return false
     if (lastUpdate.isLoading) return false
@@ -34,11 +41,26 @@ export const useDbHydrator = (enabled: boolean) => {
     return true
   }, [lastUpdate.isLoading, lastUpdate.data, enabled])
 
-  const { data: apiSubjectsData, isLoading: apiIsLoading } =
+  const { data: apiSubjectsData, isLoading: apiSubjectsIsLoading } =
     wanikaniApi.useGetSubjectsQuery(
-      { updatedAfter: lastUpdate.data, pageAfterId: lastSubjectId },
+      { updatedAfter: lastUpdate.data, pageAfterId: subjectIdToFetchAfter },
       { skip: !shouldLoad },
     )
+  const { data: apiAssignmentsData, isLoading: apiAssignmentsIsLoading } =
+    wanikaniApi.useGetAssignmentsQuery(
+      { updatedAfter: lastUpdate.data, pageAfterId: assignmentIdToFetchAfter },
+      { skip: !shouldLoad },
+    )
+  const {
+    data: apiReviewStatisticsData,
+    isLoading: apiReviewStatisticsIsLoading,
+  } = wanikaniApi.useGetReviewStatisticsQuery(
+    {
+      updatedAfter: lastUpdate.data,
+      pageAfterId: reviewStatisticIdToFetchAfter,
+    },
+    { skip: !shouldLoad },
+  )
 
   useEffect(() => {
     if (apiSubjectsData) {
@@ -46,20 +68,66 @@ export const useDbHydrator = (enabled: boolean) => {
     }
   }, [apiSubjectsData])
 
+  useEffect(() => {
+    if (apiAssignmentsData) {
+      setAssignmentsTotalCount(apiAssignmentsData?.totalCount)
+    }
+  }, [apiAssignmentsData])
+
+  useEffect(() => {
+    if (apiReviewStatisticsData) {
+      setReviewStatisticsTotalCount(apiReviewStatisticsData?.totalCount)
+    }
+  }, [apiReviewStatisticsData])
+
   const subjects = useMemo(() => {
     if (!shouldLoad) return []
 
     return apiSubjectsData?.data ?? []
   }, [shouldLoad, apiSubjectsData])
 
+  const assignments = useMemo(() => {
+    if (!shouldLoad) return []
+
+    return apiAssignmentsData?.data ?? []
+  }, [shouldLoad, apiAssignmentsData])
+
+  const reviewStatistics = useMemo(() => {
+    if (!shouldLoad) return []
+
+    return apiReviewStatisticsData?.data ?? []
+  }, [shouldLoad, apiReviewStatisticsData])
+
   const db = useSQLiteContext()
 
   useEffect(() => {
     if (subjects.length > 0) {
-      setSubjectsFetched(prev => prev + subjects.length)
-      setLastSubjectId(subjects[subjects.length - 1].id)
+      setObjectsFetched(prev => prev + subjects.length)
+      if (apiSubjectsData?.hasMore) {
+        setSubjectIdToFetchAfter(subjects[subjects.length - 1].id)
+      }
     }
-  }, [subjects])
+  }, [subjects, apiSubjectsData?.hasMore])
+
+  useEffect(() => {
+    if (assignments.length > 0) {
+      setObjectsFetched(prev => prev + assignments.length)
+      if (apiAssignmentsData?.hasMore) {
+        setAssignmentIdToFetchAfter(assignments[assignments.length - 1].id)
+      }
+    }
+  }, [assignments, apiAssignmentsData?.hasMore])
+
+  useEffect(() => {
+    if (reviewStatistics.length > 0) {
+      setObjectsFetched(prev => prev + reviewStatistics.length)
+      if (apiAssignmentsData?.hasMore) {
+        setReviewStatisticIdToFetchAfter(
+          reviewStatistics[reviewStatistics.length - 1].id,
+        )
+      }
+    }
+  }, [reviewStatistics, apiAssignmentsData?.hasMore])
 
   useEffect(() => {
     if (subjects.length > 0) {
@@ -68,29 +136,97 @@ export const useDbHydrator = (enabled: boolean) => {
   }, [subjects, db])
 
   useEffect(() => {
+    if (assignments.length > 0) {
+      dbHelper.saveAssignments(db, assignments)
+    }
+  }, [assignments, db])
+
+  useEffect(() => {
+    if (reviewStatistics.length > 0) {
+      dbHelper.saveReviewStatistics(db, reviewStatistics)
+    }
+  }, [reviewStatistics, db])
+
+  useEffect(() => {
     if (
       shouldLoad &&
       updateStart &&
-      !apiIsLoading &&
-      !apiSubjectsData?.hasMore
+      !apiSubjectsIsLoading &&
+      !apiAssignmentsIsLoading &&
+      !apiSubjectsData?.hasMore &&
+      !apiAssignmentsData?.hasMore &&
+      !apiReviewStatisticsData?.hasMore
     ) {
-      asyncStorageHelper.setSubjectsLastUpdate(updateStart.toISOString())
+      asyncStorageHelper.setLastUpdateTime(updateStart.toISOString())
+      setUpdateStart(undefined)
+      setObjectsFetched(0)
+      setSubjectsTotalCount(undefined)
+      setAssignmentsTotalCount(undefined)
+      setReviewStatisticsTotalCount(undefined)
     }
-  }, [shouldLoad, updateStart, apiIsLoading, apiSubjectsData?.hasMore])
+  }, [
+    shouldLoad,
+    updateStart,
+    apiSubjectsIsLoading,
+    apiAssignmentsIsLoading,
+    apiSubjectsData?.hasMore,
+    apiAssignmentsData?.hasMore,
+    apiReviewStatisticsData?.hasMore,
+  ])
 
   const isLoading = useMemo(() => {
     return (
-      apiIsLoading || apiSubjectsData?.hasMore === true || lastUpdate.isLoading
+      apiSubjectsIsLoading ||
+      apiAssignmentsIsLoading ||
+      apiReviewStatisticsIsLoading ||
+      apiSubjectsData?.hasMore === true ||
+      apiAssignmentsData?.hasMore === true ||
+      apiReviewStatisticsData?.hasMore === true ||
+      lastUpdate.isLoading
     )
-  }, [apiIsLoading, apiSubjectsData, lastUpdate.isLoading])
+  }, [
+    apiAssignmentsData?.hasMore,
+    apiAssignmentsIsLoading,
+    apiReviewStatisticsData?.hasMore,
+    apiReviewStatisticsIsLoading,
+    apiSubjectsData?.hasMore,
+    apiSubjectsIsLoading,
+    lastUpdate.isLoading,
+  ])
 
   const progress = useMemo(() => {
-    if (!shouldLoad || !subjectsTotalCount) return 0
+    if (
+      !shouldLoad ||
+      (!subjectsTotalCount &&
+        !assignmentsTotalCount &&
+        !reviewStatisticsTotalCount)
+    )
+      return 0
 
-    return subjectsFetched / subjectsTotalCount
-  }, [shouldLoad, subjectsFetched, subjectsTotalCount])
+    const total =
+      (subjectsTotalCount ?? 0) +
+      (assignmentsTotalCount ?? 0) +
+      (reviewStatisticsTotalCount ?? 0)
 
-  return { isLoading, progress, subjectsTotalCount, subjectsFetched }
+    if (total === 0) return 0 // Just in case
+    return objectsFetched / total
+  }, [
+    shouldLoad,
+    objectsFetched,
+    subjectsTotalCount,
+    assignmentsTotalCount,
+    reviewStatisticsTotalCount,
+  ])
+
+  return {
+    isLoading,
+    progress,
+    totalCount:
+      (subjectsTotalCount ?? 0) +
+      (assignmentsTotalCount ?? 0) +
+      (reviewStatisticsTotalCount ?? 0),
+    objectsFetched: objectsFetched,
+  }
 }
 
 const shouldTrigger = (lastUpdate: string | null | undefined) => {

@@ -1,8 +1,10 @@
 import { Subject, SubjectUtils } from '../types/subject'
 import { SQLiteDatabase } from 'expo-sqlite'
 import wanakana from 'wanakana'
+import { Assignment } from '../types/assignment'
+import { ReviewStatistic } from '../types/reviewStatistic'
 
-const createTable = async (db: SQLiteDatabase) => {
+const createTables = async (db: SQLiteDatabase) => {
   await db.runAsync(
     `CREATE TABLE IF NOT EXISTS subjects (
       id INTEGER PRIMARY KEY,
@@ -14,6 +16,20 @@ const createTable = async (db: SQLiteDatabase) => {
       characters TEXT
     )`,
   )
+  await db.runAsync(
+    `CREATE TABLE IF NOT EXISTS assignments (
+      id INTEGER PRIMARY KEY,
+      data TEXT,
+      subject_id TEXT NOT NULL
+    )`,
+  )
+  await db.runAsync(
+    `CREATE TABLE IF NOT EXISTS review_statistics (
+      id INTEGER PRIMARY KEY,
+      data TEXT,
+      subject_id TEXT NOT NULL
+    )`,
+  )
 }
 
 const saveSubject = async (db: SQLiteDatabase, subject: Subject) => {
@@ -23,6 +39,48 @@ const saveSubject = async (db: SQLiteDatabase, subject: Subject) => {
     'INSERT OR REPLACE INTO subjects (id, data) VALUES (?, ?)',
     [id, data],
   )
+}
+
+const saveAssignments = async (
+  db: SQLiteDatabase,
+  assignments: Assignment[],
+) => {
+  try {
+    await db.runAsync(
+      [
+        `INSERT OR REPLACE INTO assignments (
+          id, 
+          data,
+          subject_id
+        ) VALUES`,
+        Array(assignments.length).fill('(?, ?, ?)').join(', '),
+      ].join(' '),
+      assignments.flatMap(e => [e.id, JSON.stringify(e), e.subject_id]),
+    )
+  } catch (e) {
+    console.error('Failed to save assignments. ', e)
+  }
+}
+
+const saveReviewStatistics = async (
+  db: SQLiteDatabase,
+  reviewStatistics: ReviewStatistic[],
+) => {
+  try {
+    await db.runAsync(
+      [
+        `INSERT OR REPLACE INTO review_statistics (
+          id, 
+          data,
+          subject_id
+        ) VALUES`,
+        Array(reviewStatistics.length).fill('(?, ?, ?)').join(', '),
+      ].join(' '),
+      reviewStatistics.flatMap(e => [e.id, JSON.stringify(e), e.subject_id]),
+    )
+  } catch (e) {
+    console.error('Failed to save assignments. ', e)
+  }
 }
 
 const saveSubjects = async (db: SQLiteDatabase, subjects: Subject[]) => {
@@ -67,6 +125,40 @@ const getSubject = async (
   )
   if (result?.data) {
     return JSON.parse(result.data)
+  }
+}
+
+const getAssignment = async (
+  db: SQLiteDatabase,
+  subject_id: number,
+): Promise<Assignment | undefined> => {
+  try {
+    const result = await db.getFirstAsync<{ data: string }>(
+      'SELECT data FROM assignments WHERE subject_id = ?',
+      [subject_id],
+    )
+    if (result?.data) {
+      return JSON.parse(result.data)
+    }
+  } catch (e) {
+    console.error('Failed to get assignment. ', e)
+  }
+}
+
+const getReviewStatistic = async (
+  db: SQLiteDatabase,
+  subject_id: number,
+): Promise<ReviewStatistic | undefined> => {
+  try {
+    const result = await db.getFirstAsync<{ data: string }>(
+      'SELECT data FROM review_statistics WHERE subject_id = ?',
+      [subject_id],
+    )
+    if (result?.data) {
+      return JSON.parse(result.data)
+    }
+  } catch (e) {
+    console.error('Failed to get assignment. ', e)
   }
 }
 
@@ -132,6 +224,8 @@ const resetDb = async (db: SQLiteDatabase) => {
   try {
     await db.withExclusiveTransactionAsync(async txn => {
       await txn.runAsync('DROP TABLE IF EXISTS subjects')
+      await txn.runAsync('DROP TABLE IF EXISTS assignments')
+      await txn.runAsync('DROP TABLE IF EXISTS review_statistics')
     })
   } catch (e) {
     console.error('Failed to reset db', e)
@@ -139,23 +233,31 @@ const resetDb = async (db: SQLiteDatabase) => {
 }
 
 export const dbHelper = {
-  createTable,
+  createTables,
   saveSubject,
   saveSubjects,
   getSubject,
   getSubjects,
   getAllSubjects,
   searchSubjects,
+  saveAssignments,
+  getAssignment,
+  saveReviewStatistics,
+  getReviewStatistic,
   resetDb,
 }
 
 export {
-  createTable,
+  createTables,
   saveSubject,
   saveSubjects,
   getSubject,
   getSubjects,
   getAllSubjects,
   searchSubjects,
+  saveAssignments,
+  getAssignment,
+  saveReviewStatistics,
+  getReviewStatistic,
   resetDb,
 }

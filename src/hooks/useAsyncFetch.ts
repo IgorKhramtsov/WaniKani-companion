@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 type FetchResult<T> = { data: T | undefined; isLoading: boolean }
 
@@ -8,17 +8,15 @@ export const useAsyncFetch = <T>(
 ): FetchResult<T> => {
   const [data, setData] = useState<T | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    console.log('[useAsyncFetch]: useEffect: fetchFunc')
-  }, [fetchFunc])
+  const fetchFuncRef = React.useRef(fetchFunc)
+  fetchFuncRef.current = fetchFunc
 
   useEffect(() => {
     if (skip) return
 
     setIsLoading(true)
     const fetch = async () => {
-      const data = await fetchFunc()
+      const data = await fetchFuncRef.current()
       console.log('[useAsyncFetch]: fetch done')
       setData(data)
       setIsLoading(false)
@@ -28,7 +26,7 @@ export const useAsyncFetch = <T>(
       console.error(err)
       setIsLoading(false)
     })
-  }, [skip, fetchFunc, setIsLoading, setData])
+  }, [skip, setIsLoading, setData])
 
   return { data, isLoading }
 }

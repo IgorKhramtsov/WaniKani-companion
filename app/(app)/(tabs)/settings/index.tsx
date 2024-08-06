@@ -38,7 +38,7 @@ export default function Index() {
   const db = useSQLiteContext()
   const resetDb = useCallback(async () => {
     await dbHelper.resetDb(db)
-    await asyncStorageHelper.clearSubjectsLastUpdate()
+    await asyncStorageHelper.clearLastUpdateTime()
     Toast.show('Database has been reset', {
       duration: Toast.durations.LONG,
       position: -100,
