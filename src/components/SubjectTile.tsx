@@ -104,7 +104,7 @@ export const SubjectTile = ({
     <Pressable
       disabled={!isPressable}
       onPress={() =>
-        router.navigate({ pathname: '/subject', params: { id: subject.id } })
+        router.push({ pathname: '/subject', params: { id: subject.id } })
       }>
       {node}
     </Pressable>

@@ -8,6 +8,7 @@ import { SubjectTile } from '@/src/components/SubjectTile'
 import { Page, PageSection } from './Page'
 import { Fragment, useMemo } from 'react'
 import typography from '@/src/constants/typography'
+import { appStyles } from '../constants/styles'
 
 interface PageProps {
   topContent?: React.ReactNode
@@ -55,16 +56,24 @@ export const CompositionSection = ({ subject }: CompositionPageProps) => {
             <View style={{ height: 24 }} />
           </Fragment>
         )}
-        <FlatList
-          scrollEnabled={false}
-          style={styles.flatList}
-          data={subjectIdsToShow}
-          renderItem={el => <SubjectTile key={el.item} id={el.item} />}
-          ItemSeparatorComponent={() => (
-            <View style={styles.flatListSeparator} />
-          )}
-          horizontal
-        />
+        <View style={styles.compositionRow}>
+          {subjectIdsToShow.map(id => (
+            <View
+              key={id}
+              style={{
+                padding: 4,
+                paddingHorizontal: 8,
+                minWidth: `50%`,
+                flexGrow: 1,
+                // Maybe make it smaller instead? (In wanikani web they are
+                // smaller)
+                alignItems: 'center',
+                // backgroundColor: 'black',
+              }}>
+              <SubjectTile id={id} />
+            </View>
+          ))}
+        </View>
       </PageSection>
     </Fragment>
   )
@@ -76,5 +85,9 @@ const compositionPageStylesheet = createStyleSheet({
   },
   flatListSeparator: {
     width: 24,
+  },
+  compositionRow: {
+    ...appStyles.row,
+    flexWrap: 'wrap',
   },
 })

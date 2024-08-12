@@ -12,15 +12,16 @@ import { srsStageToColor, srsStageToMilestone } from '@/src/types/assignment'
 import { Subject, SubjectUtils } from '@/src/types/subject'
 import { dbHelper } from '@/src/utils/dbHelper'
 import { useQuery } from '@tanstack/react-query'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
 import { toLower } from 'lodash'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useLayoutEffect, useMemo } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
+  const navigation = useNavigation()
   const params = useLocalSearchParams<{
     id: string
   }>()
@@ -31,9 +32,9 @@ export default function Index() {
   const { isPending: isAssignmentLoading, data: assignment } = useQuery({
     queryKey: ['assignment', db, subject?.id],
     queryFn: async () => {
-      if (!subject?.id) return undefined
+      if (!subject?.id) return null
 
-      return await dbHelper.getAssignment(db, subject?.id)
+      return (await dbHelper.getAssignment(db, subject?.id)) ?? null
     },
     enabled: !!subject,
   })
@@ -41,9 +42,9 @@ export default function Index() {
     useQuery({
       queryKey: ['review_statistic', db, subject?.id],
       queryFn: async () => {
-        if (!subject?.id) return undefined
+        if (!subject?.id) return null
 
-        return await dbHelper.getReviewStatistic(db, subject?.id)
+        return (await dbHelper.getReviewStatistic(db, subject?.id)) ?? null
       },
       enabled: !!subject,
     })
@@ -68,6 +69,13 @@ export default function Index() {
     [subject?.meanings],
   )
 
+  useLayoutEffect(() => {
+    console.log('subject chars', subject?.characters)
+    navigation.setOptions({
+      title: subject?.characters,
+    })
+  }, [navigation, subject])
+
   if (isLoading || isAssignmentLoading || isReviewStatisticLoading)
     return <FullPageLoading />
   if (!subject) return <Text>Subject not found</Text>
@@ -77,19 +85,23 @@ export default function Index() {
   return (
     <ScrollView contentContainerStyle={styles.pageView}>
       <Fragment>
-        <View
-          style={[
-            styles.stageBar,
-            {
-              backgroundColor: stageColor,
-              borderBottomColor: Colors.getBottomBorderColor(stageColor),
-            },
-          ]}>
-          {stageName && <Text style={styles.stageText}>{stageName}</Text>}
-          <Text style={styles.stageText}>
-            🎯{reviewStatistic?.percentage_correct}%
-          </Text>
-        </View>
+        {stageName && (
+          <View
+            style={[
+              styles.stageBar,
+              {
+                backgroundColor: stageColor,
+                borderBottomColor: Colors.getBottomBorderColor(stageColor),
+              },
+            ]}>
+            {stageName && <Text style={styles.stageText}>{stageName}</Text>}
+            {reviewStatistic && (
+              <Text style={styles.stageText}>
+                🎯{reviewStatistic?.percentage_correct}%
+              </Text>
+            )}
+          </View>
+        )}
         <View style={{ height: 12 }} />
         <View style={{ alignItems: 'center' }}>
           <View style={{ flexDirection: 'row' }}>
