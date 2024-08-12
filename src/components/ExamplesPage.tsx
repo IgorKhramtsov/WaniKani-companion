@@ -5,37 +5,63 @@ import typography from '@/src/constants/typography'
 import { Kanji } from '@/src/types/kanji'
 import { Radical } from '@/src/types/radical'
 import { SubjectUtils } from '@/src/types/subject'
-import { GlyphTile } from './GlyphTile'
+import { SubjectTile } from '@/src/components/SubjectTile'
 import { appStyles } from '@/src/constants/styles'
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 
-type Props = {
-  subject: Kanji | Radical
+interface PageProps {
   topContent?: React.ReactNode
   bottomContent?: React.ReactNode
 }
 
-export const ExamplesPage = ({ subject, bottomContent, topContent }: Props) => {
+type ViewVariant = 'standard' | 'minimal'
+
+type Props = {
+  subject: Kanji | Radical
+  variant?: ViewVariant
+}
+
+export const ExamplesPage = ({
+  bottomContent,
+  topContent,
+  ...props
+}: Props & PageProps) => {
+  return (
+    <Page bottomContent={bottomContent} topContent={topContent}>
+      <ExamplesSection {...props} />
+    </Page>
+  )
+}
+
+export const ExamplesSection = ({ subject, variant = 'minimal' }: Props) => {
   const { styles } = useStyles(stylesheet)
   const subjectIdsToShow = useMemo(() => {
-    return subject.amalgamation_subject_ids.slice(0, 3)
-  }, [subject])
+    const source = subject.amalgamation_subject_ids
+    if (variant === 'minimal') {
+      return source.slice(0, 3)
+    }
+    return source
+  }, [variant, subject])
 
   console.log('[ExamplesPage] ids: ', subject.amalgamation_subject_ids)
   const componentName = SubjectUtils.isKanji(subject) ? 'Vocabulary' : 'Kanji'
 
+  const listItemStyle =
+    variant === 'minimal' ? styles.listItemMinimal : styles.listItemStandard
+
   return (
-    <Page bottomContent={bottomContent} topContent={topContent}>
+    <Fragment>
       <PageSection title={`${componentName} Examples`}>
         <View style={styles.wrapList}>
           {subjectIdsToShow.map(id => (
-            <View style={styles.listItem} key={id}>
-              <GlyphTile id={id} />
+            // TODO: consider list for standard variant for optimization?
+            <View style={listItemStyle} key={id}>
+              <SubjectTile variant='extended' id={id} />
             </View>
           ))}
         </View>
       </PageSection>
-    </Page>
+    </Fragment>
   )
 }
 
@@ -45,9 +71,13 @@ const stylesheet = createStyleSheet({
     justifyContent: 'flex-start',
     flexWrap: 'wrap',
   },
-  listItem: {
+  listItemMinimal: {
     minWidth: '50%',
     padding: 3,
+  },
+  listItemStandard: {
+    minWidth: '100%',
+    paddingVertical: 2,
   },
   jaText: {
     ...typography.body,

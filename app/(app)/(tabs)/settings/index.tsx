@@ -11,8 +11,11 @@ import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useTabPress } from '@/src/hooks/useTabPress'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Toast from 'react-native-root-toast'
+import { useSQLiteContext } from 'expo-sqlite'
+import { dbHelper } from '@/src/utils/dbHelper'
+import { asyncStorageHelper } from '@/src/utils/asyncStorageHelper'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -32,6 +35,22 @@ export default function Index() {
   const { settings, setProperty, isLoading } = useSettings()
   const [debugEnableCounter, setDebugEnableCounter] = useState(0)
 
+  const db = useSQLiteContext()
+  const resetDb = useCallback(async () => {
+    await dbHelper.resetDb(db)
+    await asyncStorageHelper.clearLastUpdateTime()
+    Toast.show('Database has been reset', {
+      duration: Toast.durations.LONG,
+      position: -100,
+      backgroundColor: Colors.pink,
+      shadowColor: Colors.grayC5,
+      shadow: true,
+      animation: true,
+      hideOnPress: true,
+      delay: 0,
+    })
+  }, [db])
+
   useTabPress(() => {
     setDebugEnableCounter(c => c + 1)
   })
@@ -39,9 +58,9 @@ export default function Index() {
   useEffect(() => {
     if (debugEnableCounter > 5) {
       setDebugEnableCounter(0)
-      setProperty('enable_debug_mode', !settings.debug_mode_enabled)
+      setProperty('debug_mode_enabled', !settings.debug_mode_enabled)
       Toast.show(
-        'Debug mode is now ' + (settings.debug_mode_enabled ? 'on' : 'off'),
+        'Debug mode is now ' + (!settings.debug_mode_enabled ? 'on' : 'off'),
         {
           containerStyle: {
             paddingHorizontal: 32,
@@ -59,111 +78,126 @@ export default function Index() {
     }
   }, [debugEnableCounter, setProperty, settings.debug_mode_enabled])
 
+  const sectionsData: SectionsData[] = useMemo(() => {
+    const sectionsData: SectionsData[] = [
+      {
+        title: 'Lesson',
+        data: [
+          {
+            title: 'Preferred lesson batch size',
+            type: 'page',
+            value: settings.lessons_batch_size,
+            onPress: () => router.navigate('/(tabs)/settings/batchSize'),
+          },
+          {
+            title: 'Maximum recommended daily lessons',
+            type: 'page',
+            onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
+          },
+          {
+            title: 'Interleave Advanced Lessons',
+            type: 'page',
+            onPress: () =>
+              router.navigate('/(tabs)/settings/interleaveAdvancedLessons'),
+          },
+        ],
+      },
+      {
+        title: 'Review',
+        footer:
+          'During the review session the SRS change indicator will appear for items completed.',
+        data: [
+          {
+            title: 'SRS update indicator during reviews',
+            type: 'switch',
+            value: settings.reviews_display_srs_indicator,
+            onPress: () =>
+              setProperty(
+                'reviews_display_srs_indicator',
+                !settings.reviews_display_srs_indicator,
+              ),
+          },
+        ],
+      },
+      {
+        data: [
+          {
+            title: 'Review ordering',
+            type: 'page',
+            value: settings.reviews_presentation_order,
+            onPress: () => router.navigate('/(tabs)/settings/reviewOrdering'),
+          },
+        ],
+      },
+      {
+        title: 'Audio',
+        data: [
+          {
+            title: 'Default voice',
+            type: 'page',
+            value: settings.default_voice,
+            onPress: () => router.navigate('/(tabs)/settings/defaultVoice'),
+          },
+          {
+            title: 'Autoplay audio in lessons',
+            type: 'switch',
+            value: settings.lessons_autoplay_audio,
+            onPress: () =>
+              setProperty(
+                'lessons_autoplay_audio',
+                !settings.lessons_autoplay_audio,
+              ),
+          },
+          {
+            title: 'Autoplay audio in reviews',
+            type: 'switch',
+            value: settings.reviews_autoplay_audio,
+            onPress: () =>
+              setProperty(
+                'reviews_autoplay_audio',
+                !settings.reviews_autoplay_audio,
+              ),
+          },
+          {
+            title: 'Autoplay audio in extra study',
+            type: 'switch',
+            value: settings.extra_study_autoplay_audio,
+            onPress: () =>
+              setProperty(
+                'extra_study_autoplay_audio',
+                !settings.extra_study_autoplay_audio,
+              ),
+          },
+        ],
+      },
+      {
+        title: 'Account',
+        data: [
+          {
+            title: 'Logout',
+            type: 'destructiveButton',
+            onPress: signOut,
+          },
+        ],
+      },
+    ]
+    if (settings.debug_mode_enabled) {
+      sectionsData.push({
+        title: 'Debug',
+        data: [
+          {
+            title: 'Reset DB',
+            type: 'destructiveButton',
+            onPress: resetDb,
+          },
+        ],
+      })
+    }
+    return sectionsData
+  }, [setProperty, resetDb, settings, signOut])
+
   if (isLoading) return <FullPageLoading />
   if (!settings) return <Text>Couldn't get user preferences</Text>
-
-  const sectionsData: SectionsData[] = [
-    {
-      title: 'Lesson',
-      data: [
-        {
-          title: 'Preferred lesson batch size',
-          type: 'page',
-          value: settings.lessons_batch_size,
-          onPress: () => router.navigate('/(tabs)/settings/batchSize'),
-        },
-        {
-          title: 'Maximum recommended daily lessons',
-          type: 'page',
-          onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
-        },
-        {
-          title: 'Interleave Advanced Lessons',
-          type: 'page',
-          onPress: () =>
-            router.navigate('/(tabs)/settings/interleaveAdvancedLessons'),
-        },
-      ],
-    },
-    {
-      title: 'Review',
-      footer:
-        'During the review session the SRS change indicator will appear for items completed.',
-      data: [
-        {
-          title: 'SRS update indicator during reviews',
-          type: 'switch',
-          value: settings.reviews_display_srs_indicator,
-          onPress: () =>
-            setProperty(
-              'reviews_display_srs_indicator',
-              !settings.reviews_display_srs_indicator,
-            ),
-        },
-      ],
-    },
-    {
-      data: [
-        {
-          title: 'Review ordering',
-          type: 'page',
-          value: settings.reviews_presentation_order,
-          onPress: () => router.navigate('/(tabs)/settings/reviewOrdering'),
-        },
-      ],
-    },
-    {
-      title: 'Audio',
-      data: [
-        {
-          title: 'Default voice',
-          type: 'page',
-          value: settings.default_voice,
-          onPress: () => router.navigate('/(tabs)/settings/defaultVoice'),
-        },
-        {
-          title: 'Autoplay audio in lessons',
-          type: 'switch',
-          value: settings.lessons_autoplay_audio,
-          onPress: () =>
-            setProperty(
-              'lessons_autoplay_audio',
-              !settings.lessons_autoplay_audio,
-            ),
-        },
-        {
-          title: 'Autoplay audio in reviews',
-          type: 'switch',
-          value: settings.reviews_autoplay_audio,
-          onPress: () =>
-            setProperty(
-              'reviews_autoplay_audio',
-              !settings.reviews_autoplay_audio,
-            ),
-        },
-        {
-          title: 'Autoplay audio in extra study',
-          type: 'switch',
-          value: settings.extra_study_autoplay_audio,
-          onPress: () =>
-            setProperty(
-              'extra_study_autoplay_audio',
-              !settings.extra_study_autoplay_audio,
-            ),
-        },
-      ],
-    },
-    {
-      title: 'Account',
-      data: [
-        {
-          title: 'Logout',
-          type: 'destructiveButton',
-          onPress: () => signOut(),
-        },
-      ],
-    },
-  ]
 
   return (
     <SettingsSectionedPage

@@ -8,20 +8,22 @@ import tinycolor from 'tinycolor2'
 const tintColorLight = '#0a7ea4'
 const tintColorDark = '#fff'
 
-const pink = '#FF00AA'
-const purple = '#9F01ED'
-const blue = '#00AAFF'
-const gray55 = '#555555'
-
-const getDarker = (baseColor: string, strength: number) =>
+const getDarker = (baseColor: string | undefined, strength: number) =>
   tinycolor(baseColor).darken(strength).toString()
 const getLighter = (baseColor: string, strength: number) =>
   tinycolor(baseColor).lighten(strength).toString()
 export const Colors = {
-  pink,
-  blue,
-  purple,
-  gray55,
+  black: '#000',
+  white: '#fff',
+  pink: '#FF00AA',
+  blue: '#00AAFF',
+  purple: '#9F01ED',
+  apprenticePink: '#F01A96',
+  masterBlue: '#304ED1',
+  enlightenedBlue: '#188EDC',
+  guruPurple: '#9230AB',
+  burnedBlack: '#404040',
+  gray55: '#555555',
   grayC5: '#C5C5C7', // ios settings icon
   gray88: '#88888C', // ios settings value
   grayEA: '#EAEAEA',
@@ -53,5 +55,6 @@ export const Colors = {
   },
   getDarker,
   getLighter,
-  getBottomBorderColor: (baseColor: string) => getDarker(baseColor, 12),
+  getBottomBorderColor: (baseColor: string | undefined) =>
+    getDarker(baseColor, 12),
 }

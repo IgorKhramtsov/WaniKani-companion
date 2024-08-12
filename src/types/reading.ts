@@ -1,4 +1,4 @@
-export const readingTypeStrings = ['kunyomi', 'nanori', 'onyomi'] as const
+export const readingTypeStrings = ['onyomi', 'kunyomi', 'nanori'] as const
 export type ReadingType = (typeof readingTypeStrings)[number]
 
 export const toNiceEmphasis = (type: ReadingType): string => {

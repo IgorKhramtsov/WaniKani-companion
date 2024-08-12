@@ -25,11 +25,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
-import { MeaningPage } from '../lessons/MeaningPage'
-import { ReadingPage } from '../lessons/ReadingPage'
 import { checkAnswer } from '@/src/utils/answerChecker/answerChecker'
 import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAnswerUtils'
 import { CardInputVariant } from './CardInputVariant'
+import { ReadingPage } from '@/src/components/ReadingPage'
+import { MeaningPage } from '@/src/components/MeaningPage'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.

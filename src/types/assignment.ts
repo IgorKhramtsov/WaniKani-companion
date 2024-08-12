@@ -1,3 +1,5 @@
+import { Colors } from '../constants/Colors'
+
 const srsStageNames = [
   'Initiate',
   'Apprentice I',
@@ -35,6 +37,19 @@ export const srsStageToMilestone = (
   else if (srsStage === 7) return 'Master'
   else if (srsStage >= 5) return 'Guru'
   else if (srsStage >= 1) return 'Apprentice'
+  else return undefined
+}
+
+export const srsStageToColor = (
+  srsStage: number | undefined,
+): string | undefined => {
+  if (srsStage === undefined) return undefined
+
+  if (srsStage === 9) return Colors.burnedBlack
+  else if (srsStage === 8) return Colors.enlightenedBlue
+  else if (srsStage === 7) return Colors.masterBlue
+  else if (srsStage >= 5) return Colors.guruPurple
+  else if (srsStage >= 1) return Colors.apprenticePink
   else return undefined
 }
 
