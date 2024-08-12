@@ -70,9 +70,11 @@ export default function Index() {
   )
 
   useLayoutEffect(() => {
-    console.log('subject chars', subject?.characters)
     navigation.setOptions({
-      title: subject?.characters,
+      title:
+        subject && SubjectUtils.isRadical(subject)
+          ? subject.meanings[0]?.meaning
+          : subject?.characters,
     })
   }, [navigation, subject])
 
