@@ -28,9 +28,13 @@ expo-env.d.ts
 !.yarn/sdks
 !.yarn/versions
 
-# sensetive
+# sensitive
 config.js
 
 # Prebuild files
 android/
 ios/
+
+# Plugin
+!plugin/src/ios
+!plugin/src/android

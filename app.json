@@ -15,7 +15,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.khramtsov.wanikani"
+      "bundleIdentifier": "dev.khramtsov.wanikani",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.dev.khramtsov.wanikani.widget"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +36,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      ["./app.plugin.js", {"devTeamId": "TN2XMHU5RV"}]
     ],
     "experiments": {
       "typedRoutes": true
