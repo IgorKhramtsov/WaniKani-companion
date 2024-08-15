@@ -30,3 +30,7 @@ expo-env.d.ts
 
 # sensetive
 config.js
+
+# Prebuild files
+android/
+ios/
