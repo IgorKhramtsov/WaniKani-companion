@@ -29,7 +29,6 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
-        <data android:scheme="com.anonymous.wanikani"/>
         <data android:scheme="dev.khramtsov.wanikani"/>
         <data android:scheme="exp+wanikani"/>
       </intent-filter>
