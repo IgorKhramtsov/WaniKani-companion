@@ -243,11 +243,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
           }
           createReview(params).then(result => {
             if (result.error === undefined) {
-              if (props.mode === 'review') {
-                console.log('Review created successfully')
-              } else if (props.mode === 'lessonsQuiz') {
-                console.log('Assignment started successfully')
-              }
+              console.log('Review created successfully')
               dispatch(markTaskPairAsReported({ taskPair: taskPair }))
             } else {
               console.error('Error reporting task pair', result.error)
