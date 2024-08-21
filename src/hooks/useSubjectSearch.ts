@@ -1,8 +1,5 @@
-import { useSQLiteContext } from 'expo-sqlite'
 import { Subject } from '../types/subject'
-import { dbHelper } from '../utils/dbHelper'
-import { useAsyncFetch } from './useAsyncFetch'
-import { useCallback, useEffect } from 'react'
+import { useSearchSubjectsQuery } from '../api/localDbApi'
 
 type Result = {
   subjects: Subject[]
@@ -10,16 +7,6 @@ type Result = {
 }
 
 export const useSubjectSearch = (query: string): Result => {
-  const db = useSQLiteContext()
-
-  const fetchFunc = useCallback(
-    () => dbHelper.searchSubjects(db, query),
-    [db, query],
-  )
-  const { isLoading, data } = useAsyncFetch(fetchFunc)
-
-  return {
-    subjects: data ?? [],
-    isLoading,
-  }
+  const { data: subjects, isLoading } = useSearchSubjectsQuery(query)
+  return { subjects: subjects ?? [], isLoading }
 }

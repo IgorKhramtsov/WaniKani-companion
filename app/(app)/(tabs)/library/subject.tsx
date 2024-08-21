@@ -1,3 +1,7 @@
+import {
+  useGetAssignmentQuery,
+  useGetReviewStatisticQuery,
+} from '@/src/api/localDbApi'
 import { CompositionSection } from '@/src/components/CompositionPage'
 import { ContextSection } from '@/src/components/ContextPage'
 import { ExamplesSection } from '@/src/components/ExamplesPage'
@@ -10,10 +14,7 @@ import typography from '@/src/constants/typography'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { srsStageToColor, srsStageToMilestone } from '@/src/types/assignment'
 import { Subject, SubjectUtils } from '@/src/types/subject'
-import { dbHelper } from '@/src/utils/dbHelper'
-import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams, useNavigation } from 'expo-router'
-import { useSQLiteContext } from 'expo-sqlite'
 import { toLower } from 'lodash'
 import { Fragment, useLayoutEffect, useMemo } from 'react'
 import { ScrollView, Text, View } from 'react-native'
@@ -28,26 +29,12 @@ export default function Index() {
   const id = useMemo(() => [parseInt(params.id ?? '')], [params.id])
   const { subjects, isLoading } = useSubjectCache(id)
   const subject = useMemo((): Subject | undefined => subjects[0], [subjects])
-  const db = useSQLiteContext()
-  const { isPending: isAssignmentLoading, data: assignment } = useQuery({
-    queryKey: ['assignment', db, subject?.id],
-    queryFn: async () => {
-      if (!subject?.id) return null
 
-      return (await dbHelper.getAssignment(db, subject?.id)) ?? null
-    },
-    enabled: !!subject,
-  })
-  const { isPending: isReviewStatisticLoading, data: reviewStatistic } =
-    useQuery({
-      queryKey: ['review_statistic', db, subject?.id],
-      queryFn: async () => {
-        if (!subject?.id) return null
+  const { isLoading: isAssignmentLoading, data: assignment } =
+    useGetAssignmentQuery(subject?.id ?? -1, { skip: !subject?.id })
+  const { isLoading: isReviewStatisticLoading, data: reviewStatistic } =
+    useGetReviewStatisticQuery(subject?.id ?? -1, { skip: !subject?.id })
 
-        return (await dbHelper.getReviewStatistic(db, subject?.id)) ?? null
-      },
-      enabled: !!subject,
-    })
   const stageName = useMemo(
     () => srsStageToMilestone(assignment?.srs_stage),
     [assignment?.srs_stage],

@@ -2,6 +2,7 @@ import { getApiKey, setApiKey } from '@/src/api/wanikaniApi'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSession } from '@/src/context/authContext'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
+import { useWidgetPropagator } from '@/src/hooks/useWidgetPropagator'
 import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
 import { QueryClient } from '@tanstack/react-query'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
@@ -36,6 +37,7 @@ export default function RootLayout() {
     totalCount: hydrationTotalCount,
     objectsFetched: hydrationDoneCount,
   } = useDbHydrator(getApiKey() != null)
+  useWidgetPropagator()
 
   if (isSessionLoading) {
     return <FullPageLoading />

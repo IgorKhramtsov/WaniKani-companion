@@ -18,7 +18,7 @@
       "bundleIdentifier": "dev.khramtsov.wanikani",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.dev.khramtsov.wanikani.widget"
+          "group.dev.khramtsov.wanikani"
         ]
       }
     },

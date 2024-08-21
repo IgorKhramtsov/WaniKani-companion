@@ -31,6 +31,7 @@ import { useSettings } from '@/src/hooks/useSettings'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { Assignment } from '@/src/types/assignment'
 import { Subject, SubjectUtils } from '@/src/types/subject'
+import { useForecast } from '@/src/hooks/useForecast'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -55,6 +56,7 @@ export default function Index() {
   } = useGetLessonsCompletedTodayQuery(undefined, {
     refetchOnMountOrArgChange: 15 * 60,
   })
+  const forecast = useForecast()
 
   const isLoading = useMemo(
     () =>
@@ -261,6 +263,21 @@ export default function Index() {
             </Animated.View>
           }
         />
+        <View style={{ height: 16 }} />
+        {!forecast.isLoading && (
+          <Text>availableRightNow: {forecast.availableRightNow}</Text>
+        )}
+        {!forecast.isLoading && (
+          <Text>
+            available during the week {forecast.availableDuringTheWeek}
+          </Text>
+        )}
+        {!forecast.isLoading &&
+          forecast.forecast.map((item, index) => (
+            <Text>
+              {item.date.toString()}: {item.assignmentsCount}
+            </Text>
+          ))}
       </ScrollView>
     </ErrorWithRetry>
   )

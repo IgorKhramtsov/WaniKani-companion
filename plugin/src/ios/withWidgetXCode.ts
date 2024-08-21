@@ -1,11 +1,16 @@
 import { ConfigPlugin, withXcodeProject } from '@expo/config-plugins'
+import type { XcodeProject } from '@expo/config-plugins'
 import * as fs from 'fs-extra'
 import * as path from 'path'
-import xcode from 'xcode'
 
 const EXTENSION_TARGET_NAME = 'widget'
 
-const TOP_LEVEL_FILES = ['Assets.xcassets', 'Info.plist', 'widget.swift']
+const TOP_LEVEL_FILES = [
+  'Assets.xcassets',
+  'Info.plist',
+  'widget.swift',
+  'widget.entitlements',
+]
 
 const BUILD_CONFIGURATION_SETTINGS = {
   ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: 'AccentColor',
@@ -23,9 +28,10 @@ const BUILD_CONFIGURATION_SETTINGS = {
   GCC_C_LANGUAGE_STANDARD: 'gnu11',
   GENERATE_INFOPLIST_FILE: 'YES',
   INFOPLIST_FILE: 'widget/Info.plist',
+  CODE_SIGN_ENTITLEMENTS: 'widget/widget.entitlements',
   INFOPLIST_KEY_CFBundleDisplayName: 'widget',
   INFOPLIST_KEY_NSHumanReadableCopyright: '""',
-  IPHONEOS_DEPLOYMENT_TARGET: '14.0',
+  IPHONEOS_DEPLOYMENT_TARGET: '15.0',
   LD_RUNPATH_SEARCH_PATHS:
     '"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"',
   MARKETING_VERSION: '1.0',
@@ -64,8 +70,8 @@ export const withWidgetXCode: ConfigPlugin<WithWidgetProps> = (
       )
       fs.copySync(widgetSourceDirPath, extensionFilesDir)
 
-      const projPath = `${newConfig.modRequest.platformProjectRoot}/${projectName}.xcodeproj/project.pbxproj`
-      await updateXCodeProj(projPath, widgetBundleId, options.devTeamId)
+      // const projPath = `${newConfig.modRequest.platformProjectRoot}/${projectName}.xcodeproj/project.pbxproj`
+      updateXCodeProj(newConfig.modResults, widgetBundleId, options.devTeamId)
       return newConfig
     } catch (e) {
       console.error(e)
@@ -74,88 +80,87 @@ export const withWidgetXCode: ConfigPlugin<WithWidgetProps> = (
   })
 }
 
-async function updateXCodeProj(
-  projPath: string,
+function updateXCodeProj(
+  xcodeProject: XcodeProject,
   widgetBundleId: string,
   developmentTeamId: string,
 ) {
-  const xcodeProject = xcode.project(projPath)
-
-  xcodeProject.parse(() => {
-    const pbxGroup = xcodeProject.addPbxGroup(
-      TOP_LEVEL_FILES,
-      EXTENSION_TARGET_NAME,
-      EXTENSION_TARGET_NAME,
+  if (!!xcodeProject.pbxTargetByName(EXTENSION_TARGET_NAME)) {
+    console.log(
+      `${EXTENSION_TARGET_NAME} already exists in project. Skipping...`,
     )
+    return
+  }
+  const pbxGroup = xcodeProject.addPbxGroup(
+    TOP_LEVEL_FILES,
+    EXTENSION_TARGET_NAME,
+    EXTENSION_TARGET_NAME,
+  )
 
-    // Add the new PBXGroup to the top level group. This makes the
-    // files / folder appear in the file explorer in Xcode.
-    const groups = xcodeProject.hash.project.objects.PBXGroup
-    Object.keys(groups).forEach(function (groupKey) {
-      if (groups[groupKey].name === undefined) {
-        xcodeProject.addToPbxGroup(pbxGroup.uuid, groupKey)
-      }
-    })
+  // Add the new PBXGroup to the top level group. This makes the
+  // files / folder appear in the file explorer in Xcode.
+  const groups = xcodeProject.hash.project.objects.PBXGroup
+  Object.keys(groups).forEach(function (groupKey) {
+    if (groups[groupKey].name === undefined) {
+      xcodeProject.addToPbxGroup(pbxGroup.uuid, groupKey)
+    }
+  })
 
-    // // WORK AROUND for codeProject.addTarget BUG
-    // // Xcode projects don't contain these if there is only one target
-    // // An upstream fix should be made to the code referenced in this link:
-    // //   - https://github.com/apache/cordova-node-xcode/blob/8b98cabc5978359db88dc9ff2d4c015cba40f150/lib/pbxProject.js#L860
-    const projObjects = xcodeProject.hash.project.objects
-    projObjects['PBXTargetDependency'] =
-      projObjects['PBXTargetDependency'] || {}
-    projObjects['PBXContainerItemProxy'] =
-      projObjects['PBXTargetDependency'] || {}
+  // WORK AROUND for codeProject.addTarget BUG
+  // Xcode projects don't contain these if there is only one target
+  // An upstream fix should be made to the code referenced in this link:
+  //   - https://github.com/apache/cordova-node-xcode/blob/8b98cabc5978359db88dc9ff2d4c015cba40f150/lib/pbxProject.js#L860
+  const projObjects = xcodeProject.hash.project.objects
+  projObjects['PBXTargetDependency'] = projObjects['PBXTargetDependency'] || {}
+  projObjects['PBXContainerItemProxy'] =
+    projObjects['PBXTargetDependency'] || {}
 
-    // // add target
-    const widgetTarget = xcodeProject.addTarget(
-      EXTENSION_TARGET_NAME,
-      'app_extension',
-      EXTENSION_TARGET_NAME,
-      widgetBundleId,
-    )
+  // add target
+  const widgetTarget = xcodeProject.addTarget(
+    EXTENSION_TARGET_NAME,
+    'app_extension',
+    EXTENSION_TARGET_NAME,
+    widgetBundleId,
+  )
 
-    // add build phase
-    xcodeProject.addBuildPhase(
-      ['widget.swift'],
-      'PBXSourcesBuildPhase',
-      'Sources',
-      widgetTarget.uuid,
-      undefined,
-      'widget',
-    )
-    xcodeProject.addBuildPhase(
-      ['SwiftUI.framework', 'WidgetKit.framework'],
-      'PBXFrameworksBuildPhase',
-      'Frameworks',
-      widgetTarget.uuid,
-    )
-    const resourcesBuildPhase = xcodeProject.addBuildPhase(
-      ['Assets.xcassets'],
-      'PBXResourcesBuildPhase',
-      'Resources',
-      widgetTarget.uuid,
-      undefined,
-      'widget',
-    )
+  // add build phase
+  xcodeProject.addBuildPhase(
+    ['widget.swift'],
+    'PBXSourcesBuildPhase',
+    'Sources',
+    widgetTarget.uuid,
+    undefined,
+    'widget',
+  )
+  xcodeProject.addBuildPhase(
+    ['SwiftUI.framework', 'WidgetKit.framework'],
+    'PBXFrameworksBuildPhase',
+    'Frameworks',
+    widgetTarget.uuid,
+  )
+  xcodeProject.addBuildPhase(
+    ['Assets.xcassets'],
+    'PBXResourcesBuildPhase',
+    'Resources',
+    widgetTarget.uuid,
+    undefined,
+    'widget',
+  )
 
-    /* Update build configurations */
-    const configurations = xcodeProject.pbxXCBuildConfigurationSection()
+  /* Update build configurations */
+  const configurations = xcodeProject.pbxXCBuildConfigurationSection()
 
-    for (const key in configurations) {
-      if (typeof configurations[key].buildSettings !== 'undefined') {
-        const productName = configurations[key].buildSettings.PRODUCT_NAME
-        if (productName === `"${EXTENSION_TARGET_NAME}"`) {
-          configurations[key].buildSettings = {
-            ...configurations[key].buildSettings,
-            ...BUILD_CONFIGURATION_SETTINGS,
-            DEVELOPMENT_TEAM: developmentTeamId,
-            PRODUCT_BUNDLE_IDENTIFIER: widgetBundleId,
-          }
+  for (const key in configurations) {
+    if (typeof configurations[key].buildSettings !== 'undefined') {
+      const productName = configurations[key].buildSettings.PRODUCT_NAME
+      if (productName === `"${EXTENSION_TARGET_NAME}"`) {
+        configurations[key].buildSettings = {
+          ...configurations[key].buildSettings,
+          ...BUILD_CONFIGURATION_SETTINGS,
+          DEVELOPMENT_TEAM: developmentTeamId,
+          PRODUCT_BUNDLE_IDENTIFIER: widgetBundleId,
         }
       }
     }
-
-    fs.writeFileSync(projPath, xcodeProject.writeSync())
-  })
+  }
 }
