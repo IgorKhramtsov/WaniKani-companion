@@ -37,6 +37,9 @@ export const withWidgetEAS: ConfigPlugin<WithWidgetProps> = (
     {
       targetName: 'widget',
       bundleIdentifier: `${bundleIdentifier}.widget`,
+      entitlements: {
+        'com.apple.security.application-groups': [options.appGroupId],
+      },
     },
   ]
 

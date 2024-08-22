@@ -2,4 +2,5 @@
 
 type WithWidgetProps = {
   devTeamId: string
+  appGroupId: string
 }

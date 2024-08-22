@@ -24,6 +24,9 @@ const withWidgetEAS = (config, options) => {
         {
             targetName: 'widget',
             bundleIdentifier: `${bundleIdentifier}.widget`,
+            entitlements: {
+                'com.apple.security.application-groups': [options.appGroupId],
+            },
         },
     ];
     return config;

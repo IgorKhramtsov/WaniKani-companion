@@ -37,7 +37,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      ["./app.plugin.js", {"devTeamId": "TN2XMHU5RV"}]
+      [
+        "./app.plugin.js", 
+        {
+          "devTeamId": "TN2XMHU5RV",
+          "appGroupId": "group.dev.khramtsov.wanikani"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
