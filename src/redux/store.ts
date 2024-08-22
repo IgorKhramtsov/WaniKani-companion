@@ -12,6 +12,7 @@ import {
 import devToolsEnhancer from 'redux-devtools-expo-dev-plugin'
 import { localDbApi } from '../api/localDbApi'
 import { SQLiteDatabase } from 'expo-sqlite'
+import { localDbSyncMiddleware } from '../api/localDbSyncMiddleware'
 
 export const createStore = (sqliteDb?: SQLiteDatabase) =>
   configureStore({
@@ -26,6 +27,7 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
         localSettingsApi.middleware,
         rtkQueryErrorLogger,
         loggerMiddleware,
+        localDbSyncMiddleware,
       ),
     reducer: {
       assignmentsSlice,

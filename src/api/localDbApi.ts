@@ -48,8 +48,10 @@ export const localDbApi = createApi({
     const queryFn = baseQueryWithSqlite(sqliteDb)
     return queryFn(args, api, extraOptions)
   },
+  tagTypes: ['Subject', 'Assignment', 'ReviewStatistic'],
   endpoints: builder => ({
     getSubject: builder.query<Subject | undefined, number>({
+      providesTags: ['Subject'],
       query: id => ({
         query: 'SELECT data FROM subjects WHERE id = ? LIMIT 1',
         params: [id],
@@ -59,6 +61,7 @@ export const localDbApi = createApi({
       },
     }),
     getSubjects: builder.query<Subject[], number[]>({
+      providesTags: ['Subject'],
       query: ids => ({
         query: `SELECT data FROM subjects WHERE id IN (${ids.map(() => '?').join(', ')})`,
         params: ids,
@@ -68,6 +71,7 @@ export const localDbApi = createApi({
       },
     }),
     getAssignment: builder.query<Assignment | undefined, number>({
+      providesTags: ['Assignment'],
       query: subject_id => ({
         query: 'SELECT data FROM assignments WHERE subject_id = ? LIMIT 1',
         params: [subject_id],
@@ -80,6 +84,7 @@ export const localDbApi = createApi({
     // TODO: optimize to get only neccesasry data (only review assignments,
     // aggregate only count)
     getAssignments: builder.query<Assignment[], void>({
+      providesTags: ['Assignment'],
       query: () => ({
         query: 'SELECT data FROM assignments',
         params: [],
@@ -89,6 +94,7 @@ export const localDbApi = createApi({
       },
     }),
     searchSubjects: builder.query<Subject[], string>({
+      providesTags: ['Subject'],
       query: query => {
         const queryJp = wanakana.toHiragana(query, { IMEMode: 'toHiragana' })
         // TODO: mnemonic search should show snippet of the found entry. This might
@@ -118,12 +124,14 @@ export const localDbApi = createApi({
       },
     }),
     saveSubject: builder.mutation<void, Subject>({
+      invalidatesTags: ['Subject'],
       query: subject => ({
         query: `INSERT OR REPLACE INTO subjects (id, data) VALUES (?, ?)`,
         params: [subject.id, JSON.stringify(subject)],
       }),
     }),
     saveSubjects: builder.mutation<void, Subject[]>({
+      invalidatesTags: ['Subject'],
       query: subjects => ({
         query: [
           `INSERT OR REPLACE INTO subjects (id, data, meanings, readings, meaning_mnemonic, reading_mnemonic, characters) VALUES`,
@@ -143,6 +151,7 @@ export const localDbApi = createApi({
       }),
     }),
     saveAssignments: builder.mutation<void, Assignment[]>({
+      invalidatesTags: ['Assignment'],
       query: assignments => ({
         query: [
           `INSERT OR REPLACE INTO assignments (id, data, subject_id) VALUES `,
@@ -156,6 +165,7 @@ export const localDbApi = createApi({
       }),
     }),
     getReviewStatistic: builder.query<ReviewStatistic | undefined, number>({
+      providesTags: ['ReviewStatistic'],
       query: subject_id => ({
         query:
           'SELECT data FROM review_statistics WHERE subject_id = ? LIMIT 1',
@@ -166,6 +176,7 @@ export const localDbApi = createApi({
       },
     }),
     saveReviewStatistics: builder.mutation<void, ReviewStatistic[]>({
+      invalidatesTags: ['ReviewStatistic'],
       query: reviewStatistics => ({
         query: [
           `INSERT OR REPLACE INTO review_statistics (id, data, subject_id) VALUES `,

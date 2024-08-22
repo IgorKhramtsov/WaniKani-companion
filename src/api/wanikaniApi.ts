@@ -288,7 +288,16 @@ export const wanikaniApi = createApi({
       }),
       transformResponse: (response: CreateReviewApiResponse) => [
         response.data,
-        response.resources_updated,
+        {
+          assignment: {
+            ...response.resources_updated.assignment.data,
+            id: response.resources_updated.assignment.id,
+          },
+          review_statistic: {
+            ...response.resources_updated.review_statistic.data,
+            id: response.resources_updated.review_statistic.id,
+          },
+        },
       ],
       invalidatesTags: ['Reviews'],
     }),
@@ -382,7 +391,12 @@ interface CreateReviewApiResponse {
   url: string
   data_updated_at: Date | null
   data: Review
-  resources_updated: CreateReviewResourcesUpdated
+  resources_updated: CreateReviewResourcesUpdatedResponse
+}
+
+interface CreateReviewResourcesUpdatedResponse {
+  assignment: ApiResponse<Assignment>
+  review_statistic: ApiResponse<ReviewStatistic>
 }
 
 interface CreateReviewResourcesUpdated {
