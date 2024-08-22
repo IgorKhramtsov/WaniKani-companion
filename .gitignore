@@ -36,8 +36,8 @@ android/
 ios/
 
 # Plugin
-!plugin/src/ios
-!plugin/src/android
+!plugin/**
+plugin/**/.DS_Store
 # Widgets
-!widget/ios
-!widget/android
+!widget/**
+widget/**/.DS_Store
