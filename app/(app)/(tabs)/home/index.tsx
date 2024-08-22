@@ -274,7 +274,7 @@ export default function Index() {
         )}
         {!forecast.isLoading &&
           forecast.forecast.map((item, index) => (
-            <Text>
+            <Text key={item.date.toString()}>
               {item.date.toString()}: {item.assignmentsCount}
             </Text>
           ))}

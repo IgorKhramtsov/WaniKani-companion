@@ -14,10 +14,15 @@ export const localDbSyncMiddleware: Middleware =
       dispatch(
         localDbApi.endpoints.saveReviewStatistics.initiate([review_statistic]),
       )
-      console.log('assignment:', assignment)
-      console.log('review_statistic:', review_statistic)
       console.log('dispatched saveAssignments and saveReviewStatistics')
       // TODO: save review
+    }
+
+    if (wanikaniApi.endpoints.startAssignment.matchFulfilled(action)) {
+      console.log('startAssignment fulfilled')
+      const assignment = action.payload
+      dispatch(localDbApi.endpoints.saveAssignments.initiate([assignment]))
+      console.log('dispatched saveAssignments')
     }
 
     return next(action)

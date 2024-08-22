@@ -86,8 +86,8 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
-        // name='quiz/index'
-        name='quiz'
+        name='quiz/index'
+        // name='quiz'
         options={{
           title: 'Quiz',
           headerTitle: 'Quiz',
