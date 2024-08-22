@@ -36,11 +36,4 @@ jobs:
             --profile=production
 
       - name: Submit to App Store
-        run: eas submit --platform=ios --profile=production --path ./app.ipa
-            
-            
-
-
-
-
-
+        run: eas submit --no-wait --platform=ios --profile=production --path ./app.ipa
