@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { asyncStorageHelper } from '../utils/asyncStorageHelper'
 import { useAsyncFetch } from './useAsyncFetch'
 import { wanikaniApi } from '../api/wanikaniApi'
-import { useSQLiteContext } from 'expo-sqlite'
-import { dbHelper } from '../utils/dbHelper'
+import {
+  useSaveAssignmentsMutation,
+  useSaveReviewStatisticsMutation,
+  useSaveSubjectsMutation,
+} from '../api/localDbApi'
 
 const timeDiffTrigger = 1000 * 60 * 60 * 24 // 24 hours
 
@@ -62,6 +65,10 @@ export const useDbHydrator = (enabled: boolean) => {
     { skip: !shouldLoad },
   )
 
+  const [saveSubjects] = useSaveSubjectsMutation()
+  const [saveAssignments] = useSaveAssignmentsMutation()
+  const [saveReviewStatistics] = useSaveReviewStatisticsMutation()
+
   useEffect(() => {
     if (apiSubjectsData) {
       setSubjectsTotalCount(apiSubjectsData?.totalCount)
@@ -98,8 +105,6 @@ export const useDbHydrator = (enabled: boolean) => {
     return apiReviewStatisticsData?.data ?? []
   }, [shouldLoad, apiReviewStatisticsData])
 
-  const db = useSQLiteContext()
-
   useEffect(() => {
     if (subjects.length > 0) {
       setObjectsFetched(prev => prev + subjects.length)
@@ -131,21 +136,21 @@ export const useDbHydrator = (enabled: boolean) => {
 
   useEffect(() => {
     if (subjects.length > 0) {
-      dbHelper.saveSubjects(db, subjects)
+      saveSubjects(subjects)
     }
-  }, [subjects, db])
+  }, [saveSubjects, subjects])
 
   useEffect(() => {
     if (assignments.length > 0) {
-      dbHelper.saveAssignments(db, assignments)
+      saveAssignments(assignments)
     }
-  }, [assignments, db])
+  }, [saveAssignments, assignments])
 
   useEffect(() => {
     if (reviewStatistics.length > 0) {
-      dbHelper.saveReviewStatistics(db, reviewStatistics)
+      saveReviewStatistics(reviewStatistics)
     }
-  }, [reviewStatistics, db])
+  }, [saveReviewStatistics, reviewStatistics])
 
   useEffect(() => {
     if (

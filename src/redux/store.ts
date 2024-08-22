@@ -10,32 +10,42 @@ import {
   rtkQueryErrorLogger,
 } from '../api/loggingMiddlewares'
 import devToolsEnhancer from 'redux-devtools-expo-dev-plugin'
+import { localDbApi } from '../api/localDbApi'
+import { SQLiteDatabase } from 'expo-sqlite'
+import { localDbSyncMiddleware } from '../api/localDbSyncMiddleware'
 
-export const store = configureStore({
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({
-      serializableCheck: { warnAfter: 300 },
-      immutableCheck: { warnAfter: 300 },
-    }).concat(
-      wanikaniApi.middleware,
-      localSettingsApi.middleware,
-      rtkQueryErrorLogger,
-      loggerMiddleware,
-    ),
-  reducer: {
-    assignmentsSlice,
-    subjectsSlice,
-    quizSlice,
-    settingsSlice,
-    [wanikaniApi.reducerPath]: wanikaniApi.reducer,
-    [localSettingsApi.reducerPath]: localSettingsApi.reducer,
-  },
-  devTools: false,
-  enhancers: getDefaultEnhancers =>
-    getDefaultEnhancers().concat(devToolsEnhancer()),
-})
+export const createStore = (sqliteDb?: SQLiteDatabase) =>
+  configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        serializableCheck: { warnAfter: 300 },
+        immutableCheck: { warnAfter: 300 },
+        thunk: { extraArgument: { sqliteDb } },
+      }).concat(
+        wanikaniApi.middleware,
+        localDbApi.middleware,
+        localSettingsApi.middleware,
+        rtkQueryErrorLogger,
+        loggerMiddleware,
+        localDbSyncMiddleware,
+      ),
+    reducer: {
+      assignmentsSlice,
+      subjectsSlice,
+      quizSlice,
+      settingsSlice,
+      [wanikaniApi.reducerPath]: wanikaniApi.reducer,
+      [localSettingsApi.reducerPath]: localSettingsApi.reducer,
+      [localDbApi.reducerPath]: localDbApi.reducer,
+    },
+    devTools: false,
+    // NOTE: This is not an error
+    enhancers: getDefaultEnhancers =>
+      getDefaultEnhancers().concat(devToolsEnhancer()),
+  })
 
+const defaultStore = createStore(undefined)
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>
+export type RootState = ReturnType<typeof defaultStore.getState>
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch
+export type AppDispatch = typeof defaultStore.dispatch

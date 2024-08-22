@@ -4,8 +4,8 @@ import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
 import _ from 'lodash'
 import { useSQLiteContext } from 'expo-sqlite'
-import { getSubjects } from '../utils/dbHelper'
 import { useAsyncFetch } from './useAsyncFetch'
+import { useGetSubjectsQuery } from '../api/localDbApi'
 
 type Result = {
   subjects: Subject[]
@@ -48,19 +48,9 @@ const useFetchSubjectsAndHydrate_v2 = (
     console.log('[useSubjectCache_hydrate] useEffect: sliceMissingIds')
   }, [sliceMissingIds])
 
-  const db = useSQLiteContext()
-  const fetchFunc = useCallback(
-    () => getSubjects(db, sliceMissingIds),
-    [db, sliceMissingIds],
-  )
-
-  useEffect(() => {
-    console.log('[useSubjectCache_hydrate] useEffect: fetchFunc')
-  }, [fetchFunc])
-
-  const { data: dbSubjects, isLoading: dbIsLoading } = useAsyncFetch(
-    fetchFunc,
-    sliceMissingIds.length === 0,
+  const { data: dbSubjects, isLoading: dbIsLoading } = useGetSubjectsQuery(
+    sliceMissingIds,
+    { skip: sliceMissingIds.length === 0 },
   )
 
   useEffect(() => {

@@ -55,6 +55,7 @@ export const srsStageToColor = (
 
 export interface Assignment {
   id: number
+  available_at_date: Date | null // Converted 'available_at' date
 
   available_at: string | null // Timestamp when the related subject will be available in the user's review queue
   burned_at: string | null // Timestamp when the user reaches SRS stage 9 the first time
