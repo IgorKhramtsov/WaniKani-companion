@@ -38,3 +38,6 @@ ios/
 # Plugin
 !plugin/src/ios
 !plugin/src/android
+# Widgets
+!widget/ios
+!widget/android
