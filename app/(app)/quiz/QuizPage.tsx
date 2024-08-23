@@ -40,6 +40,7 @@ import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { FontAwesome6 } from '@expo/vector-icons'
 import { useSettings } from '@/src/hooks/useSettings'
+import { clamp } from 'lodash'
 
 interface BaseProps {
   mode: QuizMode
@@ -255,7 +256,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   }, [createReview, startAssignment, dispatch, props, taskPairsForReport])
 
   useEffect(() => {
-    progressValue.value = withSpring(progress, {
+    progressValue.value = withSpring(clamp(progress * 0.9 + 10, 0, 100), {
       duration: 300,
       dampingRatio: 1.5,
       stiffness: 300,
