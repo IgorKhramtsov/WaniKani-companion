@@ -193,6 +193,5 @@ const stylesheet = createStyleSheet({
   },
   explanation: {
     ...typography.body,
-    lineHeight: typography.body.fontSize * 1.4,
   },
 })
