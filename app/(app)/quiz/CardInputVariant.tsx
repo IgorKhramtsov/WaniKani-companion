@@ -161,7 +161,12 @@ export const CardInputVariant = ({
     <Fragment>
       <View style={styles.cardTextContainer}>
         <AnimatedToastWrapper ref={toastRef}>
-          <Text style={styles.glyphText}>{subject.characters}</Text>
+          <Text
+            adjustsFontSizeToFit={true}
+            numberOfLines={1}
+            style={styles.glyphText}>
+            {subject.characters}
+          </Text>
         </AnimatedToastWrapper>
         <Text style={styles.taskText}>
           {subjectName}{' '}
@@ -215,6 +220,7 @@ const stylesheet = createStyleSheet({
   glyphText: {
     ...typography.display1,
     color: 'white',
+    paddingHorizontal: 16,
   },
   cardTextContainer: {
     alignItems: 'center',
