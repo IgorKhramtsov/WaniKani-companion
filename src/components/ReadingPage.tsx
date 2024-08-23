@@ -16,6 +16,8 @@ import {
 import { Fragment } from 'react'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
+import * as wanakana from 'wanakana'
+import { isKatakanaPresent } from '../utils/kanaUtils'
 
 interface PageProps {
   topContent?: React.ReactNode
@@ -59,9 +61,20 @@ type VocabularyProps = BaseProps & {
 export const VocabularySection = ({ subject }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
-  // console.log('\n\nPRONON', subject.pronunciation_audios)
+  console.log(JSON.stringify(subject, undefined, 2))
   const getAudio = (reading: Reading) =>
     SubjectUtils.getPrononciationAudioForReading(subject, reading)
+  // Sort readings in such way so that katakana twin (if present) is shown
+  // first, so that they are 'grouped' together before the audio
+  const sortedReadings = [...subject.readings].sort((a, b) => {
+    if (
+      wanakana.toHiragana(a.reading, { convertLongVowelMark: false }) ===
+      wanakana.toHiragana(b.reading, { convertLongVowelMark: false })
+    ) {
+      return isKatakanaPresent(a.reading) ? -1 : 1
+    }
+    return 0
+  })
 
   // console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
 
@@ -71,7 +84,7 @@ export const VocabularySection = ({ subject }: VocabularyProps) => {
         <FlatList
           scrollEnabled={false}
           style={styles.flatList}
-          data={subject.readings}
+          data={sortedReadings}
           renderItem={el => (
             <ReadingView
               key={el.item.reading}
