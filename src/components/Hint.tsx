@@ -35,7 +35,6 @@ const stylesheet = createStyleSheet({
   hintText: {
     ...typography.body,
     fontWeight: '300',
-    lineHeight: typography.body.fontSize * 1.3,
-    letterSpacing: 0.75,
+    letterSpacing: 0.65,
   },
 })
