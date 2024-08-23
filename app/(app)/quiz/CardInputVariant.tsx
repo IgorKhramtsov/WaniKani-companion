@@ -138,7 +138,7 @@ export const CardInputVariant = ({
       if (task.type === 'reading') {
         // IME mode is needed to avoid converting 'n' to 'ん' during the typing
         // so that it is possible to type na/ni etc.
-        setInput(wanakana.toHiragana(input, { IMEMode: 'toHiragana' }))
+        setInput(wanakana.toKana(input, { IMEMode: 'toHiragana' }))
       } else {
         setInput(input)
       }

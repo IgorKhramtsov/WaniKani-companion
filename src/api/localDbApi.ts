@@ -96,7 +96,7 @@ export const localDbApi = createApi({
     searchSubjects: builder.query<Subject[], string>({
       providesTags: ['Subject'],
       query: query => {
-        const queryJp = wanakana.toHiragana(query, { IMEMode: 'toHiragana' })
+        const queryJp = wanakana.toKana(query, { IMEMode: 'toHiragana' })
         // TODO: mnemonic search should show snippet of the found entry. This might
         // result in a lot of results. We could experiment with ranking, for that
         // the sqlite's FTS might be useful(https://www.youtube.com/watch?v=eXMA_2dEMO0)
