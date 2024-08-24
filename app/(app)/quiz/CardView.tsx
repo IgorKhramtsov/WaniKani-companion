@@ -160,7 +160,8 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const subject = task.subject
   const subjectColor = SubjectUtils.getAssociatedColor(subject.subject)
-  const infoButtonVisible = taskState.state !== 'notAnswered'
+  const infoButtonVisible =
+    taskState.state === 'correct' || taskState.state === 'incorrect'
 
   const turnBackButton = (
     <View style={styles.cardViewActionContainerBack}>
