@@ -9,6 +9,7 @@ const TOP_LEVEL_FILES = [
   'Assets.xcassets',
   'Info.plist',
   'widget.swift',
+  'DatabaseService.swift',
   'widget.entitlements',
 ]
 
@@ -125,7 +126,7 @@ function updateXCodeProj(
 
   // add build phase
   xcodeProject.addBuildPhase(
-    ['widget.swift'],
+    ['widget.swift', 'DatabaseService.swift'],
     'PBXSourcesBuildPhase',
     'Sources',
     widgetTarget.uuid,

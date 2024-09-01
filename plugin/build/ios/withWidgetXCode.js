@@ -32,6 +32,7 @@ const TOP_LEVEL_FILES = [
     'Assets.xcassets',
     'Info.plist',
     'widget.swift',
+    'DatabaseService.swift',
     'widget.entitlements',
 ];
 const BUILD_CONFIGURATION_SETTINGS = {
@@ -113,7 +114,7 @@ function updateXCodeProj(xcodeProject, widgetBundleId, developmentTeamId) {
     // add target
     const widgetTarget = xcodeProject.addTarget(EXTENSION_TARGET_NAME, 'app_extension', EXTENSION_TARGET_NAME, widgetBundleId);
     // add build phase
-    xcodeProject.addBuildPhase(['widget.swift'], 'PBXSourcesBuildPhase', 'Sources', widgetTarget.uuid, undefined, 'widget');
+    xcodeProject.addBuildPhase(['widget.swift', 'DatabaseService.swift'], 'PBXSourcesBuildPhase', 'Sources', widgetTarget.uuid, undefined, 'widget');
     xcodeProject.addBuildPhase(['SwiftUI.framework', 'WidgetKit.framework'], 'PBXFrameworksBuildPhase', 'Frameworks', widgetTarget.uuid);
     xcodeProject.addBuildPhase(['Assets.xcassets'], 'PBXResourcesBuildPhase', 'Resources', widgetTarget.uuid, undefined, 'widget');
     /* Update build configurations */

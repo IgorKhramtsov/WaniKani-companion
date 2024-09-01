@@ -28,6 +28,7 @@
     "axios": "^1.6.8",
     "expo": "~51.0.6",
     "expo-av": "^14.0.5",
+    "expo-build-properties": "~0.12.5",
     "expo-constants": "~16.0.1",
     "expo-dev-client": "~4.0.15",
     "expo-drizzle-studio-plugin": "^0.0.2",
@@ -37,7 +38,8 @@
     "expo-router": "~3.5.12",
     "expo-secure-store": "~13.0.1",
     "expo-splash-screen": "~0.27.4",
-    "expo-sqlite": "14.0.3",
+    "expo-file-system": "https://registry.npmjs.org/@vostmarkh/expo-file-system/-/expo-file-system-17.0.2.tgz",
+    "expo-sqlite": "https://registry.npmjs.org/@vostmarkh/expo-sqlite/-/expo-sqlite-14.0.15.tgz",
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "~3.0.4",
     "expo-updates": "~0.25.16",
@@ -90,6 +92,10 @@
     "react-native-svg-transformer": "^1.4.0",
     "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
+  },
+  "resolutions": {
+    "expo-file-system": "https://registry.npmjs.org/@vostmarkh/expo-file-system/-/expo-file-system-17.0.2.tgz",
+    "expo-sqlite": "https://registry.npmjs.org/@vostmarkh/expo-sqlite/-/expo-sqlite-14.0.15.tgz"
   },
   "private": true
 }

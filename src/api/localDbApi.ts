@@ -154,13 +154,16 @@ export const localDbApi = createApi({
       invalidatesTags: ['Assignment'],
       query: assignments => ({
         query: [
-          `INSERT OR REPLACE INTO assignments (id, data, subject_id) VALUES `,
-          Array(assignments.length).fill('(?, ?, ?)').join(', '),
+          `INSERT OR REPLACE INTO assignments (id, data, subject_id, available_at, srs_stage) VALUES `,
+          Array(assignments.length).fill('(?, ?, ?, ?, ?)').join(', '),
         ].join(' '),
         params: assignments.flatMap(e => [
           e.id,
           JSON.stringify(e),
           e.subject_id,
+          // Seconds since epoch
+          !!e.available_at ? new Date(e.available_at).valueOf() / 1000 : 0,
+          e.srs_stage,
         ]),
       }),
     }),

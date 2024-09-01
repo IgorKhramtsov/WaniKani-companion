@@ -16,7 +16,9 @@ const createTables = async (db: SQLiteDatabase) => {
     `CREATE TABLE IF NOT EXISTS assignments (
       id INTEGER PRIMARY KEY,
       data TEXT,
-      subject_id UNSIGNED SMALLINT NOT NULL
+      subject_id UNSIGNED SMALLINT NOT NULL,
+      available_at UNSIGNED INT NOT NULL,
+      srs_stage UNSIGNED TINYINT NOT NULL
     )`,
   )
   await db.runAsync(
