@@ -313,8 +313,13 @@ export const selectWrapUpRemainingTasks = createSelector(
     const completedSubjectIds = completedTasks.map(
       task => task.subject.subject.id,
     )
-    return remainingTasks.filter(task =>
-      completedSubjectIds.includes(task.subject.subject.id),
+    const incorrectAnsweredSubjectIds = remainingTasks
+      .filter(e => e.numberOfErrors > 0)
+      .map(e => e.subject.subject.id)
+    return remainingTasks.filter(
+      task =>
+        completedSubjectIds.includes(task.subject.subject.id) ||
+        incorrectAnsweredSubjectIds.includes(task.subject.subject.id),
     )
   },
 )
