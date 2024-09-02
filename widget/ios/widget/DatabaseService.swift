@@ -18,8 +18,8 @@ struct DatabaseService {
     db = openDb()
   }
 
-  func getReviewCountsByDate() -> [Int: Int] {
-    var reviewCounts: [Int: Int] = [:]
+  func getReviewCountsByDate() -> [(Int, Int)] {
+    var reviewCounts: [(Int, Int)] = []
     let query = """
     SELECT available_at, COUNT(*)
     FROM assignments
@@ -30,12 +30,12 @@ struct DatabaseService {
     var statement: OpaquePointer?
     if sqlite3_prepare_v2(db, query, -1, &statement, nil) != SQLITE_OK {
       print("Failed to prepare statement")
-      return [:]
+      return []
     }
     while sqlite3_step(statement) == SQLITE_ROW {
       let date = Int(sqlite3_column_int(statement, 0))
       let count = Int(sqlite3_column_int(statement, 1))
-      reviewCounts[date] = count
+      reviewCounts.append((date, count))
     }
     sqlite3_finalize(statement)
     return reviewCounts
