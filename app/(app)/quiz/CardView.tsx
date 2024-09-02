@@ -30,6 +30,7 @@ import { questionTypeAndResponseMatch } from '@/src/utils/answerChecker/checkAns
 import { CardInputVariant } from './CardInputVariant'
 import { ReadingPage } from '@/src/components/ReadingPage'
 import { MeaningPage } from '@/src/components/MeaningPage'
+import { LinearGradient } from 'expo-linear-gradient'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -193,27 +194,31 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
           styles.card,
           { backgroundColor: subjectColor },
         ]}>
-        <Animated.View
-          style={[animatedInfoButtonStyle, styles.cardViewActionContainer]}>
-          {infoButtonVisible && (
-            <Pressable
-              style={{ alignItems: 'center', zIndex: 31 }}
-              onPress={switchCard}>
-              <AntDesign name='infocirlceo' size={24} color='white' />
-            </Pressable>
-          )}
-        </Animated.View>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 0 }}>
-          <CardInputVariant
-            task={task}
-            submit={submit}
-            taskState={taskState}
-            textInputRef={textInputRef}
-            hint={hint}
-          />
-        </KeyboardAvoidingView>
+        <LinearGradient
+          colors={[subjectColor, Colors.getDarker(subjectColor, 10)]}
+          style={[styles.card, { height: '100%' }]}>
+          <Animated.View
+            style={[animatedInfoButtonStyle, styles.cardViewActionContainer]}>
+            {infoButtonVisible && (
+              <Pressable
+                style={{ alignItems: 'center', zIndex: 31 }}
+                onPress={switchCard}>
+                <AntDesign name='infocirlceo' size={24} color='white' />
+              </Pressable>
+            )}
+          </Animated.View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 0 }}>
+            <CardInputVariant
+              task={task}
+              submit={submit}
+              taskState={taskState}
+              textInputRef={textInputRef}
+              hint={hint}
+            />
+          </KeyboardAvoidingView>
+        </LinearGradient>
       </Animated.View>
       <Animated.View
         pointerEvents={cardState === 'viewInfo' ? 'auto' : 'none'}

@@ -187,7 +187,7 @@ export default function Index() {
                 exiting={exitingAnimationRight}>
                 <Link
                   href={{
-                    pathname: 'lessons',
+                    pathname: '/lessons',
                     params: { assignmentIds: lessonIdsBatch },
                   }}
                   asChild>
@@ -241,7 +241,7 @@ export default function Index() {
               exiting={exitingAnimationRight}>
               <Link
                 href={{
-                  pathname: 'review',
+                  pathname: '/review',
                   params: { assignmentIds: reviewIdsBatch },
                 }}
                 asChild>
