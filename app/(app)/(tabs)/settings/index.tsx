@@ -11,11 +11,13 @@ import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useTabPress } from '@/src/hooks/useTabPress'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import Toast from 'react-native-root-toast'
 import { useSQLiteContext } from 'expo-sqlite'
 import { dbHelper } from '@/src/utils/dbHelper'
 import { asyncStorageHelper } from '@/src/utils/asyncStorageHelper'
+import { LocalSettings } from '@/src/types/localSettings'
+import { Preferences, defaultPreferences } from '@/src/types/preferences'
 
 type SectionItemType = 'page' | 'switch' | 'destructiveButton'
 interface SectionsData {
@@ -24,7 +26,7 @@ interface SectionsData {
   data: {
     title: string
     type: SectionItemType
-    value?: any
+    key?: keyof (LocalSettings & Preferences)
     onPress: () => void
   }[]
 }
@@ -86,17 +88,19 @@ export default function Index() {
           {
             title: 'Preferred lesson batch size',
             type: 'page',
-            value: settings.lessons_batch_size,
+            key: 'lessons_batch_size',
             onPress: () => router.navigate('/(tabs)/settings/batchSize'),
           },
           {
             title: 'Maximum recommended daily lessons',
             type: 'page',
+            key: 'max_lessons_per_day',
             onPress: () => router.navigate('/(tabs)/settings/maxLessons'),
           },
           {
             title: 'Interleave Advanced Lessons',
             type: 'page',
+            key: 'interleave_advanced_lessons',
             onPress: () =>
               router.navigate('/(tabs)/settings/interleaveAdvancedLessons'),
           },
@@ -108,9 +112,9 @@ export default function Index() {
           'During the review session the SRS change indicator will appear for items completed.',
         data: [
           {
-            title: 'SRS update indicator during reviews',
+            title: 'SRS update indicator',
             type: 'switch',
-            value: settings.reviews_display_srs_indicator,
+            key: 'reviews_display_srs_indicator',
             onPress: () =>
               setProperty(
                 'reviews_display_srs_indicator',
@@ -124,7 +128,7 @@ export default function Index() {
           {
             title: 'Review ordering',
             type: 'page',
-            value: settings.reviews_presentation_order,
+            key: 'reviews_presentation_order',
             onPress: () => router.navigate('/(tabs)/settings/reviewOrdering'),
           },
         ],
@@ -135,13 +139,13 @@ export default function Index() {
           {
             title: 'Default voice',
             type: 'page',
-            value: settings.default_voice,
+            key: 'default_voice',
             onPress: () => router.navigate('/(tabs)/settings/defaultVoice'),
           },
           {
             title: 'Autoplay audio in lessons',
             type: 'switch',
-            value: settings.lessons_autoplay_audio,
+            key: 'lessons_autoplay_audio',
             onPress: () =>
               setProperty(
                 'lessons_autoplay_audio',
@@ -151,7 +155,7 @@ export default function Index() {
           {
             title: 'Autoplay audio in reviews',
             type: 'switch',
-            value: settings.reviews_autoplay_audio,
+            key: 'reviews_autoplay_audio',
             onPress: () =>
               setProperty(
                 'reviews_autoplay_audio',
@@ -161,7 +165,7 @@ export default function Index() {
           {
             title: 'Autoplay audio in extra study',
             type: 'switch',
-            value: settings.extra_study_autoplay_audio,
+            key: 'extra_study_autoplay_audio',
             onPress: () =>
               setProperty(
                 'extra_study_autoplay_audio',
@@ -211,19 +215,29 @@ export default function Index() {
         const textColor =
           item.type === 'destructiveButton' ? Colors.destructiveRed : undefined
         const textStyle = [styles.itemText, { color: textColor }]
+        const value = item.key !== undefined ? settings[item.key] : undefined
         const valueString =
-          item.value && typeof item.value === 'string'
-            ? StringUtils.convertEnumTypeToString(item.value)
-            : item.value
+          value && typeof value === 'string'
+            ? StringUtils.convertEnumTypeToString(value)
+            : value
         return (
           <View style={appStyles.rowSpaceBetween}>
-            <Text style={textStyle}>{item.title}</Text>
-            {item.type === 'switch' && (
-              <Switch value={item.value} onValueChange={item.onPress} />
+            <View style={appStyles.row}>
+              <Text style={textStyle}>{item.title}</Text>
+              {item.key &&
+                Object.keys(defaultPreferences).includes(item.key) && (
+                  <Fragment>
+                    <View style={{ width: 8 }} />
+                    <AntDesign name='sync' size={12} color={Colors.gray88} />
+                  </Fragment>
+                )}
+            </View>
+            {item.type === 'switch' && typeof value === 'boolean' && (
+              <Switch value={value} onValueChange={item.onPress} />
             )}
             {item.type === 'page' && (
               <View style={appStyles.row}>
-                {item.value && typeof item.value === 'string' && (
+                {value && typeof value === 'string' && (
                   <Text style={styles.itemValueText}>{valueString}</Text>
                 )}
                 <View style={{ width: 8 }} />
