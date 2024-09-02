@@ -73,19 +73,41 @@ extension Calendar {
 struct Provider: TimelineProvider {
   private let userDefaults: UserDefaults? = UserDefaults(suiteName: "group.dev.khramtsov.wanikani")
   private let db = DatabaseService()
-
+  
   func placeholder(in context: Context) -> SimpleEntry {
-    SimpleEntry(date: Date(), availableReviews: 16, forecast: nil)
+    SimpleEntry(
+      date: .now,
+      availableReviews: 16,
+      forecast: context.family == .systemSmall
+      ? nil
+      : [
+        (.now.addingTimeInterval(TimeInterval(5 * 60 * 60)), 5),
+        (.now.addingTimeInterval(TimeInterval(7 * 60 * 60)), 10),
+        (.now.addingTimeInterval(TimeInterval(8 * 60 * 60)), 5),
+        (.now.addingTimeInterval(TimeInterval(9 * 60 * 60)), 8),
+        (.now.addingTimeInterval(TimeInterval(0 * 60 * 60)), 8),
+    ])
   }
 
   func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
-    let entry = SimpleEntry(date: Date(), availableReviews: 16, forecast: nil)
-    completion(entry)
+    let entries = getTimelineEntries(in: context)
+    if let entry = entries.first {
+      completion(entry)
+    } else {
+      completion(placeholder(in: context))
+    }
   }
 
-  func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+  func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) 
+  {
+    let entries = getTimelineEntries(in: context)
+    let timeline = Timeline(entries: entries, policy: .atEnd)
+    completion(timeline)
+  }
+  
+  func getTimelineEntries(in context: Context) -> [SimpleEntry] {
     var entries: [SimpleEntry] = []
-
+    
     let currentDate = Date()
     let currentDateInSeconds = Int(currentDate.timeIntervalSince1970)
     let reviewCounts: [(Int, Int)] = db.getReviewCountsByDate()
@@ -115,9 +137,8 @@ struct Provider: TimelineProvider {
       )
       entries.append(entry)
     }
-
-    let timeline = Timeline(entries: entries, policy: .atEnd)
-    completion(timeline)
+    
+    return entries
   }
 }
 
