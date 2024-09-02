@@ -190,26 +190,28 @@ export const CardInputVariant = ({
       )}
       <Animated.View style={[styles.textInputBox, animatedStyle]}>
         <FloatingEmojis ref={floatingEmojisRef}>
-          <TextInput
-            ref={textInputRef}
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: taskStateColor,
-                color: taskStateTextColor,
-              },
-            ]}
-            textAlign={'center'}
-            onChangeText={input => setInputAndConvert(input)}
-            onSubmitEditing={_ => submit(input)}
-            value={input}
-            blurOnSubmit={false}
-            placeholder='Your Response'
-            autoCorrect={false}
-            autoComplete={'off'}
-            // TODO: can not set semi-transparent color of placeholder text
-            // (although it looks like the default color is semi-transparent)
-          />
+          <View style={styles.textInputView}>
+            {input.length === 0 && (
+              <Text style={styles.placeholder}>Your response</Text>
+            )}
+            <TextInput
+              ref={textInputRef}
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: taskStateColor,
+                  color: taskStateTextColor,
+                },
+              ]}
+              textAlign={'center'}
+              onChangeText={input => setInputAndConvert(input)}
+              onSubmitEditing={_ => submit(input)}
+              value={input}
+              blurOnSubmit={false}
+              autoCorrect={false}
+              autoComplete={'off'}
+            />
+          </View>
         </FloatingEmojis>
       </Animated.View>
     </Fragment>
@@ -246,11 +248,22 @@ const stylesheet = createStyleSheet({
   textInputBox: {
     padding: 20,
   },
+  textInputView: {
+    alignItems: 'center',
+  },
   textInput: {
     ...typography.titleC,
-    height: 48,
     minWidth: '80%',
+    height: 48,
+    zIndex: 1,
     borderRadius: 8,
+  },
+  placeholder: {
+    ...typography.titleC,
+    color: '#FFFFFF60',
+    lineHeight: 48,
+    zIndex: 0,
+    position: 'absolute',
   },
   toastContent: {
     ...appStyles.row,
