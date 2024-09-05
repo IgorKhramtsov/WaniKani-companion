@@ -203,6 +203,8 @@ export const CardInputVariant = ({
                   color: taskStateTextColor,
                 },
               ]}
+              contextMenuHidden={true}
+              textContentType='none'
               textAlign={'center'}
               onChangeText={input => setInputAndConvert(input)}
               onSubmitEditing={_ => submit(input)}
