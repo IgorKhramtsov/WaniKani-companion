@@ -24,10 +24,8 @@ const baseQueryWithSqlite =
     try {
       const result = await statement.executeAsync(params)
       const values = await result.getAllAsync()
-      console.log('return:', { data: values })
       return { data: values }
     } catch (error) {
-      console.log('return:', { error })
       return { error }
     } finally {
       await statement.finalizeAsync()

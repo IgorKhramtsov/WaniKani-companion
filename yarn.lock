@@ -2684,7 +2684,7 @@
     component-type "^1.2.1"
     join-component "^1.1.0"
 
-"@shopify/react-native-skia@^1.3.11":
+"@shopify/react-native-skia@1.3.11":
   version "1.3.11"
   resolved "https://registry.yarnpkg.com/@shopify/react-native-skia/-/react-native-skia-1.3.11.tgz#fc4793b6a71604007cfa178ed780fbf3a6a1991f"
   integrity sha512-fIkxh77TVbIFAIFuJbB9wjNCvehOeARWsCOTSo5HdkjZ3/f4QPGR4RWN5zOMvi8aD83oRfJ6AVcnozFYYZREaA==
@@ -5711,7 +5711,7 @@ expo-structured-headers@~3.8.0:
   resolved "https://registry.yarnpkg.com/expo-structured-headers/-/expo-structured-headers-3.8.0.tgz#11797a4c3a7a6770b21126cecffcda148030e361"
   integrity sha512-R+gFGn0x5CWl4OVlk2j1bJTJIz4KO8mPoCHpRHmfqMjmrMvrOM0qQSY3V5NHXwp1yT/L2v8aUmFQsBRIdvi1XA==
 
-expo-system-ui@~3.0.4:
+expo-system-ui@~3.0.7:
   version "3.0.7"
   resolved "https://registry.yarnpkg.com/expo-system-ui/-/expo-system-ui-3.0.7.tgz#73fee2a61db435e5d66cbf6407e0987f39c25b4e"
   integrity sha512-KAs72F5JKhdIfPR9ZNVlRubTPK9uUuevPy5oYEp12xNEzSQcjZKvypH5NpwJuNWkXzrp3n3vZ+3pXsudA7J3KA==
@@ -6171,11 +6171,6 @@ getenv@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/getenv/-/getenv-1.0.0.tgz#874f2e7544fbca53c7a4738f37de8605c3fcfc31"
   integrity sha512-7yetJWqbS9sbn0vIfliPsFgoXMKn/YMF+Wuiog97x+urnSRRRZ7xB+uVkwGKzRgq9CDFfMQnE9ruL5DHv9c6Xg==
-
-gifted-charts-core@^0.1.32:
-  version "0.1.32"
-  resolved "https://registry.yarnpkg.com/gifted-charts-core/-/gifted-charts-core-0.1.32.tgz#94ed5c5d854bcd80abd91f33cff8a39352e46ced"
-  integrity sha512-BXAc9Dg/JK9/4RHWtEzs3EUIGPDKMxlcA7xwYt2vuEXl5UkkJqX6asrfHVv0R1YmVjkgz/0ld4OsKdNArRJOAQ==
 
 glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"
@@ -8789,11 +8784,6 @@ path-type@^4.0.0:
   resolved "https://registry.yarnpkg.com/path-type/-/path-type-4.0.0.tgz#84ed01c0a7ba380afe09d90a8c180dcd9d03043b"
   integrity sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==
 
-paths-js@^0.4.10:
-  version "0.4.11"
-  resolved "https://registry.yarnpkg.com/paths-js/-/paths-js-0.4.11.tgz#b2a9d5f94ee9949aa8fee945f78a12abff44599e"
-  integrity sha512-3mqcLomDBXOo7Fo+UlaenG6f71bk1ZezPQy2JCmYHy2W2k5VKpP+Jbin9H0bjXynelTbglCqdFhSEkeIkKTYUA==
-
 picocolors@^1.0.0, picocolors@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.0.1.tgz#a8ad579b571952f0e5d25892de5445bcfe25aaa1"
@@ -8846,11 +8836,6 @@ pngjs@^3.3.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-3.4.0.tgz#99ca7d725965fb655814eaf65f38f12bbdbf555f"
   integrity sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==
-
-point-in-polygon@^1.0.1:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/point-in-polygon/-/point-in-polygon-1.1.0.tgz#b0af2616c01bdee341cbf2894df643387ca03357"
-  integrity sha512-3ojrFwjnnw8Q9242TzgXuTD+eKiutbzyslcq1ydfu82Db2y+Ogbmyrkpv0Hgj31qwT3lbS9+QAAO/pIQM35XRw==
 
 possible-typed-array-names@^1.0.0:
   version "1.0.0"
@@ -9101,15 +9086,6 @@ react-is@^17.0.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
-react-native-chart-kit@^6.12.0:
-  version "6.12.0"
-  resolved "https://registry.yarnpkg.com/react-native-chart-kit/-/react-native-chart-kit-6.12.0.tgz#187a4987a668a85b7e93588c248ed2c33b3a06f6"
-  integrity sha512-nZLGyCFzZ7zmX0KjYeeSV1HKuPhl1wOMlTAqa0JhlyW62qV/1ZPXHgT8o9s8mkFaGxdqbspOeuaa6I9jUQDgnA==
-  dependencies:
-    lodash "^4.17.13"
-    paths-js "^0.4.10"
-    point-in-polygon "^1.0.1"
-
 react-native-gesture-handler@~2.16.1:
   version "2.16.2"
   resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-2.16.2.tgz#032bd2a07334292d7f6cff1dc9d1ec928f72e26d"
@@ -9120,13 +9096,6 @@ react-native-gesture-handler@~2.16.1:
     invariant "^2.2.4"
     lodash "^4.17.21"
     prop-types "^15.7.2"
-
-react-native-gifted-charts@^1.4.31:
-  version "1.4.31"
-  resolved "https://registry.yarnpkg.com/react-native-gifted-charts/-/react-native-gifted-charts-1.4.31.tgz#561b770b9f37df7a6e0df1c526156e7723d9dd17"
-  integrity sha512-5PLM64sywUX/DuGSSAbQFB0j0w3YtR6dj+OtByuq8DFsPZSQlzBvjqCaTBKVTXMrs4BT8a72cNZUe1DtZUAWcw==
-  dependencies:
-    gifted-charts-core "^0.1.32"
 
 react-native-helmet-async@2.0.4:
   version "2.0.4"

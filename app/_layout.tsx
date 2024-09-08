@@ -9,9 +9,14 @@ import { RootSiblingParent } from 'react-native-root-siblings'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
 import { PropsWithChildren, useMemo } from 'react'
-import { Platform, Text } from 'react-native'
+import { Platform, Text, useColorScheme } from 'react-native'
 import * as FS from 'expo-file-system'
 import { Directory } from 'expo-file-system/next'
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native'
 
 const queryClient = new QueryClient()
 
@@ -20,6 +25,7 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useReactQueryDevTools(queryClient)
   }
+  const colorScheme = useColorScheme()
   const dbDirectory = useMemo(() => {
     if (Platform.OS === 'ios') {
       return Directory.getSharedContainerUri('group.dev.khramtsov.wanikani')
@@ -41,7 +47,10 @@ export default function RootLayout() {
             onInit={db => dbHelper.createTables(db)}>
             <StoreProvider>
               <RootSiblingParent>
-                <Slot />
+                <ThemeProvider
+                  value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Slot />
+                </ThemeProvider>
               </RootSiblingParent>
             </StoreProvider>
           </SQLiteProvider>

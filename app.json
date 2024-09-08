@@ -51,6 +51,17 @@
             "deploymentTarget": "15.1"
           }
         }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf",
+            "assets/fonts/NotoSans-VariableFont_wdth,wght.ttf",
+            "assets/fonts/NotoSansJP-VariableFont_wght.ttf",
+            "assets/fonts/NotoSansSC-VariableFont_wght.ttf"
+          ]
+        }
       ]
     ],
     "experiments": {

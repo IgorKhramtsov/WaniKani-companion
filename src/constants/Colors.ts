@@ -30,6 +30,8 @@ export const Colors = {
   grayDA: '#DADADA',
   correctGreen: '#88CC01',
   green: '#5BA733',
+  statisticsGreen: '#AFEC70',
+  statisticsGreenLine: '#59C275',
   quizGreen: '#34D399',
   incorrectRed: '#DC3545',
   destructiveRed: '#FF3B30',
