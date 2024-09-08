@@ -5,12 +5,12 @@ import {
   Path,
   Skia,
   Circle,
-  Text,
-  matchFont,
   Color,
   vec,
   LinearGradient,
   PaintStyle,
+  TextAlign,
+  Paragraph,
 } from '@shopify/react-native-skia'
 import {
   useSharedValue,
@@ -48,13 +48,11 @@ const Chart: React.FC<ChartProps> = ({
   bgColor = 'white',
   labelCount = 5,
 }) => {
-  const font = matchFont(
-    {
-      ...typography.label,
-      fontFamily: 'Noto Sans',
-    },
-    Skia.FontMgr.System(),
-  )
+  const labelSize = 14
+  const paddingTop = 10
+  const horizontalPadding = 20
+  const innerWidth = width - horizontalPadding * 2
+  const innerHeight = height - labelSize - paddingTop
   const touchedPoint = useSharedValue<{ x: number; y: number } | null>(null)
   const hasTouch = useSharedValue(false)
 
@@ -71,64 +69,120 @@ const Chart: React.FC<ChartProps> = ({
   const path = useMemo(() => {
     const skPath = Skia.Path.Make()
     sortedData.forEach((point, index) => {
+      const isFirst = index === 0
+      const isLast = index === sortedData.length - 1
       const x =
-        ((point.timestamp - timeRange.startTime) / timeRange.duration) * width
+        ((point.timestamp - timeRange.startTime) / timeRange.duration) *
+          innerWidth +
+        (isFirst ? 0 : isLast ? horizontalPadding * 2 : horizontalPadding)
       const y =
-        height -
-        (point.lessons / Math.max(...data.map(d => d.lessons))) * height
+        innerHeight +
+        paddingTop -
+        (point.lessons / Math.max(...data.map(d => d.lessons))) * innerHeight
       if (index === 0) {
         skPath.moveTo(x, y)
       } else {
         const prevX =
           ((sortedData[index - 1].timestamp - timeRange.startTime) /
             timeRange.duration) *
-          width
+            innerWidth +
+          horizontalPadding
         const prevY =
-          height -
+          innerHeight +
+          paddingTop -
           (sortedData[index - 1].lessons /
             Math.max(...data.map(d => d.lessons))) *
-            height
+            innerHeight
         const midX = (prevX + x) / 2
         skPath.cubicTo(midX, prevY, midX, y, x, y)
       }
     })
     return skPath
-  }, [data, sortedData, width, height, timeRange])
+  }, [data, sortedData, innerWidth, innerHeight, timeRange])
 
   const fillPath = useMemo(() => {
     const skPath = path.copy()
-    skPath.lineTo(width, height)
-    skPath.lineTo(0, height)
+    skPath.lineTo(width, innerHeight)
+    skPath.lineTo(0, innerHeight)
     skPath.close()
     return skPath
-  }, [path, width, height])
+  }, [path, width, innerHeight])
+
+  const timePointsForLabels = useMemo(() => {
+    const paddingHours = Math.round(data.length / labelCount / 2)
+    console.log('paddingHours', paddingHours)
+    const adjustedStartTime =
+      timeRange.startTime + paddingHours * 1000 * 60 * 60
+    const adjustedRange = timeRange.duration - paddingHours * 0 * 1000 * 60 * 60
+    const portion = 1 / labelCount
+
+    return Array.from({ length: labelCount }, (_, i) => {
+      const pointer = i * portion
+      const offset =
+        Math.round((pointer * adjustedRange) / 1000 / 60 / 60) * 1000 * 60 * 60
+      const timestamp = adjustedStartTime + offset
+
+      const x =
+        ((timestamp - timeRange.startTime) / timeRange.duration) * innerWidth +
+        horizontalPadding
+      const date = new Date(timestamp)
+      const timeFormatter = Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: 'numeric',
+      })
+      const formattedTime = timeFormatter.format(date)
+      return { formattedTime, x }
+    })
+  }, [data.length, labelCount, innerWidth, timeRange])
 
   const timeLabels = useMemo(() => {
-    return Array.from({ length: labelCount }, (_, i) => {
-      const timestamp =
-        timeRange.startTime + (i / (labelCount - 1)) * timeRange.duration
-      const date = new Date(timestamp)
-      const hour = date.getHours()
-      const x = (i / (labelCount - 1)) * width
-      return { hour, x }
+    const fontFaceProvider = Skia.TypefaceFontProvider.Make()
+    const paragraphStyle = {
+      textAlign: TextAlign.Center,
+    }
+    const textStyle = {
+      color: Skia.Color('black'),
+      fontFamilies: ['Noto Sans'],
+      fontSize: typography.label.fontSize,
+    }
+    return timePointsForLabels.map(({ formattedTime, x }) => {
+      const paragraph = Skia.ParagraphBuilder.Make(
+        paragraphStyle,
+        fontFaceProvider,
+      )
+        .pushStyle(textStyle)
+        .addText(formattedTime)
+        .build()
+      paragraph.layout(100)
+      return {
+        x,
+        paragraph,
+      }
     })
-  }, [labelCount, width, timeRange])
+  }, [timePointsForLabels])
 
   const updateTouchedPoint = (x: number) => {
     const nearestPoint = sortedData.reduce((prev, curr) => {
       const prevX =
-        ((prev.timestamp - timeRange.startTime) / timeRange.duration) * width
+        ((prev.timestamp - timeRange.startTime) / timeRange.duration) *
+          innerWidth +
+        horizontalPadding
       const currX =
-        ((curr.timestamp - timeRange.startTime) / timeRange.duration) * width
+        ((curr.timestamp - timeRange.startTime) / timeRange.duration) *
+          innerWidth +
+        horizontalPadding
       return Math.abs(prevX - x) < Math.abs(currX - x) ? prev : curr
     })
     touchedPoint.value = {
       x:
         ((nearestPoint.timestamp - timeRange.startTime) / timeRange.duration) *
-        width,
+          innerWidth +
+        horizontalPadding,
       y:
-        height -
-        (nearestPoint.lessons / Math.max(...data.map(d => d.lessons))) * height,
+        innerHeight +
+        paddingTop -
+        (nearestPoint.lessons / Math.max(...data.map(d => d.lessons))) *
+          innerHeight,
     }
   }
 
@@ -178,7 +232,7 @@ const Chart: React.FC<ChartProps> = ({
         <Path key='fillpath' path={fillPath}>
           <LinearGradient
             start={vec(0, 0)}
-            end={vec(0, height)}
+            end={vec(0, innerHeight)}
             colors={[
               tinycolor(color.toString()).setAlpha(0.6).toString(),
               tinycolor(color.toString()).setAlpha(0).toString(),
@@ -195,20 +249,21 @@ const Chart: React.FC<ChartProps> = ({
         {circlePoints.map((point, index) => {
           const x =
             ((point.timestamp - timeRange.startTime) / timeRange.duration) *
-            width
+              innerWidth +
+            horizontalPadding
           const y =
-            height -
-            (point.lessons / Math.max(...data.map(d => d.lessons))) * height
-          // Paint for the fill
+            innerHeight +
+            paddingTop -
+            (point.lessons / Math.max(...data.map(d => d.lessons))) *
+              innerHeight
           const fillPaint = Skia.Paint()
-          fillPaint.setStyle(PaintStyle.Fill) // Set the style to fill
-          fillPaint.setColor(Skia.Color(lineColor)) // Set fill color (green)
+          fillPaint.setStyle(PaintStyle.Fill)
+          fillPaint.setColor(Skia.Color(lineColor))
 
-          // Paint for the stroke
           const strokePaint = Skia.Paint()
-          strokePaint.setStyle(PaintStyle.Stroke) // Set the style to stroke
-          strokePaint.setStrokeWidth(3) // Set stroke width
-          strokePaint.setColor(Skia.Color(bgColor)) // Set stroke color (red)
+          strokePaint.setStyle(PaintStyle.Stroke)
+          strokePaint.setStrokeWidth(3)
+          strokePaint.setColor(Skia.Color(bgColor))
 
           return (
             <Fragment key={index}>
@@ -229,16 +284,18 @@ const Chart: React.FC<ChartProps> = ({
             </Fragment>
           )
         })}
-        {timeLabels.map(({ hour, x }) => (
-          <Text
-            key={hour}
-            x={x}
-            y={height + 20}
-            text={`${hour}:00`}
-            font={font}
-            color='black'
-          />
-        ))}
+        {timeLabels.map((label, index) => {
+          const width = label.paragraph.getLongestLine() + 1
+          return (
+            <Paragraph
+              key={label.x}
+              paragraph={label.paragraph}
+              x={label.x - width / 2}
+              y={innerHeight + labelSize - 14}
+              width={width}
+            />
+          )
+        })}
         {<Circle cx={circleX} cy={circleY} r={animatedRadius} color='blue' />}
       </Canvas>
     </GestureDetector>
