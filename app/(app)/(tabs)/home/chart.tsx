@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo } from 'react'
+import React, { Fragment, useCallback, useMemo, useState } from 'react'
 import { Dimensions } from 'react-native'
 import {
   Canvas,
@@ -11,12 +11,17 @@ import {
   PaintStyle,
   TextAlign,
   Paragraph,
+  SkParagraph,
+  Group,
+  Paint,
+  Line,
 } from '@shopify/react-native-skia'
 import {
   useSharedValue,
   useDerivedValue,
   runOnJS,
   withSpring,
+  useAnimatedReaction,
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import typography from '@/src/constants/typography'
@@ -56,6 +61,25 @@ const Chart: React.FC<ChartProps> = ({
   const touchedPoint = useSharedValue<{ x: number; y: number } | null>(null)
   const hasTouch = useSharedValue(false)
 
+  const fontFaceProvider = Skia.TypefaceFontProvider.Make()
+  const paragraphStyle = {
+    textAlign: TextAlign.Center,
+  }
+  const textStyle = {
+    color: Skia.Color('black'),
+    fontFamilies: ['Noto Sans'],
+    fontSize: typography.label.fontSize,
+  }
+
+  const fillPaint = Skia.Paint()
+  fillPaint.setStyle(PaintStyle.Fill)
+  fillPaint.setColor(Skia.Color(lineColor))
+
+  const strokePaint = Skia.Paint()
+  strokePaint.setStyle(PaintStyle.Stroke)
+  strokePaint.setStrokeWidth(3)
+  strokePaint.setColor(Skia.Color(bgColor))
+
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => a.timestamp - b.timestamp)
   }, [data])
@@ -66,6 +90,15 @@ const Chart: React.FC<ChartProps> = ({
     return { startTime, endTime, duration: endTime - startTime }
   }, [sortedData])
 
+  const paddingHours = useMemo(
+    () => Math.round(data.length / labelCount / 2),
+    [data, labelCount],
+  )
+  const adjustedStartTime = useMemo(
+    () => timeRange.startTime + paddingHours * 1000 * 60 * 60,
+    [timeRange.startTime, paddingHours],
+  )
+
   const path = useMemo(() => {
     const skPath = Skia.Path.Make()
     sortedData.forEach((point, index) => {
@@ -74,13 +107,14 @@ const Chart: React.FC<ChartProps> = ({
       const x =
         ((point.timestamp - timeRange.startTime) / timeRange.duration) *
           innerWidth +
-        (isFirst ? 0 : isLast ? horizontalPadding * 2 : horizontalPadding)
+        horizontalPadding
       const y =
         innerHeight +
         paddingTop -
         (point.lessons / Math.max(...data.map(d => d.lessons))) * innerHeight
-      if (index === 0) {
-        skPath.moveTo(x, y)
+      if (isFirst) {
+        skPath.moveTo(0, y)
+        skPath.lineTo(x, y)
       } else {
         const prevX =
           ((sortedData[index - 1].timestamp - timeRange.startTime) /
@@ -96,9 +130,12 @@ const Chart: React.FC<ChartProps> = ({
         const midX = (prevX + x) / 2
         skPath.cubicTo(midX, prevY, midX, y, x, y)
       }
+      if (isLast) {
+        skPath.lineTo(width, y)
+      }
     })
     return skPath
-  }, [data, sortedData, innerWidth, innerHeight, timeRange])
+  }, [data, width, sortedData, innerWidth, innerHeight, timeRange])
 
   const fillPath = useMemo(() => {
     const skPath = path.copy()
@@ -109,43 +146,32 @@ const Chart: React.FC<ChartProps> = ({
   }, [path, width, innerHeight])
 
   const timePointsForLabels = useMemo(() => {
-    const paddingHours = Math.round(data.length / labelCount / 2)
-    console.log('paddingHours', paddingHours)
-    const adjustedStartTime =
-      timeRange.startTime + paddingHours * 1000 * 60 * 60
-    const adjustedRange = timeRange.duration - paddingHours * 0 * 1000 * 60 * 60
     const portion = 1 / labelCount
 
     return Array.from({ length: labelCount }, (_, i) => {
       const pointer = i * portion
       const offset =
-        Math.round((pointer * adjustedRange) / 1000 / 60 / 60) * 1000 * 60 * 60
+        Math.round((pointer * timeRange.duration) / 1000 / 60 / 60) *
+        1000 *
+        60 *
+        60
       const timestamp = adjustedStartTime + offset
 
       const x =
         ((timestamp - timeRange.startTime) / timeRange.duration) * innerWidth +
         horizontalPadding
+      return { timestamp, x }
+    })
+  }, [adjustedStartTime, labelCount, innerWidth, timeRange])
+
+  const getLabelForTime = useCallback(
+    (timestamp: number): SkParagraph => {
       const date = new Date(timestamp)
       const timeFormatter = Intl.DateTimeFormat(undefined, {
         hour: 'numeric',
         minute: 'numeric',
       })
       const formattedTime = timeFormatter.format(date)
-      return { formattedTime, x }
-    })
-  }, [data.length, labelCount, innerWidth, timeRange])
-
-  const timeLabels = useMemo(() => {
-    const fontFaceProvider = Skia.TypefaceFontProvider.Make()
-    const paragraphStyle = {
-      textAlign: TextAlign.Center,
-    }
-    const textStyle = {
-      color: Skia.Color('black'),
-      fontFamilies: ['Noto Sans'],
-      fontSize: typography.label.fontSize,
-    }
-    return timePointsForLabels.map(({ formattedTime, x }) => {
       const paragraph = Skia.ParagraphBuilder.Make(
         paragraphStyle,
         fontFaceProvider,
@@ -154,12 +180,81 @@ const Chart: React.FC<ChartProps> = ({
         .addText(formattedTime)
         .build()
       paragraph.layout(100)
+      return paragraph
+    },
+    [fontFaceProvider, paragraphStyle, textStyle],
+  )
+
+  const timeLabels = useMemo(() => {
+    return timePointsForLabels.map(({ timestamp, x }) => {
+      const paragraph = getLabelForTime(timestamp)
       return {
         x,
         paragraph,
       }
     })
-  }, [timePointsForLabels])
+  }, [getLabelForTime, timePointsForLabels])
+
+  const allLabels = useMemo(() => {
+    return Array.from({ length: data.length }, (_, i) => {
+      const timestamp = data[i].timestamp
+      const x =
+        ((timestamp - timeRange.startTime) / timeRange.duration) * innerWidth +
+        horizontalPadding
+      const paragraph = getLabelForTime(timestamp)
+      const width = paragraph.getLongestLine()
+      const adjustedX = x - width / 2
+      const leftBound = horizontalPadding
+      return {
+        x: Math.max(leftBound, adjustedX),
+        paragraph,
+        width: width,
+      }
+    })
+  }, [
+    data,
+    getLabelForTime,
+    innerWidth,
+    timeRange.duration,
+    timeRange.startTime,
+  ])
+
+  const touchedTimeLabelIndex = useDerivedValue(() => {
+    const x = touchedPoint.value?.x
+    if (x === undefined) return null
+
+    const nearestPoint = sortedData.reduce((prev, curr) => {
+      const prevX =
+        ((prev.timestamp - timeRange.startTime) / timeRange.duration) *
+          innerWidth +
+        horizontalPadding
+      const currX =
+        ((curr.timestamp - timeRange.startTime) / timeRange.duration) *
+          innerWidth +
+        horizontalPadding
+      return Math.abs(prevX - x) < Math.abs(currX - x) ? prev : curr
+    })
+    const index = sortedData.findIndex(d => d === nearestPoint)
+    return index
+  }, [touchedPoint])
+
+  const [touchedTimeLabel, setTouchedTimeLabel] = useState<{
+    x: number
+    paragraph: SkParagraph
+    width: number
+  } | null>(null)
+
+  // TODO: it looks like this reaction breaks gestures sometimes.
+  useAnimatedReaction(
+    () => touchedTimeLabelIndex.value,
+    (cur, prev) => {
+      console.log('reaction')
+      if (cur !== prev && cur !== null) {
+        runOnJS(setTouchedTimeLabel)(allLabels[cur])
+      }
+    },
+    [allLabels, touchedTimeLabelIndex],
+  )
 
   const updateTouchedPoint = (x: number) => {
     const nearestPoint = sortedData.reduce((prev, curr) => {
@@ -204,18 +299,21 @@ const Chart: React.FC<ChartProps> = ({
 
   const circlePoints = useMemo(() => {
     return sortedData.reduce((acc, point, index) => {
-      if (index === 0 || point.lessons !== sortedData[index - 1].lessons) {
+      if (
+        index === 0 ||
+        (index > 0 && point.lessons !== sortedData[index - 1].lessons)
+      ) {
         acc.push(point)
       }
       return acc
     }, [] as LessonData[])
   }, [sortedData])
 
-  const circleX = useDerivedValue(
+  const touchX = useDerivedValue(
     () => touchedPoint?.value?.x ?? 0,
     [touchedPoint],
   )
-  const circleY = useDerivedValue(
+  const touchY = useDerivedValue(
     () => touchedPoint?.value?.y ?? 0,
     [touchedPoint],
   )
@@ -225,6 +323,14 @@ const Chart: React.FC<ChartProps> = ({
       damping: hasTouch.value ? 1000 : 10,
     })
   }, [hasTouch])
+  const hasTouchOpaque = useDerivedValue(
+    () => (hasTouch.value ? 1.0 : 0.0),
+    [hasTouch],
+  )
+  const hasNoTouchOpaque = useDerivedValue(
+    () => (hasTouch.value ? 0.0 : 1.0),
+    [hasTouch],
+  )
 
   return (
     <GestureDetector gesture={gesture}>
@@ -256,15 +362,6 @@ const Chart: React.FC<ChartProps> = ({
             paddingTop -
             (point.lessons / Math.max(...data.map(d => d.lessons))) *
               innerHeight
-          const fillPaint = Skia.Paint()
-          fillPaint.setStyle(PaintStyle.Fill)
-          fillPaint.setColor(Skia.Color(lineColor))
-
-          const strokePaint = Skia.Paint()
-          strokePaint.setStyle(PaintStyle.Stroke)
-          strokePaint.setStrokeWidth(3)
-          strokePaint.setColor(Skia.Color(bgColor))
-
           return (
             <Fragment key={index}>
               <Circle
@@ -284,19 +381,37 @@ const Chart: React.FC<ChartProps> = ({
             </Fragment>
           )
         })}
-        {timeLabels.map((label, index) => {
-          const width = label.paragraph.getLongestLine() + 1
-          return (
-            <Paragraph
-              key={label.x}
-              paragraph={label.paragraph}
-              x={label.x - width / 2}
-              y={innerHeight + labelSize - 14}
-              width={width}
-            />
-          )
-        })}
-        {<Circle cx={circleX} cy={circleY} r={animatedRadius} color='blue' />}
+        <Group layer={<Paint opacity={hasTouchOpaque} />}>
+          {touchedTimeLabel && (
+            <>
+              <Line
+                p1={vec(touchedTimeLabel.x + touchedTimeLabel.width / 2, 0)}
+                p2={vec(touchedTimeLabel.x + touchedTimeLabel.width / 2, 300)}
+              />
+              <Paragraph
+                paragraph={touchedTimeLabel.paragraph}
+                x={touchedTimeLabel.x}
+                y={innerHeight + labelSize - 14}
+                width={touchedTimeLabel.width + 1}
+              />
+            </>
+          )}
+        </Group>
+        <Group layer={<Paint opacity={hasNoTouchOpaque} />}>
+          {timeLabels.map((label, index) => {
+            const width = label.paragraph.getLongestLine() + 1
+            return (
+              <Paragraph
+                key={label.x}
+                paragraph={label.paragraph}
+                x={label.x - width / 2}
+                y={innerHeight + labelSize - 14}
+                width={width}
+              />
+            )
+          })}
+        </Group>
+        <Circle cx={touchX} cy={touchY} r={animatedRadius} color='blue' />
       </Canvas>
     </GestureDetector>
   )
