@@ -264,6 +264,7 @@ export default function Index() {
         />
         <View style={{ height: 16 }} />
         <Forecast />
+        <View style={{ height: 64 }} />
       </ScrollView>
     </ErrorWithRetry>
   )
@@ -271,7 +272,7 @@ export default function Index() {
 
 const stylesheet = createStyleSheet({
   scrollView: {
-    padding: 20,
+    paddingVertical: 20,
     height: '100%',
   },
   text: {
@@ -380,6 +381,7 @@ const AssignmentsCard = ({
 
 const assignmentsCardStylesheet = createStyleSheet({
   view: {
+    marginHorizontal: 20,
     padding: 20,
     borderRadius: 4,
   },

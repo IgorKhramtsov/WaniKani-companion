@@ -65,16 +65,10 @@ export const Forecast = () => {
   console.log('areaChartData', areaChartData)
 
   return (
-    <Fragment>
+    <View style={styles.view}>
+      <Text style={styles.title}>Forecast</Text>
       {!forecast.isLoading && (
-        <Text>availableRightNow: {forecast.availableRightNow}</Text>
-      )}
-      {!forecast.isLoading && (
-        <Text>available during the week {forecast.availableDuringTheWeek}</Text>
-      )}
-      {!forecast.isLoading && (
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
           <Chart
             color={Colors.statisticsGreen}
             lineColor={Colors.statisticsGreenLine}
@@ -89,24 +83,18 @@ export const Forecast = () => {
           />
         </View>
       )}
-      {!forecast.isLoading &&
-        forecast.forecast.map((item, index) => (
-          <Text key={item.date.toString()}>
-            {item.date.toString()}: {item.assignmentsCount}
-          </Text>
-        ))}
-      <View style={{ height: 10 }} />
-      {!forecast.isLoading &&
-        forecastAcc.map((item, index) => (
-          <Text key={item.date.toString()}>
-            {item.date.toString()}: {item.assignmentsCount}
-          </Text>
-        ))}
-      <View style={{ height: 64 }} />
-    </Fragment>
+    </View>
   )
 }
 
 const stylesheet = createStyleSheet({
-  graphStyle: {},
+  view: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+  },
+  title: {
+    ...typography.titleC,
+    paddingLeft: 20,
+    paddingTop: 16,
+  },
 })

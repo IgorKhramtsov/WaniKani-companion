@@ -1,5 +1,11 @@
-import React, { Fragment, useCallback, useMemo, useState } from 'react'
-import { Dimensions } from 'react-native'
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import { LayoutChangeEvent } from 'react-native'
 import {
   Canvas,
   Path,
@@ -14,7 +20,6 @@ import {
   SkParagraph,
   Group,
   Paint,
-  Line,
 } from '@shopify/react-native-skia'
 import {
   useSharedValue,
@@ -26,8 +31,6 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import typography from '@/src/constants/typography'
 import tinycolor from 'tinycolor2'
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 interface LessonData {
   timestamp: number // Unix timestamp in milliseconds
@@ -44,9 +47,19 @@ interface ChartProps {
   bgColor?: Color
 }
 
+const paragraphStyle = {
+  textAlign: TextAlign.Center,
+}
+const textStyle = {
+  color: Skia.Color('black'),
+  fontFamilies: ['Noto Sans'],
+  fontSize: typography.label.fontSize,
+}
+
+const fontFaceProvider = Skia.TypefaceFontProvider.Make()
+
 const Chart: React.FC<ChartProps> = ({
   data,
-  width = SCREEN_WIDTH,
   height = 200,
   color = 'rgba(255, 69, 0, 0.2)',
   lineColor = '#FF4500',
@@ -54,31 +67,33 @@ const Chart: React.FC<ChartProps> = ({
   labelCount = 5,
 }) => {
   const labelSize = 14
-  const paddingTop = 10
+  const paddingTop = 30
   const horizontalPadding = 20
-  const innerWidth = width - horizontalPadding * 2
+  const [width, setWidth] = useState(0)
+  const innerWidth = useMemo(() => width - horizontalPadding * 2, [width])
+  const rInnerWidth = useSharedValue(width)
   const innerHeight = height - labelSize - paddingTop
   const touchedPoint = useSharedValue<{ x: number; y: number } | null>(null)
   const hasTouch = useSharedValue(false)
 
-  const fontFaceProvider = Skia.TypefaceFontProvider.Make()
-  const paragraphStyle = {
-    textAlign: TextAlign.Center,
-  }
-  const textStyle = {
-    color: Skia.Color('black'),
-    fontFamilies: ['Noto Sans'],
-    fontSize: typography.label.fontSize,
-  }
+  useEffect(() => {
+    rInnerWidth.value = innerWidth
+  }, [rInnerWidth, innerWidth])
 
-  const fillPaint = Skia.Paint()
-  fillPaint.setStyle(PaintStyle.Fill)
-  fillPaint.setColor(Skia.Color(lineColor))
+  const fillPaint = useMemo(() => {
+    const paint = Skia.Paint()
+    paint.setStyle(PaintStyle.Fill)
+    paint.setColor(Skia.Color(lineColor))
+    return paint
+  }, [lineColor])
 
-  const strokePaint = Skia.Paint()
-  strokePaint.setStyle(PaintStyle.Stroke)
-  strokePaint.setStrokeWidth(3)
-  strokePaint.setColor(Skia.Color(bgColor))
+  const strokePaint = useMemo(() => {
+    const paint = Skia.Paint()
+    paint.setStyle(PaintStyle.Stroke)
+    paint.setStrokeWidth(3)
+    paint.setColor(Skia.Color(bgColor))
+    return paint
+  }, [bgColor])
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => a.timestamp - b.timestamp)
@@ -164,26 +179,35 @@ const Chart: React.FC<ChartProps> = ({
     })
   }, [adjustedStartTime, labelCount, innerWidth, timeRange])
 
-  const getLabelForTime = useCallback(
-    (timestamp: number): SkParagraph => {
-      const date = new Date(timestamp)
-      const timeFormatter = Intl.DateTimeFormat(undefined, {
-        hour: 'numeric',
-        minute: 'numeric',
-      })
-      const formattedTime = timeFormatter.format(date)
-      const paragraph = Skia.ParagraphBuilder.Make(
-        paragraphStyle,
-        fontFaceProvider,
-      )
-        .pushStyle(textStyle)
-        .addText(formattedTime)
-        .build()
-      paragraph.layout(100)
-      return paragraph
-    },
-    [fontFaceProvider, paragraphStyle, textStyle],
-  )
+  const getLabelForTime = useCallback((timestamp: number): SkParagraph => {
+    const date = new Date(timestamp)
+    const timeFormatter = Intl.DateTimeFormat(undefined, {
+      hour: 'numeric',
+      minute: 'numeric',
+    })
+    const formattedTime = timeFormatter.format(date)
+    const paragraph = Skia.ParagraphBuilder.Make(
+      paragraphStyle,
+      fontFaceProvider,
+    )
+      .pushStyle(textStyle)
+      .addText(formattedTime)
+      .build()
+    paragraph.layout(100)
+    return paragraph
+  }, [])
+
+  const getLabelForLessons = useCallback((lessons: number): SkParagraph => {
+    const paragraph = Skia.ParagraphBuilder.Make(
+      paragraphStyle,
+      fontFaceProvider,
+    )
+      .pushStyle(textStyle)
+      .addText(lessons.toString())
+      .build()
+    paragraph.layout(100)
+    return paragraph
+  }, [])
 
   const timeLabels = useMemo(() => {
     return timePointsForLabels.map(({ timestamp, x }) => {
@@ -201,59 +225,84 @@ const Chart: React.FC<ChartProps> = ({
       const x =
         ((timestamp - timeRange.startTime) / timeRange.duration) * innerWidth +
         horizontalPadding
-      const paragraph = getLabelForTime(timestamp)
-      const width = paragraph.getLongestLine()
-      const adjustedX = x - width / 2
+      const timePragraph = getLabelForTime(timestamp)
+      const lessonsParagraph = getLabelForLessons(data[i].lessons)
+      const timeWidth = timePragraph.getLongestLine()
+      const lessonsWidth = lessonsParagraph.getLongestLine()
       const leftBound = horizontalPadding
+      const rightBound = innerWidth - leftBound
       return {
-        x: Math.max(leftBound, adjustedX),
-        paragraph,
-        width: width,
+        time: {
+          x: Math.min(Math.max(leftBound, x - timeWidth / 2), rightBound),
+          paragraph: timePragraph,
+          width: timeWidth,
+        },
+        lessons: {
+          x: Math.max(leftBound, x - lessonsWidth / 2),
+          y:
+            innerHeight +
+            paddingTop -
+            (data[i].lessons / Math.max(...data.map(d => d.lessons))) *
+              innerHeight,
+          paragraph: lessonsParagraph,
+          width: lessonsWidth,
+        },
       }
     })
   }, [
     data,
     getLabelForTime,
+    getLabelForLessons,
     innerWidth,
+    innerHeight,
     timeRange.duration,
     timeRange.startTime,
   ])
 
   const touchedTimeLabelIndex = useDerivedValue(() => {
+    'worklet'
     const x = touchedPoint.value?.x
     if (x === undefined) return null
 
     const nearestPoint = sortedData.reduce((prev, curr) => {
       const prevX =
         ((prev.timestamp - timeRange.startTime) / timeRange.duration) *
-          innerWidth +
+          rInnerWidth.value +
         horizontalPadding
       const currX =
         ((curr.timestamp - timeRange.startTime) / timeRange.duration) *
-          innerWidth +
+          rInnerWidth.value +
         horizontalPadding
       return Math.abs(prevX - x) < Math.abs(currX - x) ? prev : curr
     })
     const index = sortedData.findIndex(d => d === nearestPoint)
-    return index
-  }, [touchedPoint])
 
-  const [touchedTimeLabel, setTouchedTimeLabel] = useState<{
-    x: number
-    paragraph: SkParagraph
-    width: number
+    return index
+  }, [touchedPoint, rInnerWidth])
+
+  const [touchedLabels, setTouchedLabels] = useState<{
+    time: {
+      x: number
+      paragraph: SkParagraph
+      width: number
+    }
+    lessons: {
+      x: number
+      y: number
+      paragraph: SkParagraph
+      width: number
+    }
   } | null>(null)
 
-  // TODO: it looks like this reaction breaks gestures sometimes.
+  // TODO: it looks like this reaction breaks gestures after hot-reload.
   useAnimatedReaction(
     () => touchedTimeLabelIndex.value,
     (cur, prev) => {
       console.log('reaction')
       if (cur !== prev && cur !== null) {
-        runOnJS(setTouchedTimeLabel)(allLabels[cur])
+        runOnJS(setTouchedLabels)(allLabels[cur])
       }
     },
-    [allLabels, touchedTimeLabelIndex],
   )
 
   const updateTouchedPoint = (x: number) => {
@@ -299,10 +348,7 @@ const Chart: React.FC<ChartProps> = ({
 
   const circlePoints = useMemo(() => {
     return sortedData.reduce((acc, point, index) => {
-      if (
-        index === 0 ||
-        (index > 0 && point.lessons !== sortedData[index - 1].lessons)
-      ) {
+      if (index > 0 && point.lessons !== sortedData[index - 1].lessons) {
         acc.push(point)
       }
       return acc
@@ -332,9 +378,16 @@ const Chart: React.FC<ChartProps> = ({
     [hasTouch],
   )
 
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      setWidth(event.nativeEvent.layout.width)
+    },
+    [setWidth],
+  )
+
   return (
     <GestureDetector gesture={gesture}>
-      <Canvas style={{ width, height }}>
+      <Canvas style={{ flex: 1, minHeight: height }} onLayout={handleLayout}>
         <Path key='fillpath' path={fillPath}>
           <LinearGradient
             start={vec(0, 0)}
@@ -382,17 +435,32 @@ const Chart: React.FC<ChartProps> = ({
           )
         })}
         <Group layer={<Paint opacity={hasTouchOpaque} />}>
-          {touchedTimeLabel && (
+          {touchedLabels && (
             <>
-              <Line
-                p1={vec(touchedTimeLabel.x + touchedTimeLabel.width / 2, 0)}
-                p2={vec(touchedTimeLabel.x + touchedTimeLabel.width / 2, 300)}
-              />
               <Paragraph
-                paragraph={touchedTimeLabel.paragraph}
-                x={touchedTimeLabel.x}
+                key='lessons'
+                paragraph={touchedLabels.lessons.paragraph}
+                x={touchedLabels.lessons.x}
+                y={touchedLabels.lessons.y - 20 - 8}
+                width={touchedLabels.lessons.width + 1}
+              />
+              {/* debug line */
+              /*<Line
+                  p1={vec(
+                    touchedLabels.time.x + touchedLabels.time.width / 2,
+                    0,
+                  )}
+                  p2={vec(
+                    touchedLabels.time.x + touchedLabels.time.width / 2,
+                    300,
+                  )}
+                />*/}
+              <Paragraph
+                key='time'
+                paragraph={touchedLabels.time.paragraph}
+                x={touchedLabels.time.x}
                 y={innerHeight + labelSize - 14}
-                width={touchedTimeLabel.width + 1}
+                width={touchedLabels.time.width + 1}
               />
             </>
           )}
