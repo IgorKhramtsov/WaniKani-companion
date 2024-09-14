@@ -40,9 +40,11 @@ describe('parseStringToElements', () => {
     const result = parseStringToElements(input)
     expect(result).toEqual([
       { type: 'text', content: 'Line ', metaTags: [] },
-      { type: 'text', content: '1\n', metaTags: [] },
+      { type: 'text', content: '1', metaTags: [] },
+      { type: 'text', content: '\n', metaTags: [] },
       { type: 'text', content: 'Line ', metaTags: [] },
-      { type: 'text', content: '2\n', metaTags: [] },
+      { type: 'text', content: '2', metaTags: [] },
+      { type: 'text', content: '\n', metaTags: [] },
       { type: 'text', content: 'Line ', metaTags: [] },
       { type: 'text', content: '3', metaTags: [] },
     ])
@@ -50,10 +52,12 @@ describe('parseStringToElements', () => {
 
   it('should handle mixed content correctly', () => {
     const input =
-      'Start <kanji><ja>漢字</ja></kanji> <radical><ja>部首</ja></radical>\nNew line'
+      'Start <ja>漢字</ja> <kanji><ja>漢字</ja></kanji> <radical><ja>部首</ja></radical>\nNew line'
     const result = parseStringToElements(input)
     expect(result).toEqual([
       { type: 'text', content: 'Start ', metaTags: [] },
+      { type: 'text', content: '漢字', metaTags: ['ja'] },
+      { type: 'text', content: ' ', metaTags: [] },
       { type: 'kanji', content: '漢字', metaTags: ['ja'] },
       { type: 'text', content: ' ', metaTags: [] },
       { type: 'radical', content: '部首', metaTags: ['ja'] },

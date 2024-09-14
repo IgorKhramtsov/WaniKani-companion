@@ -104,15 +104,18 @@ export const parseStringToElements = (input: string): ParsedElement[] => {
       currentIndex += 1
     } else if (input[currentIndex] === '\r') {
       if (input[currentIndex + 1] === '\n') {
+        pushText()
         currentText += '\n'
         pushText()
         currentIndex += 2
       } else {
+        pushText()
         currentText += input[currentIndex]
         pushText()
         currentIndex += 1
       }
     } else if (input[currentIndex] === '\n') {
+      pushText()
       currentText += input[currentIndex]
       pushText()
       currentIndex += 1
