@@ -3,12 +3,10 @@ import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { PronunciationAudio } from '@/src/types/pronunciationAudio'
 import { AntDesign } from '@expo/vector-icons'
-import { Audio } from 'expo-av'
-import { useEffect } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import Waveform from '@/assets/images/waveform_short.svg'
-import { useQuery } from '@tanstack/react-query'
+import { usePronunciationAudio } from '../hooks/usePronunciationAudio'
 
 export const PronunciationAudioView = ({
   pronunciation_audio,
@@ -16,31 +14,7 @@ export const PronunciationAudioView = ({
   pronunciation_audio: PronunciationAudio
 }) => {
   const { styles } = useStyles(stylesheet)
-
-  const sound = useQuery({
-    queryKey: [pronunciation_audio.url],
-    queryFn: () =>
-      Audio.Sound.createAsync(
-        { uri: pronunciation_audio.url },
-        { shouldPlay: false },
-      ),
-  })
-
-  async function playSound() {
-    try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
-      await sound.data?.sound.replayAsync()
-    } catch (reason) {
-      console.error(reason)
-    }
-  }
-  useEffect(() => {
-    return sound.data
-      ? () => {
-          sound.data?.sound.unloadAsync()
-        }
-      : undefined
-  }, [sound.data])
+  const { playSound } = usePronunciationAudio(pronunciation_audio)
 
   const image =
     pronunciation_audio.metadata.gender === 'female'

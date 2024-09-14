@@ -7,7 +7,7 @@ import {
   answeredIncorrectly,
 } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -31,6 +31,9 @@ import { CardInputVariant } from './CardInputVariant'
 import { ReadingPage } from '@/src/components/ReadingPage'
 import { MeaningPage } from '@/src/components/MeaningPage'
 import { LinearGradient } from 'expo-linear-gradient'
+import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
+import { getPreferedAudio } from '@/src/types/pronunciationAudio'
+import { useSettings } from '@/src/hooks/useSettings'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -58,6 +61,16 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const [hint, setHint] = useState<string | undefined>(undefined)
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
+  const { settings } = useSettings()
+  const pronunciationAudio = useMemo(() => {
+    if (SubjectUtils.isVocabulary(task.subject.subject)) {
+      return getPreferedAudio(
+        task.subject.subject.pronunciation_audios,
+        settings.default_voice,
+      )
+    }
+  }, [task.subject.subject, settings.default_voice])
+  const { playSound } = usePronunciationAudio(pronunciationAudio)
 
   const frontAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -140,8 +153,14 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       })
 
       if (checkResult.status === 'correct') {
+        if (task.type === 'reading' && settings.reviews_autoplay_audio) {
+          playSound()
+        }
         setTaskState({ state: 'correct' })
       } else if (checkResult.status === 'correctWithHint') {
+        if (task.type === 'reading' && settings.reviews_autoplay_audio) {
+          playSound()
+        }
         setTaskState({ state: 'correct' })
         setHint(checkResult.message)
       } else if (checkResult.status === 'incorrect') {
@@ -151,7 +170,14 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         setHint(checkResult.message)
       }
     },
-    [dispatch, task, taskState, onSubmit],
+    [
+      dispatch,
+      task,
+      taskState,
+      onSubmit,
+      playSound,
+      settings.reviews_autoplay_audio,
+    ],
   )
 
   const switchCard = useCallback(() => {

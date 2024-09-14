@@ -41,6 +41,8 @@ import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { FontAwesome6 } from '@expo/vector-icons'
 import { useSettings } from '@/src/hooks/useSettings'
 import { clamp } from 'lodash'
+import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
+import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 
 interface BaseProps {
   mode: QuizMode
