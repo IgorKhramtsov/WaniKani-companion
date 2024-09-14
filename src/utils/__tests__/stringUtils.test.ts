@@ -6,11 +6,11 @@ const matchOne = (a: string, b: string) =>
 describe('StringUtils', () => {
   it('matches string with one word with threshold', () => {
     const result = matchOne('word', 'word')
-    expect(result.result).toEqual('equal')
+    expect(result.result).toEqual('exact')
   })
   it('matches string with a number and a word with threshold (equal)', () => {
     const result = matchOne('1 day', '1 day')
-    expect(result.result).toEqual('equal')
+    expect(result.result).toEqual('exact')
   })
   it('matches string with a number and a word with threshold (without space)', () => {
     const result = matchOne('1day', '1 day')
