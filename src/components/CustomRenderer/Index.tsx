@@ -16,7 +16,11 @@ interface ParsedElement {
   metaTags: string[]
 }
 
-const parseStringToElements = (input: string): ParsedElement[] => {
+/*
+ * @internal
+ * Exposed for tests only.
+ */
+export const parseStringToElements = (input: string): ParsedElement[] => {
   const elements: ParsedElement[] = []
   let currentText = ''
   let currentIndex = 0
@@ -33,21 +37,31 @@ const parseStringToElements = (input: string): ParsedElement[] => {
     }
   }
 
+  const parseTag = (): [string, number] => {
+    const tagEndIndex = input.indexOf('>', currentIndex)
+    if (tagEndIndex === -1) return ['', input.length]
+
+    const isClosingTag = input[currentIndex + 1] === '/'
+    const tagContent = isClosingTag
+      ? input.slice(currentIndex + 2, tagEndIndex)
+      : input.slice(currentIndex + 1, tagEndIndex)
+
+    return [tagContent, tagEndIndex]
+  }
+
   while (currentIndex < input.length) {
     if (input[currentIndex] === '<') {
-      const tagEndIndex = input.indexOf('>', currentIndex)
-      if (tagEndIndex === -1) break
+      const [tagContent, tagEndIndex] = parseTag()
+      if (!tagContent) break
 
       const isClosingTag = input[currentIndex + 1] === '/'
-      const tagName = isClosingTag
-        ? input.slice(currentIndex + 2, tagEndIndex)
-        : input.slice(currentIndex + 1, tagEndIndex)
 
-      if (META_TAGS.includes(tagName)) {
+      if (META_TAGS.includes(tagContent)) {
+        pushText()
         if (!isClosingTag) {
-          currentMetaTags.push(tagName)
+          currentMetaTags.push(tagContent)
         } else {
-          currentMetaTags = currentMetaTags.filter(tag => tag !== tagName)
+          currentMetaTags = currentMetaTags.filter(tag => tag !== tagContent)
         }
         currentIndex = tagEndIndex + 1
         continue
@@ -58,18 +72,29 @@ const parseStringToElements = (input: string): ParsedElement[] => {
       if (!isClosingTag) {
         const contentStartIndex = tagEndIndex + 1
         const contentEndIndex = input.indexOf(
-          `</${tagName}>`,
+          `</${tagContent}>`,
           contentStartIndex,
         )
         if (contentEndIndex === -1) break
 
         const content = input.slice(contentStartIndex, contentEndIndex)
-        elements.push({
-          type: tagName as ParsedElementType,
-          content,
-          metaTags: [...currentMetaTags],
-        })
-        currentIndex = contentEndIndex + tagName.length + 3 // Move past the closing tag
+        const nestedElements = parseStringToElements(content)
+
+        if (nestedElements.length === 1 && nestedElements[0].type === 'text') {
+          elements.push({
+            type: tagContent as ParsedElementType,
+            content: nestedElements[0].content,
+            metaTags: [...currentMetaTags, ...nestedElements[0].metaTags],
+          })
+        } else {
+          elements.push({
+            type: tagContent as ParsedElementType,
+            content: content,
+            metaTags: [...currentMetaTags],
+          })
+        }
+
+        currentIndex = contentEndIndex + tagContent.length + 3 // Move past the closing tag
       } else {
         currentIndex = tagEndIndex + 1
       }
