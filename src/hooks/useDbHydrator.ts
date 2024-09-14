@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { asyncStorageHelper } from '../utils/asyncStorageHelper'
 import { useAsyncFetch } from './useAsyncFetch'
 import { wanikaniApi } from '../api/wanikaniApi'
@@ -7,12 +7,14 @@ import {
   useSaveReviewStatisticsMutation,
   useSaveSubjectsMutation,
 } from '../api/localDbApi'
+import { useDispatch } from 'react-redux'
 
 const timeDiffTrigger = 1000 * 60 * 60 * 24 // 24 hours
 
 // TODO: try to abstract fetch logic instead of duplicating it for every
 // endpoint (after TanStack Query migration)
 export const useDbHydrator = (enabled: boolean) => {
+  const dispatch = useDispatch()
   const [objectsFetched, setObjectsFetched] = useState<number>(0)
   const [subjectsTotalCount, setSubjectsTotalCount] = useState<
     number | undefined
@@ -32,17 +34,32 @@ export const useDbHydrator = (enabled: boolean) => {
   const [reviewStatisticIdToFetchAfter, setReviewStatisticIdToFetchAfter] =
     useState<number | undefined>(undefined)
   const [updateStart, setUpdateStart] = useState<Date | undefined>(undefined)
+  const [manualTrigger, setManualTrigger] = useState<boolean>(false)
+
+  const triggerUpdate = useCallback(() => {
+    setManualTrigger(true)
+    dispatch(
+      wanikaniApi.util.invalidateTags([
+        'Reviews',
+        'Lessons',
+        'Assignment',
+        'ReviewStatistic',
+        'Subject',
+        'User',
+      ]),
+    )
+  }, [dispatch, setManualTrigger])
 
   const lastUpdate = useAsyncFetch(() => asyncStorageHelper.getLastUpdateTime())
   const shouldLoad = useMemo(() => {
     if (!enabled) return false
     if (lastUpdate.isLoading) return false
-    if (!shouldTrigger(lastUpdate.data)) return false
+    if (!manualTrigger && !shouldTrigger(lastUpdate.data)) return false
 
     console.log('[useDbHydrator] shouldLoad:', true)
     setUpdateStart(new Date())
     return true
-  }, [lastUpdate.isLoading, lastUpdate.data, enabled])
+  }, [manualTrigger, lastUpdate.isLoading, lastUpdate.data, enabled])
 
   const { data: apiSubjectsData, isLoading: apiSubjectsIsLoading } =
     wanikaniApi.useGetSubjectsQuery(
@@ -162,6 +179,7 @@ export const useDbHydrator = (enabled: boolean) => {
       !apiAssignmentsData?.hasMore &&
       !apiReviewStatisticsData?.hasMore
     ) {
+      setManualTrigger(false)
       asyncStorageHelper.setLastUpdateTime(updateStart.toISOString())
       setUpdateStart(undefined)
       setObjectsFetched(0)
@@ -170,6 +188,7 @@ export const useDbHydrator = (enabled: boolean) => {
       setReviewStatisticsTotalCount(undefined)
     }
   }, [
+    setManualTrigger,
     shouldLoad,
     updateStart,
     apiSubjectsIsLoading,
@@ -224,6 +243,7 @@ export const useDbHydrator = (enabled: boolean) => {
   ])
 
   return {
+    triggerUpdate,
     isLoading,
     progress,
     totalCount:

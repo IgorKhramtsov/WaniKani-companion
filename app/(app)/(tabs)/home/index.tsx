@@ -32,38 +32,36 @@ import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { Assignment } from '@/src/types/assignment'
 import { Subject, SubjectUtils } from '@/src/types/subject'
 import { Forecast } from './forecast'
+import { useDbHydrator } from '@/src/hooks/useDbHydrator'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
   const { settings, isLoading: settingsIsLoading } = useSettings()
   const lessonsCount = useAppSelector(selectLessonsCount)
   const reviewsCount = useAppSelector(selectReviewsCount)
-  const {
-    refetch: refetchLessons,
-    isLoading: lessonsIsLoading,
-    error: lessonsError,
-  } = useGetLessonsQuery()
-  const {
-    refetch: refetchReviews,
-    isLoading: reviewsIsLoading,
-    error: reviewsError,
-  } = useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
+  const { isLoading: lessonsIsLoading, error: lessonsError } =
+    useGetLessonsQuery()
+  const { isLoading: reviewsIsLoading, error: reviewsError } =
+    useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
   const {
     data: lessonsCompletedToday,
-    refetch: refetchLessonsCompletedToday,
     isLoading: lessonsCompletedTodayIsLoading,
     error: lessonsCompletedTodayError,
   } = useGetLessonsCompletedTodayQuery(undefined, {
     refetchOnMountOrArgChange: 15 * 60,
   })
+  const { isLoading: dbHydratorIsLoading, triggerUpdate: triggerDbUpdate } =
+    useDbHydrator(true)
 
   const isLoading = useMemo(
     () =>
+      dbHydratorIsLoading ||
       lessonsIsLoading ||
       reviewsIsLoading ||
       settingsIsLoading ||
       lessonsCompletedTodayIsLoading,
     [
+      dbHydratorIsLoading,
       lessonsIsLoading,
       reviewsIsLoading,
       settingsIsLoading,
@@ -134,10 +132,8 @@ export default function Index() {
   )
 
   const refresh = useCallback(() => {
-    refetchLessons()
-    refetchReviews()
-    refetchLessonsCompletedToday()
-  }, [refetchLessons, refetchReviews, refetchLessonsCompletedToday])
+    triggerDbUpdate()
+  }, [triggerDbUpdate])
 
   // useFocusEffect(
   //   useCallback(() => {

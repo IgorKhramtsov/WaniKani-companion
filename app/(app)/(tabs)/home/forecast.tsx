@@ -62,7 +62,6 @@ export const Forecast = () => {
       change: value,
     }
   })
-  console.log('areaChartData', areaChartData)
 
   return (
     <View style={styles.view}>

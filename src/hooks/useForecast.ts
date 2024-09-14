@@ -42,18 +42,6 @@ export const useForecast = () => {
       ),
     [notAvailableYet, timeInAWeek],
   )
-  console.log('reviewAssignments:', reviewAssignments.length)
-  // console.log(
-  //   'reviewAssignments:',
-  //   reviewAssignments
-  //     .filter(
-  //       e => (e.available_at_date?.valueOf() ?? 0) <= currentTime.valueOf(),
-  //     )
-  //     .filter(e => e.srs_stage > 0)
-  //     .filter(e => !e.hidden),
-  // )
-  console.log('notAvailableYet:', notAvailableYet.length)
-  console.log('availableDuringTheWeek:', availableDuringTheWeek.length)
   const forecast = useMemo(
     () =>
       availableDuringTheWeek.reduce(
@@ -75,7 +63,6 @@ export const useForecast = () => {
       ),
     [availableDuringTheWeek],
   )
-  console.log('forecast:', forecast)
 
   return {
     isLoading,
