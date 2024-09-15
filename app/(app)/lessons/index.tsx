@@ -1,8 +1,14 @@
 import typography from '@/src/constants/typography'
 import { SubjectUtils } from '@/src/types/subject'
-import { router, useLocalSearchParams, useNavigation } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Pressable, Text, View } from 'react-native'
+import {
+  Button,
+  NativeSyntheticEvent,
+  Pressable,
+  Text,
+  View,
+} from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -19,6 +25,10 @@ import { MeaningPage } from '@/src/components/MeaningPage'
 import { ReadingPage } from '@/src/components/ReadingPage'
 import { ContextPage } from '@/src/components/ContextPage'
 import { ExamplesPage } from '@/src/components/ExamplesPage'
+import { useSettings } from '@/src/hooks/useSettings'
+import { getPreferedAudio } from '@/src/types/pronunciationAudio'
+import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
+import { OnPageSelectedEventData } from 'react-native-pager-view/lib/typescript/PagerViewNativeComponent'
 
 export default function Index() {
   const params = useLocalSearchParams<{
@@ -26,6 +36,7 @@ export default function Index() {
   }>()
   const { styles } = useStyles(stylesheet)
   const parentPagerView = useRef<PagerView>(null)
+  const { settings } = useSettings()
 
   const assignmentIds = useMemo(() => {
     console.log(
@@ -55,9 +66,61 @@ export default function Index() {
     [subjects],
   )
 
+  const [parentPagerIndex, setParentPagerIndex] = useState(0)
+  const [subjectPagerIndex, setSubjectPagerIndex] = useState(0)
+  const selectedSubject = useMemo(
+    () => subjects[parentPagerIndex],
+    [subjects, parentPagerIndex],
+  )
+  const pronunciationAudio = useMemo(
+    () =>
+      SubjectUtils.isVocabulary(selectedSubject)
+        ? getPreferedAudio(
+            selectedSubject.pronunciation_audios,
+            settings.default_voice,
+          )
+        : undefined,
+    [selectedSubject, settings.default_voice],
+  )
+  const { playSound, isLoading: soundIsLoading } =
+    usePronunciationAudio(pronunciationAudio)
+
+  const selectParentPage = useCallback(
+    (event: NativeSyntheticEvent<OnPageSelectedEventData>) => {
+      setParentPagerIndex(event.nativeEvent.position)
+    },
+    [setParentPagerIndex],
+  )
+  const selectSubjectPage = useCallback(
+    (event: NativeSyntheticEvent<OnPageSelectedEventData>) => {
+      setSubjectPagerIndex(event.nativeEvent.position)
+    },
+    [setSubjectPagerIndex],
+  )
+
+  useEffect(() => {
+    const subject = subjects[subjectPagerIndex]
+    if (SubjectUtils.isVocabulary(subject)) {
+      if (
+        settings.lessons_autoplay_audio &&
+        subjectPagerIndex === 2 &&
+        !soundIsLoading
+      ) {
+        playSound().catch(console.error)
+      }
+    }
+  }, [
+    soundIsLoading,
+    playSound,
+    settings.lessons_autoplay_audio,
+    subjects,
+    parentPagerIndex,
+    subjectPagerIndex,
+  ])
+
   const openQuiz = useCallback(() => {
     router.replace({
-      pathname: 'quiz',
+      pathname: '/quiz',
       params: { assignmentIds: assignmentIds },
     })
   }, [assignmentIds])
@@ -72,13 +135,15 @@ export default function Index() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-      <PagerView ref={parentPagerView} style={styles.pagerView} initialPage={0}>
+      <PagerView
+        ref={parentPagerView}
+        style={styles.pagerView}
+        initialPage={0}
+        onPageSelected={selectParentPage}>
         {sortedSubjects.map((subject, index) => {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
           const isLast = index === sortedSubjects.length - 1
-          console.log('[lessons] building subject #', index)
-          // console.log('\n\nSUBJECT DATA', JSON.stringify(subject, null, 2))
           const getBottomContent = ({
             direction,
           }: {
@@ -188,7 +253,10 @@ export default function Index() {
                 <Text style={styles.glyphText}>{subject.characters}</Text>
                 <Text style={styles.glyphName}>{primaryMeaning?.meaning}</Text>
               </View>
-              <PagerView style={styles.pagerView} initialPage={0}>
+              <PagerView
+                style={styles.pagerView}
+                initialPage={0}
+                onPageSelected={selectSubjectPage}>
                 {pages}
               </PagerView>
             </View>
@@ -197,7 +265,7 @@ export default function Index() {
       </PagerView>
       <View style={styles.subjectQueueContainer}>
         {sortedSubjects.map((subject, index) => (
-          // TODO: probably we should move that to bottomContent of the pages
+          // TODO: probably should be moved to bottomContent of the pages
           <Pressable
             key={subject.id}
             onPress={() => parentPagerView.current?.setPage(index)}>

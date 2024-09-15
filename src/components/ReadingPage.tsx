@@ -61,7 +61,6 @@ type VocabularyProps = BaseProps & {
 export const VocabularySection = ({ subject }: VocabularyProps) => {
   const { styles } = useStyles(stylesheet)
 
-  console.log(JSON.stringify(subject, undefined, 2))
   const getAudio = (reading: Reading) =>
     SubjectUtils.getPrononciationAudioForReading(subject, reading)
   // Sort readings in such way so that katakana twin (if present) is shown
@@ -75,8 +74,6 @@ export const VocabularySection = ({ subject }: VocabularyProps) => {
     }
     return 0
   })
-
-  // console.log('\n\nMNEMONIC: ', subject.reading_mnemonic)
 
   return (
     <Fragment>

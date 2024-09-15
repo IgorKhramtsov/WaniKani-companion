@@ -5,21 +5,28 @@ export const getPreferedAudio = (
   audios: PronunciationAudio[],
   defaultVoice: VoiceType | undefined,
 ): PronunciationAudio | undefined => {
+  // Webm is not supported on iOS
+  const supportetAudios = audios.filter(e => e.content_type !== 'audio/webm')
   switch (defaultVoice) {
     case 'feminine_only':
-      return audios.find(audio => audio.metadata.gender === 'female')
+      return supportetAudios.find(audio => audio.metadata.gender === 'female')
     case 'masculine_only':
-      return audios.find(audio => audio.metadata.gender === 'male')
+      return supportetAudios.find(audio => audio.metadata.gender === 'male')
     case 'prefer_feminine':
       return (
-        audios.find(audio => audio.metadata.gender === 'female') ?? audios[0]
+        supportetAudios.find(audio => audio.metadata.gender === 'female') ??
+        supportetAudios[0]
       )
     case 'prefer_masculine':
       return (
-        audios.find(audio => audio.metadata.gender === 'female') ?? audios[0]
+        supportetAudios.find(audio => audio.metadata.gender === 'female') ??
+        supportetAudios[0]
       )
     default:
-      return audios[random(audios.length - 1)] ?? audios[0]
+      return (
+        supportetAudios[random(supportetAudios.length - 1)] ??
+        supportetAudios[0]
+      )
   }
 }
 

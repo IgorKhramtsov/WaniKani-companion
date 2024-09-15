@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Subject, SubjectUtils } from '../types/subject'
 import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
 import _ from 'lodash'
-import { useSQLiteContext } from 'expo-sqlite'
-import { useAsyncFetch } from './useAsyncFetch'
 import { useGetSubjectsQuery } from '../api/localDbApi'
 
 type Result = {
   subjects: Subject[]
   isLoading: boolean
+}
+
+const enableLogging = false
+const log = (msg: any, ...params: any[]) => {
+  if (enableLogging) console.log(msg, ...params)
 }
 
 const useFetchSubjectsAndHydrate_v2 = (
@@ -19,7 +22,7 @@ const useFetchSubjectsAndHydrate_v2 = (
   const subjectIdsSafe = useMemo(() => {
     return _.uniq(subjectIds ?? [])
   }, [subjectIds])
-  console.log(
+  log(
     '[useSubjectCache_hydrate] hydrate:',
     subjectIdsSafe.slice(0, 3),
     subjectIdsSafe.length,
@@ -28,24 +31,24 @@ const useFetchSubjectsAndHydrate_v2 = (
   const subjects = useAppSelector(selectSubjects(subjectIdsSafe))
 
   useEffect(() => {
-    console.log('[useSubjectCache_hydrate] hydrate useEffect: subjects')
+    log('[useSubjectCache_hydrate] hydrate useEffect: subjects')
   }, [subjects])
 
   useEffect(() => {
-    console.log('[useSubjectCache_hydrate] hydrate useEffect: subjectIdsSafe')
+    log('[useSubjectCache_hydrate] hydrate useEffect: subjectIdsSafe')
   }, [subjectIdsSafe])
 
   const sliceMissingIds = useMemo(() => {
-    console.log('[useSubjectCache_hydrate] useMemo: sliceMissingIds')
+    log('[useSubjectCache_hydrate] useMemo: sliceMissingIds')
     const ids = subjectIdsSafe.filter(id => !subjects.some(el => el.id === id))
     if (ids.length > 0) {
-      console.log('[useSubjectCache_hydrate] slice missing ids:', ids)
+      log('[useSubjectCache_hydrate] slice missing ids:', ids)
     }
     return ids
   }, [subjectIdsSafe, subjects])
 
   useEffect(() => {
-    console.log('[useSubjectCache_hydrate] useEffect: sliceMissingIds')
+    log('[useSubjectCache_hydrate] useEffect: sliceMissingIds')
   }, [sliceMissingIds])
 
   const { data: dbSubjects, isLoading: dbIsLoading } = useGetSubjectsQuery(
@@ -57,7 +60,7 @@ const useFetchSubjectsAndHydrate_v2 = (
     if (dbIsLoading) return
 
     if (dbSubjects && dbSubjects.length > 0) {
-      console.log('[useSubjectCache_hydrate] hydrate slice:', dbSubjects.length)
+      log('[useSubjectCache_hydrate] hydrate slice:', dbSubjects.length)
       dispatch(subjectsReceived(dbSubjects))
     }
   }, [dispatch, dbSubjects, dbIsLoading])
@@ -68,12 +71,12 @@ const useFetchSubjectsAndHydrate_v2 = (
     // is already fetched due to race condition.
     const subjectsSliceIsHydrating =
       subjects.length < (sliceMissingIds?.length ?? 0)
-    console.log(
+    log(
       '[useSubjectCache_hydrate] hydrate slice:',
       subjects.length,
       sliceMissingIds?.length,
     )
-    console.log(
+    log(
       '[useSubjectCache_hydrate] hydrate isLoading: ',
       subjectsSliceIsHydrating,
       dbIsLoading,
@@ -89,19 +92,19 @@ export const useSubjectCache = (
   cacheDependencies: boolean = true,
 ): Result => {
   useEffect(() => {
-    console.log('[useSubjectCache] input: ', subjectIds, cacheDependencies)
+    log('[useSubjectCache] input: ', subjectIds, cacheDependencies)
   }, [subjectIds, cacheDependencies])
   const subjectIdsSafe = useMemo(() => {
     return _.uniq(subjectIds ?? [])
   }, [subjectIds])
-  console.log(
+  log(
     '[useSubjectCache] trigger:',
     subjectIdsSafe.slice(0, 3),
     subjectIdsSafe.length,
   )
 
   useEffect(() => {
-    console.log('[useSubjectCache]: useEffect subjectIdsSafe')
+    log('[useSubjectCache]: useEffect subjectIdsSafe')
   }, [subjectIdsSafe])
 
   const { subjects, isLoading: mainIsLoading } =
@@ -124,7 +127,7 @@ export const useSubjectCache = (
     })
 
     if (subjectsToFetch.length > 0) {
-      console.log(
+      log(
         '[useSubjectCache] dependencies detected:',
         subjectsToFetch.slice(0, 3),
         subjectsToFetch.length,
@@ -137,11 +140,7 @@ export const useSubjectCache = (
     useFetchSubjectsAndHydrate_v2(dependencySubjectIds)
 
   const isLoading = useMemo(() => {
-    console.log(
-      '[useSubjectCache] isLoading:',
-      mainIsLoading,
-      dependenciesIsLoading,
-    )
+    log('[useSubjectCache] isLoading:', mainIsLoading, dependenciesIsLoading)
     return mainIsLoading || dependenciesIsLoading
   }, [mainIsLoading, dependenciesIsLoading])
 
