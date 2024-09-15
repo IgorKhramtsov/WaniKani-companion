@@ -345,7 +345,6 @@ const AssignmentsCard = ({
   )
 
   return (
-    // <LoadingIndicator loading={loading}>
     <Animated.View
       style={[styles.view, { backgroundColor }]}
       layout={layoutAnimation}>
@@ -371,7 +370,6 @@ const AssignmentsCard = ({
       <View style={{ height: 12 }} />
       {assignmentsCount > 0 && actions}
     </Animated.View>
-    // </LoadingIndicator>
   )
 }
 

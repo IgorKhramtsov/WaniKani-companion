@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useGetAssignmentsQuery } from '../api/localDbApi'
+import { useHourlyTriggerOnRoundHour } from './useHourlyTrigger'
 
 export const useForecast = () => {
   const { isLoading, data: assignments } = useGetAssignmentsQuery()
@@ -23,7 +24,7 @@ export const useForecast = () => {
       (b?.available_at_date?.valueOf() ?? 0)
     )
   })
-  const currentTime = useMemo(() => new Date(), [])
+  const currentTime = useHourlyTriggerOnRoundHour()
   const notAvailableYet = useMemo(
     () =>
       reviewAssignments.filter(
