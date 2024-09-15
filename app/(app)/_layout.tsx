@@ -76,6 +76,7 @@ export default function RootLayout() {
         options={{
           title: 'Review',
           headerTitle: 'Review',
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -91,6 +92,7 @@ export default function RootLayout() {
         options={{
           title: 'Quiz',
           headerTitle: 'Quiz',
+          headerShown: false,
         }}
       />
     </Stack>

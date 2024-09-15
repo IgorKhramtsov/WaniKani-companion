@@ -14,8 +14,8 @@ import {
   selectWrapUpRemainingTasks,
   toggleWrapUp,
 } from '@/src/redux/quizSlice'
-import { Link, useNavigation } from 'expo-router'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, router, useNavigation } from 'expo-router'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
@@ -38,11 +38,11 @@ import {
 import { CreateReviewParams } from '@/src/types/createReviewParams'
 import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
-import { FontAwesome6 } from '@expo/vector-icons'
+import { AntDesign, FontAwesome6 } from '@expo/vector-icons'
 import { useSettings } from '@/src/hooks/useSettings'
 import { clamp } from 'lodash'
-import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
-import { getPreferedAudio } from '@/src/types/pronunciationAudio'
+import { appStyles } from '@/src/constants/styles'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 interface BaseProps {
   mode: QuizMode
@@ -162,9 +162,9 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     setInitiated(true)
   }, [enrichedSubjects, dispatch, assignments, props, initiated, isReadyToInit])
 
-  useEffect(() => {
-    const menuActios: MenuAction[] = []
-    menuActios.push({
+  const menuActions = useMemo(() => {
+    const actions: MenuAction[] = []
+    actions.push({
       id: 'wrap-up',
       attributes: {
         disabled: wrapUpRemaningTasks.length === 0,
@@ -174,12 +174,20 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         : `Wrap Up (${wrapUpRemaningTasks.length})`,
     })
     if (settings.debug_mode_enabled) {
-      menuActios.push({
+      actions.push({
         id: 'debug-view-all',
         title: debugViewEnabled ? 'Disable Debug View' : 'Enable Debug View',
       })
     }
+    return actions
+  }, [
+    debugViewEnabled,
+    settings.debug_mode_enabled,
+    wrapUpEnabled,
+    wrapUpRemaningTasks.length,
+  ])
 
+  useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <MenuView
@@ -190,12 +198,13 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               setDebugViewEnabled(!debugViewEnabled)
             }
           }}
-          actions={menuActios}>
+          actions={menuActions}>
           <FontAwesome6 name='ellipsis' size={24} color='black' />
         </MenuView>
       ),
     })
   }, [
+    menuActions,
     settings.debug_mode_enabled,
     debugViewEnabled,
     dispatch,
@@ -315,6 +324,10 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     transitionProgress.value = withTiming(1, { duration: transitionDuration })
   }, [currentTask, transitionProgress])
 
+  const closeFunc = useCallback(() => {
+    router.back()
+  }, [])
+
   const currentTaskStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -342,142 +355,189 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
   if (settings.debug_mode_enabled && debugViewEnabled) {
     return (
-      <View style={styles.pageContainer}>
-        <FlatList
-          data={allTasksDebug}
-          ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
-          renderItem={el => {
-            const typeStyle =
-              el.item.type === 'meaning'
-                ? { color: 'black' }
-                : { color: 'blue' }
-            return (
-              <View>
-                <Text style={typography.body}>
-                  <Text>{el.item.completed ? '✅' : '❌'} </Text>
-                  <Text style={typeStyle}>
-                    {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
-                  </Text>
-                  <Text>{el.item.subject.subject.characters}</Text>
-                  <Text>
-                    {el.item.numberOfErrors > 0
-                      ? `(${el.item.numberOfErrors})`
-                      : ''}
-                  </Text>
-                  <Text>{el.item.reported ? '📝' : ''}</Text>
-                </Text>
+      <SafeAreaView edges={['top']}>
+        <View style={styles.pageContainerDebug}>
+          <View style={appStyles.rowSpaceBetween}>
+            <View />
+            <Pressable onPress={() => setDebugViewEnabled(false)}>
+              <View style={(styles.topBarCloseButton, [{ marginRight: 16 }])}>
+                <AntDesign name='close' size={32} color={Colors.gray55} />
               </View>
-            )
-          }}
-        />
-      </View>
+            </Pressable>
+          </View>
+          <FlatList
+            contentContainerStyle={{
+              marginHorizontal: 16,
+              paddingBottom: 82,
+            }}
+            data={allTasksDebug}
+            ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+            renderItem={el => {
+              const typeStyle =
+                el.item.type === 'meaning'
+                  ? { color: 'black' }
+                  : { color: 'blue' }
+              return (
+                <View>
+                  <Text style={typography.body}>
+                    <Text>{el.item.completed ? '✅' : '❌'} </Text>
+                    <Text style={typeStyle}>
+                      {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
+                    </Text>
+                    <Text>{el.item.subject.subject.characters}</Text>
+                    <Text>
+                      {el.item.numberOfErrors > 0
+                        ? `(${el.item.numberOfErrors})`
+                        : ''}
+                    </Text>
+                    <Text>{el.item.reported ? '📝' : ''}</Text>
+                  </Text>
+                </View>
+              )
+            }}
+          />
+        </View>
+      </SafeAreaView>
     )
   }
 
-  // TODO: The cursor for TextInput is not in the middle when placeholder is in
-  // place. To fix that custom placeholder should be implemented
-
   return (
-    <Pressable
-      style={{ height: '100%' }}
-      // Disable pressable when keyboard is not shown. This is to avoid issue
-      // with scrollable for info view of card
-      disabled={!isKeyboardVisible}
-      onPress={Keyboard.dismiss}
-      accessible={false}>
-      {currentTask !== undefined && (
-        <View style={styles.progressIndicatorContainer}>
-          <Animated.View
-            style={[styles.progressIndicator, progressAnimatedStyle]}>
-            <Animated.View style={[styles.progressIndicatorHighlight]} />
-          </Animated.View>
-        </View>
-      )}
-      <View style={styles.pageContainer}>
-        {nextTask && (
-          // Show next task in order to keep the keyboard always open (we focus
-          // the next task's input node when current one is leaving the scene)
-          // NOTE: The sub-tree should be the same as for the currentTask to
-          // support seamless focus move for the keyboard.
-          <Animated.View
-            pointerEvents='none'
-            key={
-              nextTask.subject.subject.id +
-              nextTask.type +
-              nextTask.numberOfErrors
-            }
-            style={{
-              height: '100%',
-              width: '100%',
-              zIndex: 0,
-              position: 'absolute',
-              transform: [
-                { translateY: nextTaskTransformStyle.translateY },
-                { scale: nextTaskTransformStyle.scale },
-              ],
-            }}>
-            <Animated.View>
-              <CardView task={nextTask} textInputRef={nextInputRef} />
-            </Animated.View>
-          </Animated.View>
-        )}
-        {currentTask && (
-          <Animated.View
-            key={
-              currentTask.subject.subject.id +
-              currentTask.type +
-              currentTask.numberOfErrors
-            }
-            style={{
-              height: '100%',
-              width: '100%',
-              position: 'absolute',
-            }}
-            exiting={RollOutRight.duration(transitionDuration)}>
-            <Animated.View
-              // To avoid conflicts with styling and exiting animation - we
-              // need to introduce separate AnimatedViews for them
-              style={[
-                {
-                  height: '100%',
-                  width: '100%',
-                  position: 'absolute',
-                },
-                currentTaskStyle,
-              ]}>
-              <CardView
-                task={currentTask}
-                textInputRef={currentInputRef}
-                onSubmit={() => nextInputRef.current?.focus()}
+    <SafeAreaView edges={['top']}>
+      <Pressable
+        style={{ height: '100%' }}
+        // Disable pressable when keyboard is not shown. This is to avoid issue
+        // with scrollable for info view of card
+        disabled={!isKeyboardVisible}
+        onPress={Keyboard.dismiss}
+        accessible={false}>
+        <View style={styles.topBarContainer}>
+          <Pressable onPress={closeFunc}>
+            <View style={styles.topBarCloseButton}>
+              <AntDesign
+                name={props.mode === 'lessonsQuiz' ? 'arrowleft' : 'close'}
+                size={32}
+                color={Colors.gray55}
               />
+            </View>
+          </Pressable>
+          {currentTask !== undefined && (
+            <View style={styles.progressIndicatorContainer}>
+              <Animated.View
+                style={[styles.progressIndicator, progressAnimatedStyle]}>
+                <Animated.View style={[styles.progressIndicatorHighlight]} />
+              </Animated.View>
+            </View>
+          )}
+          <MenuView
+            style={styles.topBarMenu}
+            onPressAction={({ nativeEvent }) => {
+              if (nativeEvent.event === 'wrap-up') {
+                dispatch(toggleWrapUp())
+              } else if (nativeEvent.event === 'debug-view-all') {
+                setDebugViewEnabled(!debugViewEnabled)
+              }
+            }}
+            actions={menuActions}>
+            <FontAwesome6 name='ellipsis' size={24} color={Colors.gray55} />
+          </MenuView>
+        </View>
+        <View style={styles.pageContainer}>
+          {nextTask && (
+            // Show next task in order to keep the keyboard always open (we focus
+            // the next task's input node when current one is leaving the scene)
+            // NOTE: The sub-tree should be the same as for the currentTask to
+            // support seamless focus move for the keyboard.
+            <Animated.View
+              pointerEvents='none'
+              key={
+                nextTask.subject.subject.id +
+                nextTask.type +
+                nextTask.numberOfErrors
+              }
+              style={{
+                height: '100%',
+                width: '100%',
+                zIndex: 0,
+                position: 'absolute',
+                transform: [
+                  { translateY: nextTaskTransformStyle.translateY },
+                  { scale: nextTaskTransformStyle.scale },
+                ],
+              }}>
+              <Animated.View>
+                <CardView task={nextTask} textInputRef={nextInputRef} />
+              </Animated.View>
             </Animated.View>
-          </Animated.View>
-        )}
-        {!currentTask && completionTitle && completionCopy && (
-          <View style={styles.completionCard}>
-            <Text style={styles.completionTextTitle}>{completionTitle}</Text>
-            <View style={{ height: 16 }} />
-            <Text style={styles.completionText}>{completionCopy}</Text>
-            <View style={{ height: 32 }} />
-            <Link href='..' asChild>
-              <Pressable style={styles.completionButton}>
-                <Text style={styles.completionButtonText}>Done</Text>
-              </Pressable>
-            </Link>
-          </View>
-        )}
-      </View>
-    </Pressable>
+          )}
+          {currentTask && (
+            <Animated.View
+              key={
+                currentTask.subject.subject.id +
+                currentTask.type +
+                currentTask.numberOfErrors
+              }
+              style={{
+                height: '100%',
+                width: '100%',
+                position: 'absolute',
+              }}
+              exiting={RollOutRight.duration(transitionDuration)}>
+              <Animated.View
+                // To avoid conflicts with styling and exiting animation - we
+                // need to introduce separate AnimatedViews for them
+                style={[
+                  {
+                    height: '100%',
+                    width: '100%',
+                    position: 'absolute',
+                  },
+                  currentTaskStyle,
+                ]}>
+                <CardView
+                  task={currentTask}
+                  textInputRef={currentInputRef}
+                  onSubmit={() => nextInputRef.current?.focus()}
+                />
+              </Animated.View>
+            </Animated.View>
+          )}
+          {!currentTask && completionTitle && completionCopy && (
+            <View style={styles.completionCard}>
+              <Text style={styles.completionTextTitle}>{completionTitle}</Text>
+              <View style={{ height: 16 }} />
+              <Text style={styles.completionText}>{completionCopy}</Text>
+              <View style={{ height: 32 }} />
+              <Link href='..' asChild>
+                <Pressable style={styles.completionButton}>
+                  <Text style={styles.completionButtonText}>Done</Text>
+                </Pressable>
+              </Link>
+            </View>
+          )}
+        </View>
+      </Pressable>
+    </SafeAreaView>
   )
 }
 
 const stylesheet = createStyleSheet({
+  topBarContainer: {
+    ...appStyles.row,
+  },
+  topBarCloseButton: {
+    marginLeft: 12,
+    marginRight: 4,
+  },
+  topBarMenu: {
+    marginRight: 12,
+    marginLeft: 8,
+  },
   progressIndicatorContainer: {
+    flex: 1,
     height: 20,
     backgroundColor: Colors.grayDA,
     borderRadius: 10,
     marginHorizontal: 8,
-    marginTop: 8,
   },
   progressIndicator: {
     height: 20,
@@ -491,10 +551,12 @@ const stylesheet = createStyleSheet({
     backgroundColor: Colors.getLighter(Colors.correctGreen, 5),
     borderRadius: 16,
   },
+  pageContainerDebug: {
+    height: '100%',
+  },
   pageContainer: {
     flex: 1,
     margin: 30,
-    justifyContent: 'center',
   },
   completionCard: {
     backgroundColor: Colors.blue,

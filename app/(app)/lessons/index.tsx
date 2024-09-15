@@ -119,7 +119,7 @@ export default function Index() {
   ])
 
   const openQuiz = useCallback(() => {
-    router.replace({
+    router.push({
       pathname: '/quiz',
       params: { assignmentIds: assignmentIds },
     })
