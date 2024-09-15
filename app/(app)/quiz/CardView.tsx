@@ -254,6 +254,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
             <ReadingPage
               topContent={turnBackButton}
               bottomContent={nextButton}
+              variant='extended'
               subject={task.subject.subject}
             />
           )}
