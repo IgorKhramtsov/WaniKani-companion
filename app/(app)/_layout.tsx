@@ -87,6 +87,13 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
+        name='lessonsAdvanced/index'
+        options={{
+          title: 'Lesson Picker',
+          headerTitle: 'Lesson Picker',
+        }}
+      />
+      <Stack.Screen
         name='quiz/index'
         // name='quiz'
         options={{

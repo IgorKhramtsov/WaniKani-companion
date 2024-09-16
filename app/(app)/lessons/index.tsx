@@ -56,10 +56,6 @@ export default function Index() {
     return assignments.map(el => el.subject_id)
   }, [assignments])
 
-  useEffect(() => {
-    console.log('[lessons] useEffect subjectIds:', subjectIds)
-  }, [subjectIds])
-
   const { subjects, isLoading } = useSubjectCache(subjectIds)
   const sortedSubjects = useMemo(
     () => subjects.sort(SubjectUtils.compareByLevelAndLessonPosition),

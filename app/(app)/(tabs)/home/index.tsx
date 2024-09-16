@@ -135,12 +135,6 @@ export default function Index() {
     triggerDbUpdate()
   }, [triggerDbUpdate])
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     refresh()
-  //   }, [refresh]),
-  // )
-
   const duration = 600
   const enteringAnimationLeft = useMemo(
     () => LightSpeedInLeft.duration(duration),
@@ -207,17 +201,24 @@ export default function Index() {
                 key={'advanced'}
                 entering={enteringAnimationRight}
                 exiting={exitingAnimationLeft}>
-                <Pressable style={styles.advancedButton}>
-                  <View style={appStyles.row}>
-                    <MaterialIcons
-                      name='smart-toy'
-                      size={typography.body.fontSize}
-                      color='white'
-                    />
-                    <View style={{ width: 4 }} />
-                    <Text style={styles.advancedButtonText}>Advanced</Text>
-                  </View>
-                </Pressable>
+                <Link
+                  href={{
+                    pathname: '/lessonsAdvanced',
+                    params: { assignmentIds: lessonIdsBatch },
+                  }}
+                  asChild>
+                  <Pressable style={styles.advancedButton}>
+                    <View style={appStyles.row}>
+                      <MaterialIcons
+                        name='smart-toy'
+                        size={typography.body.fontSize}
+                        color='white'
+                      />
+                      <View style={{ width: 4 }} />
+                      <Text style={styles.advancedButtonText}>Advanced</Text>
+                    </View>
+                  </Pressable>
+                </Link>
               </Animated.View>
             </View>
           }
