@@ -5,13 +5,13 @@ export interface CharacterImage {
   /**
    * The location of the image.
    */
-  url: string;
-  
+  url: string
+
   /**
    * The content type of the image. The API only delivers image/svg+xml.
    */
-  content_type: 'image/svg+xml';
-  
+  content_type: 'image/png' | 'image/svg+xml'
+
   /**
    * Details about the image. Each content_type returns a uniquely structured object.
    */
@@ -20,7 +20,6 @@ export interface CharacterImage {
      * The SVG asset contains built-in CSS styling.
      * This is currently always set to true and exists for historical reasons only.
      */
-    inline_styles: boolean;
-  };
+    inline_styles: boolean
+  }
 }
-

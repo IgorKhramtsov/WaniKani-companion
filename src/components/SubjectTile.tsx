@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { SubjectSymbol } from './SubjectSymbol'
 
 type IdProps = {
   id: number
@@ -66,7 +67,7 @@ export const SubjectTile = ({
       return (
         <View
           style={[styles.extendedView, { backgroundColor: associatedColor }]}>
-          <Text style={styles.subjectSlug}>{subject.characters}</Text>
+          <SubjectSymbol textStyle={styles.subjectSymbol} subject={subject} />
           <View style={styles.rightSideView}>
             {reading && <Text style={styles.subjectRightText}>{reading}</Text>}
             <Text style={styles.subjectRightText}>
@@ -86,7 +87,10 @@ export const SubjectTile = ({
                 borderBottomColor: Colors.getBottomBorderColor(associatedColor),
               },
             ]}>
-            <Text style={resolvedTileTextStyle}>{subject?.characters}</Text>
+            <SubjectSymbol
+              textStyle={resolvedTileTextStyle}
+              subject={subject}
+            />
           </View>
           {variant === 'normal' && (
             <View style={{ marginStart: 8 }}>
@@ -105,7 +109,7 @@ export const SubjectTile = ({
       disabled={!isPressable}
       onPress={() =>
         router.push({
-          pathname: '(tabs)/library/subject',
+          pathname: '/(tabs)/library/subject',
           params: { id: subject.id },
         })
       }>
@@ -124,7 +128,7 @@ const glyphTileStylesheet = createStyleSheet({
   rightSideView: {
     alignItems: 'flex-end',
   },
-  subjectSlug: {
+  subjectSymbol: {
     ...typography.titleB,
     color: 'white',
     fontWeight: '400',

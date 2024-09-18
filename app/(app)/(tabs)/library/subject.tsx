@@ -8,6 +8,7 @@ import { ExamplesSection } from '@/src/components/ExamplesPage'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { MeaningSection } from '@/src/components/MeaningPage'
 import { ReadingSection } from '@/src/components/ReadingPage'
+import { SubjectSymbol } from '@/src/components/SubjectSymbol'
 import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
@@ -116,7 +117,10 @@ export default function Index() {
                       Colors.getBottomBorderColor(associatedColor),
                   },
                 ]}>
-                <Text style={styles.subjectText}>{subject.characters}</Text>
+                <SubjectSymbol
+                  textStyle={styles.subjectText}
+                  subject={subject}
+                />
               </View>
             </View>
           </View>

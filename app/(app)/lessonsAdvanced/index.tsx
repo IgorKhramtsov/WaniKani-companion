@@ -121,7 +121,7 @@ export default function Index() {
                                 )
                                 return (
                                   <Pressable
-                                        key={subject.id}
+                                    key={subject.id}
                                     onPress={() => toggleSelected(subject.id)}>
                                     <View
                                       style={[
