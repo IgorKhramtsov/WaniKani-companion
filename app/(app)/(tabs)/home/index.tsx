@@ -33,6 +33,8 @@ import { Assignment } from '@/src/types/assignment'
 import { Subject, SubjectUtils } from '@/src/types/subject'
 import { Forecast } from './forecast'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
+import { shuffle } from 'lodash'
+import { createLessonsBatch } from '@/src/utils/lessonPickerUtils'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -98,28 +100,11 @@ export default function Index() {
 
   const { subjects } = useSubjectCache(lessonSubjects, false)
 
-  const sortedAssignments = useMemo(() => {
-    const pairedAssignments = allLessons
-      .map(lesson => ({
-        lesson,
-        subject: subjects.find(e => e.id === lesson.subject_id),
-      }))
-      .filter(
-        (e): e is { lesson: Assignment; subject: Subject } =>
-          e.subject !== undefined,
-      )
+  const lessonsBatch = useMemo(() => {
+    const batchSize = settings.lessons_batch_size ?? 5
 
-    return pairedAssignments
-      .sort((a, b) =>
-        SubjectUtils.compareByLevelAndLessonPosition(a.subject, b.subject),
-      )
-      .map(e => e.lesson)
-  }, [allLessons, subjects])
-
-  const lessonsBatch = useMemo(
-    () => sortedAssignments.slice(0, settings.lessons_batch_size ?? 5),
-    [sortedAssignments, settings.lessons_batch_size],
-  )
+    return createLessonsBatch(batchSize, allLessons, subjects)
+  }, [settings.lessons_batch_size, allLessons, subjects])
   const reviewBatch = useAppSelector(selectReviewsBatch)
 
   const lessonIdsBatch = useMemo(

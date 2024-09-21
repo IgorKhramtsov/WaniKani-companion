@@ -333,8 +333,11 @@ const innerSelectAssignments = createSelector(
   selectLessons,
   reviewsSelector,
   (_: RootState, ids: number[]) => ids,
-  (lessons, reviews, ids): Assignment[] =>
-    lessons.concat(reviews).filter(el => ids.includes(el.id)),
+  (lessons, reviews, ids): Assignment[] => {
+    const selected = lessons.concat(reviews).filter(el => ids.includes(el.id))
+    selected.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
+    return selected
+  },
 )
 const innerSelectAssignment = createSelector(
   selectLessons,

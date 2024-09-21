@@ -57,10 +57,6 @@ export default function Index() {
   }, [assignments])
 
   const { subjects, isLoading } = useSubjectCache(subjectIds)
-  const sortedSubjects = useMemo(
-    () => subjects.sort(SubjectUtils.compareByLevelAndLessonPosition),
-    [subjects],
-  )
 
   const [parentPagerIndex, setParentPagerIndex] = useState(0)
   const [subjectPagerIndex, setSubjectPagerIndex] = useState(0)
@@ -136,10 +132,10 @@ export default function Index() {
         style={styles.pagerView}
         initialPage={0}
         onPageSelected={selectParentPage}>
-        {sortedSubjects.map((subject, index) => {
+        {subjects.map((subject, index) => {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
-          const isLast = index === sortedSubjects.length - 1
+          const isLast = index === subjects.length - 1
           const getBottomContent = ({
             direction,
           }: {
@@ -160,7 +156,7 @@ export default function Index() {
             return (
               <View>
                 {((index > 0 && direction === 'prev') ||
-                  (index < sortedSubjects.length && direction === 'next')) && (
+                  (index < subjects.length && direction === 'next')) && (
                   <Button title={buttonTitle} onPress={onPress} />
                 )}
 
@@ -260,7 +256,7 @@ export default function Index() {
         })}
       </PagerView>
       <View style={styles.subjectQueueContainer}>
-        {sortedSubjects.map((subject, index) => (
+        {subjects.map((subject, index) => (
           // TODO: probably should be moved to bottomContent of the pages
           <Pressable
             key={subject.id}
