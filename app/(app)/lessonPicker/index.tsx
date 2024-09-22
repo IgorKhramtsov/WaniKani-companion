@@ -50,11 +50,14 @@ export default function Index() {
     router.replace({
       pathname: '/lessons',
       params: {
-        assignmentIds: selectedAssignments,
+        assignmentIds:
+          selectedAssignments.length > 0
+            ? selectedAssignments
+            : assignments.map(e => e.id),
         interleave: interleave.toString(),
       },
     })
-  }, [selectedAssignments, interleave])
+  }, [selectedAssignments, assignments, interleave])
 
   const subjectsByLevel = useMemo(() => {
     const result = new Map<number, Map<SubjectType, Subject[]>>()
@@ -99,6 +102,11 @@ export default function Index() {
     }
     return result
   }, [subjects])
+
+  const buttonCopy = useMemo(
+    () => (selectedIds.length === 0 ? 'Batch, Please!' : 'Start lessons'),
+    [selectedIds],
+  )
 
   if (isLoading) {
     return <FullPageLoading />
@@ -175,12 +183,19 @@ export default function Index() {
         </Pressable>
         <View style={{ height: 12 }} />
 
-        <Pressable
-          style={styles.startButtonView}
-          disabled={selectedIds.length === 0}
-          onPress={startLessons}>
-          <View>
-            <Text style={styles.startButtonText}>Start Lessons</Text>
+        <Pressable style={styles.startButtonView} onPress={startLessons}>
+          <View style={appStyles.row}>
+            <Text style={styles.startButtonText}>{buttonCopy}</Text>
+            {selectedIds.length > 0 && (
+              <>
+                <View style={{ width: 4 }} />
+                <View style={styles.startbuttonLenTextContainer}>
+                  <Text style={styles.startbuttonLenText}>
+                    {selectedIds.length}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </Pressable>
       </BlurView>
@@ -213,6 +228,16 @@ const stylesheet = createStyleSheet({
   startButtonText: {
     ...typography.callout,
     color: Colors.white,
+  },
+  startbuttonLenTextContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  startbuttonLenText: {
+    ...typography.callout,
+    color: Colors.pink,
   },
   viewText: {
     ...typography.titleC,
