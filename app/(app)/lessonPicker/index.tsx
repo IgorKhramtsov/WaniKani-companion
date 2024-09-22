@@ -15,6 +15,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeArea } from 'react-native-safe-area-context'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { BlurView } from 'expo-blur'
+import { useSettings } from '@/src/hooks/useSettings'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -23,7 +24,10 @@ export default function Index() {
     return assignments.map(el => el.subject_id)
   }, [assignments])
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [interleave, setInterleave] = useState(true)
+  const { settings } = useSettings()
+  const [interleave, setInterleave] = useState(
+    settings.interleave_advanced_lessons ?? false,
+  )
   const { subjects, isLoading } = useSubjectCache(subjectIds)
   const { bottom: bottomSafePadding } = useSafeArea()
 

@@ -3,8 +3,6 @@ import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSession } from '@/src/context/authContext'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
 import { useWidgetPropagator } from '@/src/hooks/useWidgetPropagator'
-import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
-import { QueryClient } from '@tanstack/react-query'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
 import { Redirect, Stack } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
@@ -87,7 +85,7 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
-        name='lessonsAdvanced/index'
+        name='lessonPicker/index'
         options={{
           title: 'Lesson Picker',
           headerTitle: 'Lesson Picker',

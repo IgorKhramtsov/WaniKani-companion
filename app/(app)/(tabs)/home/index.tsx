@@ -188,7 +188,7 @@ export default function Index() {
                 exiting={exitingAnimationLeft}>
                 <Link
                   href={{
-                    pathname: '/lessonsAdvanced',
+                    pathname: '/lessonPicker',
                     params: { assignmentIds: lessonIdsBatch },
                   }}
                   asChild>
