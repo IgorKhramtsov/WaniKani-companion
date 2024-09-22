@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeArea } from 'react-native-safe-area-context'
 import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
 import { AntDesign } from '@expo/vector-icons'
@@ -37,6 +37,7 @@ export default function Index() {
     interleave?: string
   }>()
   const { styles } = useStyles(stylesheet)
+  const { top: topSafePadding } = useSafeArea()
   const parentPagerView = useRef<PagerView>(null)
   const { settings } = useSettings()
 
@@ -275,16 +276,19 @@ export default function Index() {
             )
           }
 
-          // return <Text>{index}</Text>
           return (
             <View style={{ flex: 1 }} key={index} collapsable={false}>
               <View
                 style={[
-                  styles.glyphDisplayView,
                   { backgroundColor: subjectColor },
+                  { paddingTop: topSafePadding },
                 ]}>
-                <Text style={styles.glyphText}>{subject.characters}</Text>
-                <Text style={styles.glyphName}>{primaryMeaning?.meaning}</Text>
+                <View style={styles.glyphDisplayView}>
+                  <Text style={styles.glyphText}>{subject.characters}</Text>
+                  <Text style={styles.glyphName}>
+                    {primaryMeaning?.meaning}
+                  </Text>
+                </View>
               </View>
               <PagerView
                 style={styles.pagerView}
@@ -319,6 +323,13 @@ export default function Index() {
           </View>
         </Pressable>
       </View>
+      <View style={[styles.topBar, { paddingTop: topSafePadding }]}>
+        <Pressable onPress={router.back}>
+          <View style={styles.topBarCloseButton}>
+            <AntDesign name='arrowleft' size={32} color={Colors.white} />
+          </View>
+        </Pressable>
+      </View>
     </SafeAreaView>
   )
 }
@@ -326,6 +337,16 @@ export default function Index() {
 const stylesheet = createStyleSheet({
   scrollView: {
     padding: 20,
+  },
+  topBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  topBarCloseButton: {
+    marginLeft: 12,
+    marginRight: 4,
   },
   text: {
     ...typography.body,

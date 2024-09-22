@@ -82,6 +82,7 @@ export default function RootLayout() {
         options={{
           title: 'Lessons',
           headerTitle: 'Lessons',
+          headerShown: false,
         }}
       />
       <Stack.Screen
