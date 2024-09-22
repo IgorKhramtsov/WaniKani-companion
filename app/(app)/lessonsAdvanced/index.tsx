@@ -8,11 +8,13 @@ import { useAppSelector } from '@/src/hooks/redux'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { Subject, SubjectType } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
+import { FontAwesome } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { Fragment, useCallback, useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeArea } from 'react-native-safe-area-context'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { BlurView } from 'expo-blur'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -21,6 +23,7 @@ export default function Index() {
     return assignments.map(el => el.subject_id)
   }, [assignments])
   const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [interleave, setInterleave] = useState(true)
   const { subjects, isLoading } = useSubjectCache(subjectIds)
   const { bottom: bottomSafePadding } = useSafeArea()
 
@@ -42,9 +45,12 @@ export default function Index() {
   const startLessons = useCallback(() => {
     router.replace({
       pathname: '/lessons',
-      params: { assignmentIds: selectedAssignments },
+      params: {
+        assignmentIds: selectedAssignments,
+        interleave: interleave.toString(),
+      },
     })
-  }, [selectedAssignments])
+  }, [selectedAssignments, interleave])
 
   const subjectsByLevel = useMemo(() => {
     const result = new Map<number, Map<SubjectType, Subject[]>>()
@@ -150,16 +156,30 @@ export default function Index() {
           })}
         <View style={{ height: 80 }} />
       </ScrollView>
-      <View style={[styles.bottomBar, { bottom: bottomSafePadding }]}>
+      <BlurView
+        style={[styles.bottomBar, { paddingBottom: bottomSafePadding }]}>
+        <Pressable
+          style={appStyles.row}
+          onPress={() => setInterleave(!interleave)}>
+          <FontAwesome
+            name={interleave ? 'check-square-o' : 'square-o'}
+            size={24}
+            color='black'
+          />
+          <View style={{ width: 8 }} />
+          <Text style={typography.callout}>Interleave</Text>
+        </Pressable>
+        <View style={{ height: 12 }} />
+
         <Pressable
           style={styles.startButtonView}
           disabled={selectedIds.length === 0}
           onPress={startLessons}>
-          <View style={styles.startButtonView}>
+          <View>
             <Text style={styles.startButtonText}>Start Lessons</Text>
           </View>
         </Pressable>
-      </View>
+      </BlurView>
     </>
   )
 }
@@ -172,6 +192,8 @@ const stylesheet = createStyleSheet({
     position: 'absolute',
     left: 0,
     right: 0,
+    bottom: 0,
+    paddingTop: 16,
     alignItems: 'center',
   },
   startButtonView: {
@@ -181,6 +203,8 @@ const stylesheet = createStyleSheet({
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
+    borderBottomWidth: 4,
+    borderBottomColor: Colors.getBottomBorderColor(Colors.pink),
   },
   startButtonText: {
     ...typography.callout,

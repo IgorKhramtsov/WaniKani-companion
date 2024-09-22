@@ -43,13 +43,13 @@ import { useSettings } from '@/src/hooks/useSettings'
 import { clamp } from 'lodash'
 import { appStyles } from '@/src/constants/styles'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { completionTitleCopywritings, getRandomCopywritings } from './utils'
 
 interface BaseProps {
   mode: QuizMode
-  completionTitle?: string
-  completionCopy?: string
 }
 
+// TODO: do not tie together quiz mode and assignment/subject
 interface SubjectProps extends BaseProps {
   mode: 'quiz'
   subjectIds: number[]
@@ -58,6 +58,7 @@ interface SubjectProps extends BaseProps {
 interface AssignmentProps extends BaseProps {
   mode: 'review' | 'lessonsQuiz'
   assignmentIds: number[]
+  moreLessonIds?: number[]
 }
 
 const isAssignmentProps = (
@@ -72,8 +73,6 @@ const isSubjectProps = (
 }
 
 export const QuizPage = (props: SubjectProps | AssignmentProps) => {
-  const { completionCopy, completionTitle } = props
-
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
   const navigation = useNavigation()
@@ -87,6 +86,38 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     }
     return []
   }, [props])
+
+  let moreLessonIds = useMemo(() => {
+    if (isAssignmentProps(props)) {
+      return props.moreLessonIds ?? []
+    }
+    return []
+  }, [props])
+
+  const { completionCopy, completionTitle } = useMemo(() => {
+    switch (props.mode) {
+      case 'lessonsQuiz':
+        return {
+          completionCopy:
+            moreLessonIds.length > 0
+              ? 'You have completed all the lessons in this batch.\n Do you want another one?'
+              : 'You have completed all for today. Return tomorrow for the new portion!',
+          completionTitle: completionTitleCopywritings[0],
+        }
+      case 'review':
+      default:
+        const copywritings = getRandomCopywritings()
+        return {
+          completionCopy: copywritings.copy,
+          completionTitle: copywritings.title,
+        }
+    }
+  }, [moreLessonIds.length, props.mode])
+
+  const doneCopy = useMemo(
+    () => (moreLessonIds.length > 0 ? "That's enough for now" : 'Done'),
+    [moreLessonIds],
+  )
 
   const assignments = useAppSelector(selectAssignments(assignmentIds))
 
@@ -428,18 +459,20 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               </Animated.View>
             </View>
           )}
-          <MenuView
-            style={styles.topBarMenu}
-            onPressAction={({ nativeEvent }) => {
-              if (nativeEvent.event === 'wrap-up') {
-                dispatch(toggleWrapUp())
-              } else if (nativeEvent.event === 'debug-view-all') {
-                setDebugViewEnabled(!debugViewEnabled)
-              }
-            }}
-            actions={menuActions}>
-            <FontAwesome6 name='ellipsis' size={24} color={Colors.gray55} />
-          </MenuView>
+          {currentTask !== undefined && (
+            <MenuView
+              style={styles.topBarMenu}
+              onPressAction={({ nativeEvent }) => {
+                if (nativeEvent.event === 'wrap-up') {
+                  dispatch(toggleWrapUp())
+                } else if (nativeEvent.event === 'debug-view-all') {
+                  setDebugViewEnabled(!debugViewEnabled)
+                }
+              }}
+              actions={menuActions}>
+              <FontAwesome6 name='ellipsis' size={24} color={Colors.gray55} />
+            </MenuView>
+          )}
         </View>
         <View style={styles.pageContainer}>
           {nextTask && (
@@ -502,16 +535,34 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             </Animated.View>
           )}
           {!currentTask && completionTitle && completionCopy && (
-            <View style={styles.completionCard}>
-              <Text style={styles.completionTextTitle}>{completionTitle}</Text>
-              <View style={{ height: 16 }} />
-              <Text style={styles.completionText}>{completionCopy}</Text>
-              <View style={{ height: 32 }} />
-              <Link href='..' asChild>
-                <Pressable style={styles.completionButton}>
-                  <Text style={styles.completionButtonText}>Done</Text>
-                </Pressable>
-              </Link>
+            <View style={{ height: '100%', justifyContent: 'center' }}>
+              <View style={styles.completionCard}>
+                <Text style={styles.completionTextTitle}>
+                  {completionTitle}
+                </Text>
+                <View style={{ height: 16 }} />
+                <Text style={styles.completionText}>{completionCopy}</Text>
+                <View style={{ height: 32 }} />
+                <Link href='/home' asChild>
+                  <Pressable style={styles.completionButton}>
+                    <Text style={styles.completionButtonText}>{doneCopy}</Text>
+                  </Pressable>
+                </Link>
+                {moreLessonIds.length > 0 && (
+                  <>
+                    <View style={{ height: 12 }} />
+                    <Link
+                      href={{ pathname: '/lessons', params: { moreLessonIds } }}
+                      asChild>
+                      <Pressable style={styles.completionButton}>
+                        <Text style={styles.completionButtonText}>
+                          Yes, Please!
+                        </Text>
+                      </Pressable>
+                    </Link>
+                  </>
+                )}
+              </View>
             </View>
           )}
         </View>

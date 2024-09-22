@@ -29,26 +29,24 @@ import { useSettings } from '@/src/hooks/useSettings'
 import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { OnPageSelectedEventData } from 'react-native-pager-view/lib/typescript/PagerViewNativeComponent'
+import { createLessonsBatch } from '@/src/utils/lessonPickerUtils'
 
 export default function Index() {
   const params = useLocalSearchParams<{
     assignmentIds: string
+    interleave?: string
   }>()
   const { styles } = useStyles(stylesheet)
   const parentPagerView = useRef<PagerView>(null)
   const { settings } = useSettings()
 
+  const interleave = useMemo(
+    () => (params.interleave ?? 'true').toLowerCase() === 'true',
+    [params.interleave],
+  )
   const assignmentIds = useMemo(() => {
-    console.log(
-      '[lessons] Processing assignmentIds from params: ',
-      params.assignmentIds,
-    )
     return params.assignmentIds?.split(',').map(el => parseInt(el))
   }, [params.assignmentIds])
-  useEffect(
-    () => console.log('[lessons] assignmentIds:', assignmentIds),
-    [assignmentIds],
-  )
 
   const assignments = useAppSelector(selectAssignments(assignmentIds ?? []))
 
@@ -58,11 +56,50 @@ export default function Index() {
 
   const { subjects, isLoading } = useSubjectCache(subjectIds)
 
+  const lessonsBatch = useMemo(() => {
+    const batchSize = settings.lessons_batch_size ?? 5
+
+    if (interleave) {
+      return createLessonsBatch({
+        batchSize,
+        assignments,
+        subjects,
+        interleave,
+      })
+    } else {
+      return assignments.slice(0, batchSize)
+    }
+  }, [settings.lessons_batch_size, interleave, assignments, subjects])
+
+  const lessonBatchAssignmentIds = useMemo(
+    () => lessonsBatch.map(e => e.id),
+    [lessonsBatch],
+  )
+
+  const moreLessonIds = useMemo(
+    () => assignmentIds.filter(e => !lessonBatchAssignmentIds.includes(e)),
+    [assignmentIds, lessonBatchAssignmentIds],
+  )
+
+  const lessonBatchSubjects = useMemo(() => {
+    const selectedSubjects = subjects.filter(e =>
+      lessonsBatch.map(e => e.subject_id).includes(e.id),
+    )
+
+    // Preserve order of lessonsBatch
+    selectedSubjects.sort((a, b) => {
+      const aIndex = lessonsBatch.findIndex(e => e.subject_id === a.id)
+      const bIndex = lessonsBatch.findIndex(e => e.subject_id === b.id)
+      return aIndex - bIndex
+    })
+    return selectedSubjects
+  }, [lessonsBatch, subjects])
+
   const [parentPagerIndex, setParentPagerIndex] = useState(0)
   const [subjectPagerIndex, setSubjectPagerIndex] = useState(0)
   const selectedSubject = useMemo(
-    () => subjects[parentPagerIndex],
-    [subjects, parentPagerIndex],
+    () => lessonBatchSubjects[parentPagerIndex],
+    [lessonBatchSubjects, parentPagerIndex],
   )
   const pronunciationAudio = useMemo(
     () =>
@@ -91,7 +128,7 @@ export default function Index() {
   )
 
   useEffect(() => {
-    const subject = subjects[subjectPagerIndex]
+    const subject = lessonBatchSubjects[subjectPagerIndex]
     if (SubjectUtils.isVocabulary(subject)) {
       if (
         settings.lessons_autoplay_audio &&
@@ -105,7 +142,7 @@ export default function Index() {
     soundIsLoading,
     playSound,
     settings.lessons_autoplay_audio,
-    subjects,
+    lessonBatchSubjects,
     parentPagerIndex,
     subjectPagerIndex,
   ])
@@ -113,9 +150,12 @@ export default function Index() {
   const openQuiz = useCallback(() => {
     router.push({
       pathname: '/quiz',
-      params: { assignmentIds: assignmentIds },
+      params: {
+        assignmentIds: lessonBatchAssignmentIds,
+        moreLessonIds,
+      },
     })
-  }, [assignmentIds])
+  }, [lessonBatchAssignmentIds, moreLessonIds])
 
   if (subjectIds === undefined) {
     return <Text>Couldn't get parameters</Text>
@@ -132,10 +172,10 @@ export default function Index() {
         style={styles.pagerView}
         initialPage={0}
         onPageSelected={selectParentPage}>
-        {subjects.map((subject, index) => {
+        {lessonBatchSubjects.map((subject, index) => {
           const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)
           const subjectColor = SubjectUtils.getAssociatedColor(subject)
-          const isLast = index === subjects.length - 1
+          const isLast = index === lessonBatchSubjects.length - 1
           const getBottomContent = ({
             direction,
           }: {
@@ -156,7 +196,8 @@ export default function Index() {
             return (
               <View>
                 {((index > 0 && direction === 'prev') ||
-                  (index < subjects.length && direction === 'next')) && (
+                  (index < lessonBatchSubjects.length &&
+                    direction === 'next')) && (
                   <Button title={buttonTitle} onPress={onPress} />
                 )}
 
@@ -256,7 +297,7 @@ export default function Index() {
         })}
       </PagerView>
       <View style={styles.subjectQueueContainer}>
-        {subjects.map((subject, index) => (
+        {lessonBatchSubjects.map((subject, index) => (
           // TODO: probably should be moved to bottomContent of the pages
           <Pressable
             key={subject.id}

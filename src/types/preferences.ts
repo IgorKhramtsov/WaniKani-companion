@@ -52,7 +52,7 @@ export const defaultPreferences: Preferences = {
   default_voice_actor_id: 1, // always 1
   extra_study_autoplay_audio: false,
   lessons_autoplay_audio: false,
-  lessons_batch_size: 10,
+  lessons_batch_size: 5,
   lessons_presentation_order: 'ascending_level_then_subject', // Deprecated
   reviews_autoplay_audio: false,
   reviews_display_srs_indicator: false,

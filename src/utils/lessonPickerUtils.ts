@@ -37,13 +37,23 @@ const bucketAssignmentsBySubjectType = (
   }, {})
 }
 
-export const createLessonsBatch = (
-  batchSize: number,
-  allAssignments: Assignment[],
-  subjects: Subject[],
-) => {
+export const createLessonsBatch = ({
+  batchSize,
+  assignments,
+  subjects,
+  interleave = true,
+}: {
+  batchSize: number
+  assignments: Assignment[]
+  subjects: Subject[]
+  interleave?: boolean
+}) => {
+  if (!interleave) {
+    return assignments.slice(0, batchSize)
+  }
+
   const bucketedAssignmentsBySubjectType = bucketAssignmentsBySubjectType(
-    allAssignments,
+    assignments,
     subjects,
   )
   const totalAssignments = Object.values(

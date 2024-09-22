@@ -100,16 +100,16 @@ export default function Index() {
 
   const { subjects } = useSubjectCache(lessonSubjects, false)
 
-  const lessonsBatch = useMemo(() => {
-    const batchSize = settings.lessons_batch_size ?? 5
+  const dailyLessons = useMemo(() => {
+    const batchSize = availableLessonsCount
 
-    return createLessonsBatch(batchSize, allLessons, subjects)
-  }, [settings.lessons_batch_size, allLessons, subjects])
+    return createLessonsBatch({ batchSize, assignments: allLessons, subjects })
+  }, [availableLessonsCount, allLessons, subjects])
   const reviewBatch = useAppSelector(selectReviewsBatch)
 
   const lessonIdsBatch = useMemo(
-    () => lessonsBatch.map(r => r.id),
-    [lessonsBatch],
+    () => dailyLessons.map(r => r.id),
+    [dailyLessons],
   )
   const reviewIdsBatch = useMemo(
     () => reviewBatch.map(r => r.id),
