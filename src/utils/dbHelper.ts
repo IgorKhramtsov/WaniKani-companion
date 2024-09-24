@@ -28,6 +28,14 @@ const createTables = async (db: SQLiteDatabase) => {
       subject_id UNSIGNED SMALLINT NOT NULL
     )`,
   )
+  await db.runAsync(
+    `CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY,
+      data TEXT,
+      created_at UNSIGNED INT NOT NULL,
+      subject_id UNSIGNED SMALLINT NOT NULL
+    )`,
+  )
 }
 
 const resetDb = async (db: SQLiteDatabase) => {
@@ -36,6 +44,7 @@ const resetDb = async (db: SQLiteDatabase) => {
       await txn.runAsync('DROP TABLE IF EXISTS subjects')
       await txn.runAsync('DROP TABLE IF EXISTS assignments')
       await txn.runAsync('DROP TABLE IF EXISTS review_statistics')
+      await txn.runAsync('DROP TABLE IF EXISTS reviews')
     })
   } catch (e) {
     console.error('Failed to reset db', e)

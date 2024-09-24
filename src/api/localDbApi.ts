@@ -8,6 +8,7 @@ import { Subject, SubjectUtils } from '../types/subject'
 import { Assignment } from '../types/assignment'
 import wanakana from 'wanakana'
 import { ReviewStatistic } from '../types/reviewStatistic'
+import { Review } from '../types/review'
 
 const baseQueryWithSqlite =
   (
@@ -46,7 +47,7 @@ export const localDbApi = createApi({
     const queryFn = baseQueryWithSqlite(sqliteDb)
     return queryFn(args, api, extraOptions)
   },
-  tagTypes: ['Subject', 'Assignment', 'ReviewStatistic'],
+  tagTypes: ['Subject', 'Assignment', 'ReviewStatistic', 'Review'],
   endpoints: builder => ({
     getSubject: builder.query<Subject | undefined, number>({
       providesTags: ['Subject'],
@@ -186,6 +187,21 @@ export const localDbApi = createApi({
         params: reviewStatistics.flatMap(e => [
           e.id,
           JSON.stringify(e),
+          e.subject_id,
+        ]),
+      }),
+    }),
+    saveReview: builder.mutation<void, Review[]>({
+      invalidatesTags: ['Review'],
+      query: review => ({
+        query: [
+          `INSERT OR REPLACE INTO reviews (id, data, created_at, subject_id) VALUES `,
+          Array(review.length).fill('(?, ?, ?, ?)').join(', '),
+        ].join(' '),
+        params: review.flatMap(e => [
+          e.id,
+          JSON.stringify(e),
+          Math.round(new Date(e.created_at).valueOf() / 1000),
           e.subject_id,
         ]),
       }),

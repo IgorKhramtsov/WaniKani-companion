@@ -287,7 +287,7 @@ export const wanikaniApi = createApi({
         body: { review: params },
       }),
       transformResponse: (response: CreateReviewApiResponse) => [
-        response.data,
+        { ...response.data, id: response.id },
         {
           assignment: {
             ...response.resources_updated.assignment.data,
