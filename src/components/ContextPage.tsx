@@ -30,8 +30,6 @@ export const ContextPage = ({
 export const ContextSection = ({ subject }: Props) => {
   const { styles } = useStyles(stylesheet)
 
-  // console.log('\n\nContext', subject.context_sentences)
-
   return (
     <Fragment>
       <PageSection title='Context Sentences'>

@@ -298,7 +298,7 @@ const Chart: React.FC<ChartProps> = ({
   useAnimatedReaction(
     () => touchedTimeLabelIndex.value,
     (cur, prev) => {
-      console.log('reaction')
+      // console.log('reaction')
       if (cur !== prev && cur !== null) {
         runOnJS(setTouchedLabels)(allLabels[cur])
       }

@@ -14,7 +14,7 @@ export const localDbSyncMiddleware: Middleware =
       dispatch(
         localDbApi.endpoints.saveReviewStatistics.initiate([review_statistic]),
       )
-      dispatch(localDbApi.endpoints.saveReview.initiate([review]))
+      dispatch(localDbApi.endpoints.saveReviews.initiate([review]))
     }
 
     if (wanikaniApi.endpoints.startAssignment.matchFulfilled(action)) {

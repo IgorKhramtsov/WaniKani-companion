@@ -4,11 +4,12 @@ import {
   SQLiteDatabase,
   SQLiteVariadicBindParams,
 } from 'expo-sqlite'
-import { Subject, SubjectUtils } from '../types/subject'
+import { Subject, SubjectType, SubjectUtils } from '../types/subject'
 import { Assignment } from '../types/assignment'
 import wanakana from 'wanakana'
 import { ReviewStatistic } from '../types/reviewStatistic'
 import { Review } from '../types/review'
+import { LevelProgression } from '../types/levelProgression'
 
 const baseQueryWithSqlite =
   (
@@ -47,7 +48,13 @@ export const localDbApi = createApi({
     const queryFn = baseQueryWithSqlite(sqliteDb)
     return queryFn(args, api, extraOptions)
   },
-  tagTypes: ['Subject', 'Assignment', 'ReviewStatistic', 'Review'],
+  tagTypes: [
+    'Subject',
+    'Assignment',
+    'ReviewStatistic',
+    'Review',
+    'LevelProgression',
+  ],
   endpoints: builder => ({
     getSubject: builder.query<Subject | undefined, number>({
       providesTags: ['Subject'],
@@ -55,9 +62,8 @@ export const localDbApi = createApi({
         query: 'SELECT data FROM subjects WHERE id = ? LIMIT 1',
         params: [id],
       }),
-      transformResponse: (response: { data: string }[]) => {
-        return response.length ? JSON.parse(response[0].data) : undefined
-      },
+      transformResponse: (response: { data: string }[]) =>
+        response.length ? JSON.parse(response[0].data) : undefined,
     }),
     getSubjects: builder.query<Subject[], number[]>({
       providesTags: ['Subject'],
@@ -65,9 +71,40 @@ export const localDbApi = createApi({
         query: `SELECT data FROM subjects WHERE id IN (${ids.map(() => '?').join(', ')})`,
         params: ids,
       }),
-      transformResponse: (response: { data: string }[]) => {
-        return response.map(row => JSON.parse(row.data))
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
+    }),
+    findSubjectsBy: builder.query<
+      Subject[],
+      { level?: number; type?: SubjectType; srsStage?: number }
+    >({
+      providesTags: ['Subject'],
+      query: ({ level, type, srsStage }) => {
+        let sql = 'SELECT data FROM subjects'
+        const conditions: string[] = []
+        const values: SQLiteVariadicBindParams = []
+        if (level !== undefined) {
+          conditions.push('level = ?')
+          values.push(level)
+        }
+        if (type !== undefined) {
+          conditions.push('type = ?')
+          values.push(type)
+        }
+        if (srsStage !== undefined) {
+          conditions.push('srs_stage = ?')
+          values.push(srsStage)
+        }
+        if (conditions.length > 0) {
+          sql += ` WHERE ${conditions.join(' AND ')}`
+        }
+        return {
+          query: sql,
+          params: values,
+        }
       },
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
     }),
     getAssignment: builder.query<Assignment | undefined, number>({
       providesTags: ['Assignment'],
@@ -75,12 +112,30 @@ export const localDbApi = createApi({
         query: 'SELECT data FROM assignments WHERE subject_id = ? LIMIT 1',
         params: [subject_id],
       }),
-      transformResponse: (response: { data: string }[]) => {
-        console.log('getAssignment:', response)
-        return response.length ? JSON.parse(response[0].data) : undefined
-      },
+      transformResponse: (response: { data: string }[]) =>
+        response.length ? JSON.parse(response[0].data) : undefined,
     }),
-    // TODO: optimize to get only neccesasry data (only review assignments,
+    findAssignmentsBy: builder.query<Assignment[], { subjectIds: number[] }>({
+      providesTags: ['Assignment'],
+      query: ({ subjectIds }) => {
+        let sql = 'SELECT data FROM assignments'
+        const conditions: string[] = []
+        const values: SQLiteVariadicBindParams = []
+        if (subjectIds !== undefined && subjectIds.length > 0) {
+          conditions.push(`subject_id IN (${subjectIds.join(', ')})`)
+        }
+        if (conditions.length > 0) {
+          sql += ` WHERE ${conditions.join(' AND ')}`
+        }
+        return {
+          query: sql,
+          params: values,
+        }
+      },
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
+    }),
+    // TODO: optimize to get only necessary data (only review assignments,
     // aggregate only count)
     getAssignments: builder.query<Assignment[], void>({
       providesTags: ['Assignment'],
@@ -88,9 +143,8 @@ export const localDbApi = createApi({
         query: 'SELECT data FROM assignments',
         params: [],
       }),
-      transformResponse: (response: { data: string }[]) => {
-        return response.map(row => JSON.parse(row.data))
-      },
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
     }),
     searchSubjects: builder.query<Subject[], string>({
       providesTags: ['Subject'],
@@ -118,36 +172,41 @@ export const localDbApi = createApi({
           ],
         }
       },
-      transformResponse: (response: { data: string }[]) => {
-        return response.map(row => JSON.parse(row.data))
-      },
-    }),
-    saveSubject: builder.mutation<void, Subject>({
-      invalidatesTags: ['Subject'],
-      query: subject => ({
-        query: `INSERT OR REPLACE INTO subjects (id, data) VALUES (?, ?)`,
-        params: [subject.id, JSON.stringify(subject)],
-      }),
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
     }),
     saveSubjects: builder.mutation<void, Subject[]>({
       invalidatesTags: ['Subject'],
-      query: subjects => ({
-        query: [
-          `INSERT OR REPLACE INTO subjects (id, data, meanings, readings, meaning_mnemonic, reading_mnemonic, characters) VALUES`,
-          Array(subjects.length).fill('(?, ?, ?, ?, ?, ?, ?)').join(', '),
-        ].join(' '),
-        params: subjects.flatMap(s => [
-          s.id,
-          JSON.stringify(s),
-          s.meanings.map(e => e.meaning).join(','),
-          SubjectUtils.hasReading(s)
-            ? s.readings.map(e => e.reading).join(',')
-            : null,
-          s.meaning_mnemonic,
-          SubjectUtils.hasReading(s) ? s.reading_mnemonic : null,
-          s.characters,
-        ]),
-      }),
+      query: subjects => {
+        const queryDef = `INSERT OR REPLACE INTO subjects 
+          (
+            id,
+            data,
+            level,
+            type,
+            meanings,
+            readings,
+            meaning_mnemonic,
+            reading_mnemonic,
+            characters
+          ) VALUES`
+        return {
+          query: getQueryFor(queryDef, subjects.length),
+          params: subjects.flatMap(s => [
+            s.id,
+            JSON.stringify(s),
+            s.level,
+            s.type,
+            s.meanings.map(e => e.meaning).join(','),
+            SubjectUtils.hasReading(s)
+              ? s.readings.map(e => e.reading).join(',')
+              : null,
+            s.meaning_mnemonic,
+            SubjectUtils.hasReading(s) ? s.reading_mnemonic : null,
+            s.characters,
+          ]),
+        }
+      },
     }),
     saveAssignments: builder.mutation<void, Assignment[]>({
       invalidatesTags: ['Assignment'],
@@ -160,8 +219,7 @@ export const localDbApi = createApi({
           e.id,
           JSON.stringify(e),
           e.subject_id,
-          // Seconds since epoch
-          !!e.available_at ? new Date(e.available_at).valueOf() / 1000 : 0,
+          dateToUnixTimestamp(e.available_at) ?? 0,
           e.srs_stage,
         ]),
       }),
@@ -173,9 +231,8 @@ export const localDbApi = createApi({
           'SELECT data FROM review_statistics WHERE subject_id = ? LIMIT 1',
         params: [subject_id],
       }),
-      transformResponse: (response: { data: string }[]) => {
-        return response.length ? JSON.parse(response[0].data) : undefined
-      },
+      transformResponse: (response: { data: string }[]) =>
+        response.length ? JSON.parse(response[0].data) : undefined,
     }),
     saveReviewStatistics: builder.mutation<void, ReviewStatistic[]>({
       invalidatesTags: ['ReviewStatistic'],
@@ -191,23 +248,77 @@ export const localDbApi = createApi({
         ]),
       }),
     }),
-    saveReview: builder.mutation<void, Review[]>({
+    saveReviews: builder.mutation<void, Review[]>({
       invalidatesTags: ['Review'],
-      query: review => ({
+      query: reviews => ({
         query: [
           `INSERT OR REPLACE INTO reviews (id, data, created_at, subject_id) VALUES `,
-          Array(review.length).fill('(?, ?, ?, ?)').join(', '),
+          Array(reviews.length).fill('(?, ?, ?, ?)').join(', '),
         ].join(' '),
-        params: review.flatMap(e => [
+        params: reviews.flatMap(e => [
           e.id,
           JSON.stringify(e),
-          Math.round(new Date(e.created_at).valueOf() / 1000),
+          dateToUnixTimestamp(e.created_at),
           e.subject_id,
         ]),
       }),
     }),
+    saveLevelProgressions: builder.mutation<void, LevelProgression[]>({
+      invalidatesTags: ['LevelProgression'],
+      query: levelProgressions => {
+        const queryDef = `INSERT OR REPLACE INTO level_progressions
+            (
+              id,
+              data,
+              created_at,
+              level,
+              unlocked_at,
+              started_at,
+              passed_at,
+              completed_at,
+              abandoned_at
+            ) VALUES
+          `
+        return {
+          query: getQueryFor(queryDef, levelProgressions.length),
+          params: levelProgressions.flatMap(e => [
+            e.id,
+            JSON.stringify(e),
+            dateToUnixTimestamp(e.created_at),
+            e.level,
+            dateToUnixTimestamp(e.unlocked_at),
+            dateToUnixTimestamp(e.started_at),
+            dateToUnixTimestamp(e.passed_at),
+            dateToUnixTimestamp(e.completed_at),
+            dateToUnixTimestamp(e.abandoned_at),
+          ]),
+        }
+      },
+    }),
+    getLevelProgressions: builder.query<LevelProgression[], void>({
+      providesTags: ['LevelProgression'],
+      query: () => ({
+        query: 'SELECT data FROM level_progressions',
+        params: [],
+      }),
+      transformResponse: (response: { data: string }[]) =>
+        response.map(row => JSON.parse(row.data)),
+    }),
   }),
 })
+
+/// Converts a date string to a unix timestamp(seconds since epoch)
+const dateToUnixTimestamp = (date?: string | null) =>
+  date ? Math.round(new Date(date).valueOf() / 1000) : null
+
+const getQueryFor = (queryDef: string, valuesCount: number) => {
+  // Gets number of params for query
+  const numberOfParams = queryDef.match(/\([^)]*\)/)![0].split(',').length
+  const values = Array(valuesCount).fill(
+    `(${Array(numberOfParams).fill('?').join(', ')})`,
+  )
+  return [queryDef, values].join(' ')
+}
 
 export const {
   useGetSubjectQuery,
@@ -215,11 +326,15 @@ export const {
   useGetAssignmentsQuery,
   useGetAssignmentQuery,
   useGetReviewStatisticQuery,
+  useGetLevelProgressionsQuery,
+
+  useFindSubjectsByQuery,
+  useFindAssignmentsByQuery,
 
   useSearchSubjectsQuery,
 
-  useSaveSubjectMutation,
   useSaveSubjectsMutation,
   useSaveAssignmentsMutation,
   useSaveReviewStatisticsMutation,
+  useSaveLevelProgressionsMutation,
 } = localDbApi

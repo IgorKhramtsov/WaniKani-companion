@@ -33,7 +33,6 @@ export const isReadingCorrect = (
 ): Result => {
   //  reading: wrong type used (oniyomi/kuniyomi)
   const matchedReading = subject.readings.find(el => el.reading === answer)
-  console.log('READINGS: ', subject.readings)
   if (matchedReading === undefined) {
     return {
       status: 'incorrect',
@@ -55,7 +54,6 @@ export const isMeaningCorrect = (answer: string, subject: Subject): Result => {
     ...subject.meanings.filter(el => el.accepted_answer),
     ...subject.auxiliary_meanings.filter(el => el.type === 'whitelist'),
   ]
-  console.log('MEANINGS: ', meanings)
 
   const comparisonResult =
     StringUtils.compareStringWithArrayWithThresholdEnsuringNumbers(

@@ -6,6 +6,8 @@ import {
   isRejectedWithValue,
 } from '@reduxjs/toolkit'
 
+const shouldLogExpanded = false
+
 /**
  * Log an error
  */
@@ -25,7 +27,9 @@ export const rtkQueryErrorLogger: Middleware =
       )
     }
     if (isFulfilled(action)) {
-      console.log('Fulfilled action:', action.meta.arg)
+      if (shouldLogExpanded) {
+        console.log('Fulfilled action:', action.meta.arg)
+      }
     }
 
     return next(action)
@@ -37,12 +41,12 @@ export const loggerMiddleware: Middleware = api => next => async action => {
 
     const endpointName =
       'endpointName' in arg ? (arg.endpointName as string) : undefined
-    if (
-      endpointName
-      //   &&
-      // Object.keys(wanikaniApi.endpoints).includes(endpointName)
-    ) {
-      console.log(`Request to ${endpointName} :`, arg)
+    if (endpointName) {
+      if (shouldLogExpanded) {
+        console.log(`Request to ${endpointName} :`, arg)
+      } else {
+        console.log(`Request to ${endpointName}`)
+      }
     }
   }
 

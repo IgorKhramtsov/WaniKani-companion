@@ -9,6 +9,7 @@ import { CreateReviewParams } from '../types/createReviewParams'
 import { createSelector } from '@reduxjs/toolkit'
 import { RootState } from '../redux/store'
 import { getLocalStartOfDayInUTC, isToday } from '../utils/dateUtils'
+import { LevelProgression } from '../types/levelProgression'
 
 // TODO: maybe refactor in future to look more like a data source which is
 // injected to redux store?
@@ -45,6 +46,7 @@ export const wanikaniApi = createApi({
     'ReviewStatistic',
     'Reviews',
     'Lessons',
+    'LevelProgressions',
   ],
   endpoints: build => ({
     getUser: build.query<User, void>({
@@ -301,6 +303,35 @@ export const wanikaniApi = createApi({
       ],
       invalidatesTags: ['Reviews'],
     }),
+    getLevelProgressions: build.query<
+      { data: LevelProgression[]; totalCount: number },
+      { updatedAfter?: string; pageAfterId?: number }
+    >({
+      query: ({ updatedAfter, pageAfterId }) => {
+        const params: {
+          ids?: string
+          updated_after?: string
+          page_after_id?: number
+        } = {}
+        if (updatedAfter) {
+          params['updated_after'] = updatedAfter
+        }
+        if (pageAfterId) {
+          params['page_after_id'] = pageAfterId
+        }
+        return {
+          url: 'level_progressions',
+          params,
+        }
+      },
+      transformResponse: (
+        response: ApiResponse<ApiResponse<LevelProgression>[]>,
+      ) => ({
+        data: response.data.map(el => ({ ...el.data, id: el.id })),
+        totalCount: response.total_count,
+      }),
+      providesTags: ['LevelProgressions'],
+    }),
   }),
 })
 
@@ -312,6 +343,7 @@ export const {
   useGetSubjectsQuery,
   useGetAssignmentsQuery,
   useGetReviewStatisticsQuery,
+  useGetLevelProgressionsQuery,
 
   useSetUserPreferencesMutation,
   useCreateReviewMutation,

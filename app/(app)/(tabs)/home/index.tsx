@@ -29,12 +29,10 @@ import {
 } from '@/src/api/wanikaniApi'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
-import { Assignment } from '@/src/types/assignment'
-import { Subject, SubjectUtils } from '@/src/types/subject'
 import { Forecast } from './forecast'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
-import { shuffle } from 'lodash'
 import { createLessonsBatch } from '@/src/utils/lessonPickerUtils'
+import { LevelProgress } from './LevelProgress'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
@@ -145,6 +143,8 @@ export default function Index() {
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
         }>
+        <LevelProgress />
+        <View style={{ height: 16 }} />
         <AssignmentsCard
           backgroundColor={Colors.pink}
           layoutAnimationDuration={duration * 0.6}

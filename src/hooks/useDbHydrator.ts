@@ -4,6 +4,7 @@ import { useAsyncFetch } from './useAsyncFetch'
 import { wanikaniApi } from '../api/wanikaniApi'
 import {
   useSaveAssignmentsMutation,
+  useSaveLevelProgressionsMutation,
   useSaveReviewStatisticsMutation,
   useSaveSubjectsMutation,
 } from '../api/localDbApi'
@@ -25,6 +26,8 @@ export const useDbHydrator = (enabled: boolean) => {
   const [reviewStatisticsTotalCount, setReviewStatisticsTotalCount] = useState<
     number | undefined
   >(undefined)
+  const [levelProgressionsTotalCount, setLevelProgressionsTotalCount] =
+    useState<number | undefined>(undefined)
   const [subjectIdToFetchAfter, setSubjectIdToFetchAfter] = useState<
     number | undefined
   >(undefined)
@@ -46,6 +49,7 @@ export const useDbHydrator = (enabled: boolean) => {
         'ReviewStatistic',
         'Subject',
         'User',
+        'LevelProgressions',
       ]),
     )
   }, [dispatch, setManualTrigger])
@@ -81,10 +85,18 @@ export const useDbHydrator = (enabled: boolean) => {
     },
     { skip: !shouldLoad },
   )
+  const {
+    data: apiLevelProgressionsData,
+    isLoading: apiLevelProgressionsIsLoading,
+  } = wanikaniApi.useGetLevelProgressionsQuery(
+    { updatedAfter: lastUpdate.data },
+    { skip: !shouldLoad },
+  )
 
   const [saveSubjects] = useSaveSubjectsMutation()
   const [saveAssignments] = useSaveAssignmentsMutation()
   const [saveReviewStatistics] = useSaveReviewStatisticsMutation()
+  const [saveLevelProgressions] = useSaveLevelProgressionsMutation()
 
   useEffect(() => {
     if (apiSubjectsData) {
@@ -104,6 +116,12 @@ export const useDbHydrator = (enabled: boolean) => {
     }
   }, [apiReviewStatisticsData])
 
+  useEffect(() => {
+    if (apiLevelProgressionsData) {
+      setLevelProgressionsTotalCount(apiLevelProgressionsData?.totalCount)
+    }
+  }, [apiLevelProgressionsData])
+
   const subjects = useMemo(() => {
     if (!shouldLoad) return []
 
@@ -121,6 +139,12 @@ export const useDbHydrator = (enabled: boolean) => {
 
     return apiReviewStatisticsData?.data ?? []
   }, [shouldLoad, apiReviewStatisticsData])
+
+  const levelProgressions = useMemo(() => {
+    if (!shouldLoad) return []
+
+    return apiLevelProgressionsData?.data ?? []
+  }, [shouldLoad, apiLevelProgressionsData])
 
   useEffect(() => {
     if (subjects.length > 0) {
@@ -152,6 +176,12 @@ export const useDbHydrator = (enabled: boolean) => {
   }, [reviewStatistics, apiAssignmentsData?.hasMore])
 
   useEffect(() => {
+    if (levelProgressions.length > 0) {
+      setObjectsFetched(prev => prev + levelProgressions.length)
+    }
+  }, [levelProgressions])
+
+  useEffect(() => {
     if (subjects.length > 0) {
       saveSubjects(subjects)
     }
@@ -170,11 +200,18 @@ export const useDbHydrator = (enabled: boolean) => {
   }, [saveReviewStatistics, reviewStatistics])
 
   useEffect(() => {
+    if (levelProgressions.length > 0) {
+      saveLevelProgressions(levelProgressions)
+    }
+  }, [saveLevelProgressions, levelProgressions])
+
+  useEffect(() => {
     if (
       shouldLoad &&
       updateStart &&
       !apiSubjectsIsLoading &&
       !apiAssignmentsIsLoading &&
+      !apiLevelProgressionsIsLoading &&
       !apiSubjectsData?.hasMore &&
       !apiAssignmentsData?.hasMore &&
       !apiReviewStatisticsData?.hasMore
@@ -186,6 +223,7 @@ export const useDbHydrator = (enabled: boolean) => {
       setSubjectsTotalCount(undefined)
       setAssignmentsTotalCount(undefined)
       setReviewStatisticsTotalCount(undefined)
+      setLevelProgressionsTotalCount(undefined)
     }
   }, [
     setManualTrigger,
@@ -193,6 +231,7 @@ export const useDbHydrator = (enabled: boolean) => {
     updateStart,
     apiSubjectsIsLoading,
     apiAssignmentsIsLoading,
+    apiLevelProgressionsIsLoading,
     apiSubjectsData?.hasMore,
     apiAssignmentsData?.hasMore,
     apiReviewStatisticsData?.hasMore,
@@ -203,6 +242,7 @@ export const useDbHydrator = (enabled: boolean) => {
       apiSubjectsIsLoading ||
       apiAssignmentsIsLoading ||
       apiReviewStatisticsIsLoading ||
+      apiLevelProgressionsIsLoading ||
       apiSubjectsData?.hasMore === true ||
       apiAssignmentsData?.hasMore === true ||
       apiReviewStatisticsData?.hasMore === true ||
@@ -215,41 +255,35 @@ export const useDbHydrator = (enabled: boolean) => {
     apiReviewStatisticsIsLoading,
     apiSubjectsData?.hasMore,
     apiSubjectsIsLoading,
+    apiLevelProgressionsIsLoading,
     lastUpdate.isLoading,
   ])
 
-  const progress = useMemo(() => {
-    if (
-      !shouldLoad ||
-      (!subjectsTotalCount &&
-        !assignmentsTotalCount &&
-        !reviewStatisticsTotalCount)
-    )
-      return 0
-
-    const total =
+  const total = useMemo(
+    () =>
       (subjectsTotalCount ?? 0) +
       (assignmentsTotalCount ?? 0) +
-      (reviewStatisticsTotalCount ?? 0)
+      (reviewStatisticsTotalCount ?? 0) +
+      (levelProgressionsTotalCount ?? 0),
+    [
+      subjectsTotalCount,
+      assignmentsTotalCount,
+      reviewStatisticsTotalCount,
+      levelProgressionsTotalCount,
+    ],
+  )
 
-    if (total === 0) return 0 // Just in case
+  const progress = useMemo(() => {
+    if (!shouldLoad || total === 0) return 0
+
     return objectsFetched / total
-  }, [
-    shouldLoad,
-    objectsFetched,
-    subjectsTotalCount,
-    assignmentsTotalCount,
-    reviewStatisticsTotalCount,
-  ])
+  }, [shouldLoad, objectsFetched, total])
 
   return {
     triggerUpdate,
     isLoading,
     progress,
-    totalCount:
-      (subjectsTotalCount ?? 0) +
-      (assignmentsTotalCount ?? 0) +
-      (reviewStatisticsTotalCount ?? 0),
+    totalCount: total,
     objectsFetched: objectsFetched,
   }
 }
