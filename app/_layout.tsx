@@ -19,6 +19,7 @@ import {
 } from '@react-navigation/native'
 import * as Sentry from '@sentry/react-native'
 import { isRunningInExpoGo } from 'expo'
+import { captureConsoleIntegration } from '@sentry/integrations'
 
 const queryClient = new QueryClient()
 
@@ -33,8 +34,8 @@ Sentry.init({
       // Pass instrumentation to be used as `routingInstrumentation`
       routingInstrumentation,
       enableNativeFramesTracking: !isRunningInExpoGo(),
-      // ...
     }),
+    captureConsoleIntegration({ levels: ['warning', 'error'] }),
   ],
 })
 
