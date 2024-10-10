@@ -13,6 +13,9 @@ import devToolsEnhancer from 'redux-devtools-expo-dev-plugin'
 import { SQLiteDatabase } from 'expo-sqlite'
 import { localDbApi } from '../api/localDbApi'
 import { localDbSyncMiddleware } from '../api/localDbSyncMiddleware'
+import * as Sentry from '@sentry/react-native'
+
+const sentryReduxEnhancer = Sentry.createReduxEnhancer({})
 
 export const createStore = (sqliteDb?: SQLiteDatabase) =>
   configureStore({
@@ -41,7 +44,9 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
     devTools: false,
     // NOTE: This is not an error
     enhancers: getDefaultEnhancers =>
-      getDefaultEnhancers().concat(devToolsEnhancer()),
+      getDefaultEnhancers()
+        .concat(devToolsEnhancer())
+        .concat(sentryReduxEnhancer),
   })
 
 const defaultStore = createStore(undefined)
