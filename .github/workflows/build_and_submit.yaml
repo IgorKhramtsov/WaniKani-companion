@@ -17,6 +17,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Create .env file
+        run: |
+          touch .env
+          echo EXPO_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN }} >> .env
+
       - name: Setup Expo and EAS
         uses: expo/expo-github-action@v7
         with:
