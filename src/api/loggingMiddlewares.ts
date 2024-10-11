@@ -6,7 +6,15 @@ import {
   isRejectedWithValue,
 } from '@reduxjs/toolkit'
 
-const shouldLogExpanded = false
+const shouldLogExpanded = true
+const enableLogging = true
+const log = (msg: any, ...params: any[]) => {
+  if (enableLogging) console.log('[api]', msg, ...params)
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const logExpanded = (msg: any, ...params: any[]) => {
+  if (shouldLogExpanded) log(msg, ...params)
+}
 
 /**
  * Log an error
@@ -20,20 +28,26 @@ export const rtkQueryErrorLogger: Middleware =
           ? (action.error.data as { message: string }).message
           : action.error.message
       const payload = JSON.stringify(action.payload, null, 4)
+      let requestDetails = undefined
+      if (hasRTKQMeta(action)) {
+        const baseQueryMeta = action.meta.baseQueryMeta
+        requestDetails =
+          `(${baseQueryMeta.response?.status ?? 'UNKNOWN'})` +
+          baseQueryMeta.request.method +
+          baseQueryMeta.request.url
+      }
       console.error(
+        '[api]',
         'We got a rejected action!',
         `\n  error.data: "${errorData}"`,
         `\n  payload: ${payload}`,
+        requestDetails,
       )
-    }
-    if (isFulfilled(action)) {
-      if (shouldLogExpanded) {
-        console.log('Fulfilled action:', action.meta.arg)
-      }
     }
 
     return next(action)
   }
+
 export const loggerMiddleware: Middleware = api => next => async action => {
   if (isPending(action)) {
     const arg = action.meta.arg
@@ -41,14 +55,37 @@ export const loggerMiddleware: Middleware = api => next => async action => {
 
     const endpointName =
       'endpointName' in arg ? (arg.endpointName as string) : undefined
-    if (endpointName) {
-      if (shouldLogExpanded) {
-        console.log(`Request to ${endpointName} :`, arg)
-      } else {
-        console.log(`Request to ${endpointName}`)
-      }
+    log('Started request', endpointName)
+  }
+  if (isFulfilled(action)) {
+    const arg = action.meta.arg
+    if (typeof arg !== 'object' || !arg) return
+    const endpointName =
+      'endpointName' in arg ? (arg.endpointName as string) : undefined
+
+    if (hasRTKQMeta(action)) {
+      const baseQueryMeta = action.meta.baseQueryMeta
+
+      log(
+        'Finished request',
+        `(${baseQueryMeta.response?.status ?? 'UNKNOWN'})`,
+        endpointName,
+        baseQueryMeta.request.method,
+        baseQueryMeta.request.url,
+      )
     }
   }
 
   return next(action)
 }
+
+const hasRTKQMeta = (
+  action: any,
+): action is {
+  meta: {
+    baseQueryMeta: {
+      request: Request
+      response?: Response
+    }
+  }
+} => action?.meta?.baseQueryMeta?.request instanceof Request
