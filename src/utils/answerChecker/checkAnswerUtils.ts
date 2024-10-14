@@ -127,7 +127,7 @@ const compareInputWithMeanings = (
 }
 
 const getLevenshteinToleranceByLength = (input: string) =>
-  2 + 1 * Math.floor(input.length / 7)
+  2 + Math.floor(input.length / 7)
 
 const getLevenshteinTolerance = (input: string) => {
   const predefinedTolerance = levenshteinTolerances[input.length]
@@ -138,7 +138,7 @@ const levenshteinTolerances: Record<number, number> = {
   0: 0,
   1: 0,
   2: 0,
-  3: 1, // Allow one mistake for 3-letter words (tas -> task)
+  3: 1, // Allow one typo for 3-letter words (tas -> task)
   4: 1,
   5: 1,
   6: 2,

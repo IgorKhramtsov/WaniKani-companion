@@ -36,35 +36,6 @@ export namespace StringUtils {
     match: string | undefined
   }
 
-  export const compareStringWithArrayWithThresholdEnsuringNumbers = (
-    a: string,
-    arr: string[],
-    threshold: number = 1,
-  ): ComparisonResult => {
-    const sanitizedA = a.trim().toLowerCase()
-    const comparisonResult = StringUtils.compareStringWithArrayWithThreshold(
-      sanitizedA,
-      arr,
-      threshold,
-    )
-    if (comparisonResult.result === 'exact') {
-      return comparisonResult
-    } else if (comparisonResult.result === 'almost') {
-      // If we are off by 1 symbol - ensure this symbol is not a number
-      const match = comparisonResult.match || ''
-      const aNumbers = StringUtils.splitAndGetNumbers(sanitizedA, '')
-      const matchNumbers = StringUtils.splitAndGetNumbers(match, '')
-      console.log('answerNumbers: ', aNumbers, 'matchNumbers: ', matchNumbers)
-      if (aNumbers.join('') === matchNumbers.join('')) {
-        return comparisonResult
-      }
-    }
-    return {
-      result: 'not',
-      match: undefined,
-    }
-  }
-
   export const compareStringWithArrayWithThreshold = (
     target: string,
     arr: string[],
