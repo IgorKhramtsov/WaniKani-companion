@@ -7,7 +7,7 @@ export interface ReviewStatistic {
   /**
    * Timestamp when the review statistic was created.
    */
-  created_at: Date
+  created_at: number
 
   /**
    * Indicates if the associated subject has been hidden,

@@ -1,25 +1,26 @@
-import { selectLessons } from '@/src/api/wanikaniApi'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { SubjectTile } from '@/src/components/SubjectTile'
 import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
-import { useAppSelector } from '@/src/hooks/redux'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { Subject, SubjectType } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { FontAwesome } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeArea } from 'react-native-safe-area-context'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { BlurView } from 'expo-blur'
 import { useSettings } from '@/src/hooks/useSettings'
+import { useGetLessonsQuery } from '@/src/api/localDb/assignment'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
-  const assignments = useAppSelector(selectLessons)
+  const { isLoading: assignmentsIsLoading, data: dbAssignments } =
+    useGetLessonsQuery()
+  const assignments = useMemo(() => dbAssignments ?? [], [dbAssignments])
   const subjectIds = useMemo(() => {
     return assignments.map(el => el.subject_id)
   }, [assignments])
@@ -28,8 +29,13 @@ export default function Index() {
   const [interleave, setInterleave] = useState(
     settings.interleave_advanced_lessons ?? false,
   )
-  const { subjects, isLoading } = useSubjectCache(subjectIds)
+  const { subjects, isLoading: subjectsIsLoading } = useSubjectCache(subjectIds)
   const { bottom: bottomSafePadding } = useSafeArea()
+
+  const isLoading = useMemo(
+    () => assignmentsIsLoading || subjectsIsLoading,
+    [assignmentsIsLoading, subjectsIsLoading],
+  )
 
   const toggleSelected = useCallback(
     (id: number) => {

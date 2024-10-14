@@ -43,7 +43,6 @@ export const ExamplesSection = ({ subject, variant = 'minimal' }: Props) => {
     return source
   }, [variant, subject])
 
-  console.log('[ExamplesPage] ids: ', subject.amalgamation_subject_ids)
   const componentName = SubjectUtils.isKanji(subject) ? 'Vocabulary' : 'Kanji'
 
   const listItemStyle =

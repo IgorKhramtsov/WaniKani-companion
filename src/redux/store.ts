@@ -1,5 +1,4 @@
 import { configureStore } from '@reduxjs/toolkit'
-import assignmentsSlice from './assignmentsSlice'
 import subjectsSlice from './subjectsSlice'
 import quizSlice from './quizSlice'
 import settingsSlice from './settingsSlice'
@@ -11,11 +10,13 @@ import {
 } from '../api/loggingMiddlewares'
 import devToolsEnhancer from 'redux-devtools-expo-dev-plugin'
 import { SQLiteDatabase } from 'expo-sqlite'
-import { localDbApi } from '../api/localDbApi'
 import { localDbSyncMiddleware } from '../api/localDbSyncMiddleware'
 import * as Sentry from '@sentry/react-native'
+import { localDbApi } from '../api/localDb/api'
 
-const sentryReduxEnhancer = Sentry.createReduxEnhancer({})
+const sentryReduxEnhancer = Sentry.createReduxEnhancer({
+  attachReduxState: false, // The state could easily be more than 1 mb
+})
 
 export const createStore = (sqliteDb?: SQLiteDatabase) =>
   configureStore({
@@ -33,7 +34,6 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
         localDbSyncMiddleware,
       ),
     reducer: {
-      assignmentsSlice,
       subjectsSlice,
       quizSlice,
       settingsSlice,

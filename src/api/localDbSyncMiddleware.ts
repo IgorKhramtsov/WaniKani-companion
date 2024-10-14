@@ -1,7 +1,8 @@
 import { Middleware } from '@reduxjs/toolkit'
 import { wanikaniApi } from '../api/wanikaniApi'
-import { localDbApi } from '../api/localDbApi'
+import { localDbApi } from '../api/localDb/api'
 import { AppDispatch } from '../redux/store'
+import { localDbAssignmentsApi } from './localDb/assignment'
 
 export const localDbSyncMiddleware: Middleware =
   api => next => async action => {
@@ -10,7 +11,9 @@ export const localDbSyncMiddleware: Middleware =
     if (wanikaniApi.endpoints.createReview.matchFulfilled(action)) {
       console.log('createReview fulfilled')
       const [review, { assignment, review_statistic }] = action.payload
-      dispatch(localDbApi.endpoints.saveAssignments.initiate([assignment]))
+      dispatch(
+        localDbAssignmentsApi.endpoints.saveAssignments.initiate([assignment]),
+      )
       dispatch(
         localDbApi.endpoints.saveReviewStatistics.initiate([review_statistic]),
       )
@@ -19,7 +22,9 @@ export const localDbSyncMiddleware: Middleware =
 
     if (wanikaniApi.endpoints.startAssignment.matchFulfilled(action)) {
       const assignment = action.payload
-      dispatch(localDbApi.endpoints.saveAssignments.initiate([assignment]))
+      dispatch(
+        localDbAssignmentsApi.endpoints.saveAssignments.initiate([assignment]),
+      )
     }
 
     return next(action)

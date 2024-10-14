@@ -18,7 +18,6 @@ import { AntDesign } from '@expo/vector-icons'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { useAppSelector } from '@/src/hooks/redux'
-import { selectAssignments } from '@/src/api/wanikaniApi'
 import { SubjectTile } from '@/src/components/SubjectTile'
 import { CompositionPage } from '@/src/components/CompositionPage'
 import { MeaningPage } from '@/src/components/MeaningPage'
@@ -30,6 +29,7 @@ import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { OnPageSelectedEventData } from 'react-native-pager-view/lib/typescript/PagerViewNativeComponent'
 import { createLessonsBatch } from '@/src/utils/lessonPickerUtils'
+import { useGetAssignmentsQuery } from '@/src/api/localDb/assignment'
 
 export default function Index() {
   const params = useLocalSearchParams<{
@@ -49,13 +49,19 @@ export default function Index() {
     return params.assignmentIds?.split(',').map(el => parseInt(el))
   }, [params.assignmentIds])
 
-  const assignments = useAppSelector(selectAssignments(assignmentIds ?? []))
+  const { data: assignments, isLoading: assignmentsIsLoading } =
+    useGetAssignmentsQuery(assignmentIds)
 
   const subjectIds = useMemo(() => {
-    return assignments.map(el => el.subject_id)
+    return assignments?.map(el => el.subject_id)
   }, [assignments])
 
-  const { subjects, isLoading } = useSubjectCache(subjectIds)
+  const { subjects, isLoading: subjectsIsLoading } = useSubjectCache(subjectIds)
+
+  const isLoading = useMemo(
+    () => subjectsIsLoading || assignmentsIsLoading,
+    [subjectsIsLoading, assignmentsIsLoading],
+  )
 
   const lessonsBatch = useMemo(() => {
     const batchSize = settings.lessons_batch_size ?? 5
@@ -63,12 +69,12 @@ export default function Index() {
     if (interleave) {
       return createLessonsBatch({
         batchSize,
-        assignments,
+        assignments: assignments ?? [],
         subjects,
         interleave,
       })
     } else {
-      return assignments.slice(0, batchSize)
+      return assignments?.slice(0, batchSize) ?? []
     }
   }, [settings.lessons_batch_size, interleave, assignments, subjects])
 

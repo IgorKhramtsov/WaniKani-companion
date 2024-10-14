@@ -12,7 +12,7 @@ export interface Review {
   /**
    * Timestamp when the review was created.
    */
-  created_at: string
+  created_at: number
 
   /**
    * The SRS stage interval calculated from the number of correct and incorrect answers,

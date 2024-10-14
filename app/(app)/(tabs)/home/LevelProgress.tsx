@@ -1,8 +1,6 @@
-import {
-  useFindAssignmentsByQuery,
-  useFindSubjectsByQuery,
-  useGetLevelProgressionsQuery,
-} from '@/src/api/localDbApi'
+import { useGetLevelProgressionsQuery } from '@/src/api/localDb/api'
+import { useFindAssignmentsByQuery } from '@/src/api/localDb/assignment'
+import { useFindSubjectsByQuery } from '@/src/api/localDb/subject'
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useMemo } from 'react'

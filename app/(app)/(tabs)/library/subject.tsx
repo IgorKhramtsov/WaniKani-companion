@@ -1,7 +1,5 @@
-import {
-  useGetAssignmentQuery,
-  useGetReviewStatisticQuery,
-} from '@/src/api/localDbApi'
+import { useGetReviewStatisticQuery } from '@/src/api/localDb/api'
+import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
 import { CompositionSection } from '@/src/components/CompositionPage'
 import { ContextSection } from '@/src/components/ContextPage'
 import { ExamplesSection } from '@/src/components/ExamplesPage'

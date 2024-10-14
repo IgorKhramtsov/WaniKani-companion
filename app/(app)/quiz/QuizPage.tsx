@@ -31,7 +31,6 @@ import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { QuizMode } from '@/src/types/quizType'
 import {
-  selectAssignments,
   useCreateReviewMutation,
   useStartAssignmentMutation,
 } from '@/src/api/wanikaniApi'
@@ -44,6 +43,7 @@ import { clamp } from 'lodash'
 import { appStyles } from '@/src/constants/styles'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { completionTitleCopywritings, getRandomCopywritings } from './utils'
+import { useGetAssignmentsQuery } from '@/src/api/localDb/assignment'
 
 interface BaseProps {
   mode: QuizMode
@@ -119,14 +119,14 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     [moreLessonIds],
   )
 
-  const assignments = useAppSelector(selectAssignments(assignmentIds))
+  const { data: assignments } = useGetAssignmentsQuery(assignmentIds)
 
   const resolvedSubjectIds = useMemo(() => {
     console.log('[QuizPage] resolving subjectIds')
     if (isSubjectProps(props)) {
       return props.subjectIds
     }
-    return assignments.map(assignment => assignment.subject_id)
+    return assignments?.map(assignment => assignment.subject_id) ?? []
   }, [props, assignments])
 
   // Hydrate subjectsSlice with data
@@ -176,7 +176,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       console.log('[QuizPage]: dispatching init for quiz')
       dispatch(init({ enrichedSubjects, mode: props.mode }))
     } else if (isAssignmentProps(props)) {
-      if (enrichedSubjects.length === 0 || assignments.length === 0) {
+      if (enrichedSubjects.length === 0 || (assignments?.length ?? 0) === 0) {
         console.log('[QuizPage]: subjects or assignments are empty. Waiting.')
         return
       } else {

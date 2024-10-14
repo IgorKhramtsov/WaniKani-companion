@@ -5,11 +5,10 @@ export interface ContextSentence {
   /**
    * English translation of the sentence.
    */
-  en: string;
-  
+  en: string
+
   /**
    * Japanese context sentence.
    */
-  ja: string;
+  ja: string
 }
-

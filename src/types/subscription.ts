@@ -18,7 +18,7 @@ export interface Subscription {
    * The date when the user's subscription period ends.
    * If the user has subscription type lifetime or free then the value is null.
    */
-  period_ends_at: Date | null
+  period_ends_at: number | null
 
   /**
    * The type of subscription the user has. Options are following: free, recurring, and lifetime.

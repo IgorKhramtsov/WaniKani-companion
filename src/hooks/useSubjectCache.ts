@@ -3,7 +3,7 @@ import { Subject, SubjectUtils } from '../types/subject'
 import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
 import _ from 'lodash'
-import { useGetSubjectsQuery } from '../api/localDbApi'
+import { useGetSubjectsQuery } from '../api/localDb/subject'
 
 type Result = {
   subjects: Subject[]

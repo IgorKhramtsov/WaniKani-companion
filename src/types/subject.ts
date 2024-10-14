@@ -39,19 +39,14 @@ export interface SubjectBase {
   /**
    * Timestamp when the subject was created.
    */
-  created_at: Date
-
-  /**
-   * A URL pointing to the page on wanikani.com that provides detailed information about this subject.
-   */
-  document_url: string
+  created_at: number
 
   /**
    * Timestamp when the subject was hidden.
    * If hidden, associated assignments will no longer appear in lessons or reviews,
    * and the subject page will no longer be visible on wanikani.com.
    */
-  hidden_at: Date | null
+  hidden_at: number | null
 
   /**
    * The position that the subject appears in lessons.
@@ -137,19 +132,21 @@ export namespace SubjectUtils {
     return a.lesson_position - b.lesson_position
   }
 
-  export function isRadical(subject: Subject): subject is Radical {
-    return subject.type === 'radical'
+  export function isRadical(subject: Subject | undefined): subject is Radical {
+    return subject?.type === 'radical'
   }
-  export function isKanji(subject: Subject): subject is Kanji {
-    return subject.type === 'kanji'
+  export function isKanji(subject: Subject | undefined): subject is Kanji {
+    return subject?.type === 'kanji'
   }
-  export function isVocabulary(subject: Subject): subject is Vocabulary {
-    return subject.type === 'vocabulary'
+  export function isVocabulary(
+    subject: Subject | undefined,
+  ): subject is Vocabulary {
+    return subject?.type === 'vocabulary'
   }
   export function isKanaVocabulary(
-    subject: Subject,
+    subject: Subject | undefined,
   ): subject is KanaVocabulary {
-    return subject.type === 'kana_vocabulary'
+    return subject?.type === 'kana_vocabulary'
   }
 
   export function hasReading(subject: Subject): subject is Kanji | Vocabulary {

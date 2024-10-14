@@ -5,7 +5,7 @@ export interface StudyMaterial {
   /**
    * Timestamp when the study material was created.
    */
-  created_at: Date
+  created_at: number
 
   /**
    * Indicates if the associated subject has been hidden, preventing it from appearing in lessons or reviews.

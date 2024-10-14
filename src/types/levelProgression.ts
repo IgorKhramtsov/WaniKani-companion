@@ -12,7 +12,7 @@ export interface LevelProgression {
   /**
    * Timestamp when the level progression was created.
    */
-  created_at: string
+  created_at: number
 
   /**
    * The level of the progression, ranging from 1 to 60.
@@ -23,27 +23,27 @@ export interface LevelProgression {
    * Timestamp when the user unlocks the level and gains access to lessons and reviews.
    * Can be `null` if not unlocked yet.
    */
-  unlocked_at: string | null
+  unlocked_at: number | null
 
   /**
    * Timestamp when the user starts their first lesson of a subject for this level.
    * Can be `null` if not started yet.
    */
-  started_at: string | null
+  started_at: number | null
 
   /**
    * Timestamp when the user passes at least 90% of the assignments with a type of kanji
    * for this level. Can be `null` if not passed yet.
    */
-  passed_at: string | null
+  passed_at: number | null
 
   /**
    * Timestamp when the user completes all assignments for the level. Can be `null` if not completed yet.
    */
-  completed_at: string | null
+  completed_at: number | null
 
   /**
    * Timestamp when the user abandons the level, usually due to a reset. Can be `null`.
    */
-  abandoned_at: string | null
+  abandoned_at: number | null
 }

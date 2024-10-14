@@ -10,14 +10,12 @@ import { useEffect } from 'react'
 import { Text, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
-
 export default function RootLayout() {
   const { apiKey, isLoading: isSessionLoading } = useSession()
+  const db = useSQLiteContext()
   if (__DEV__) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const db = useSQLiteContext()
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useDrizzleStudio(db) // This is not an error.
+    useDrizzleStudio(db as any)
   }
 
   useEffect(() => {

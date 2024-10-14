@@ -4,7 +4,6 @@ import React, { useCallback, useMemo } from 'react'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
 import { Link } from 'expo-router'
 import typography from '@/src/constants/typography'
-import { useAppSelector } from '@/src/hooks/redux'
 import Animated, {
   LightSpeedInLeft,
   LightSpeedInRight,
@@ -18,38 +17,35 @@ import { ErrorWithRetry } from '@/src/components/ErrorWithRetry'
 import { appStyles } from '@/src/constants/styles'
 import { RefreshControl } from 'react-native-gesture-handler'
 import { Colors } from '@/src/constants/Colors'
-import {
-  selectLessons,
-  selectLessonsCount,
-  selectReviewsBatch,
-  selectReviewsCount,
-  useGetLessonsCompletedTodayQuery,
-  useGetLessonsQuery,
-  useGetReviewsQuery,
-} from '@/src/api/wanikaniApi'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { Forecast } from './forecast'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
 import { createLessonsBatch } from '@/src/utils/lessonPickerUtils'
 import { LevelProgress } from './LevelProgress'
+import {
+  useGetLessonsCompletedTodayQuery,
+  useGetLessonsQuery,
+  useGetReviewsQuery,
+} from '@/src/api/localDb/assignment'
 
 export default function Index() {
   const { styles } = useStyles(stylesheet)
   const { settings, isLoading: settingsIsLoading } = useSettings()
-  const lessonsCount = useAppSelector(selectLessonsCount)
-  const reviewsCount = useAppSelector(selectReviewsCount)
-  const { isLoading: lessonsIsLoading, error: lessonsError } =
-    useGetLessonsQuery()
-  const { isLoading: reviewsIsLoading, error: reviewsError } =
-    useGetReviewsQuery(undefined, { refetchOnMountOrArgChange: 15 * 60 })
+  const { isLoading: lessonsIsLoading, data: dbLessons } = useGetLessonsQuery()
+  const lessons = useMemo(() => dbLessons ?? [], [dbLessons])
+  const { isLoading: reviewsIsLoading, data: dbReviews } = useGetReviewsQuery()
+  const reviews = useMemo(() => dbReviews ?? [], [dbReviews])
   const {
-    data: lessonsCompletedToday,
+    data: dbLessonsCompletedToday,
     isLoading: lessonsCompletedTodayIsLoading,
-    error: lessonsCompletedTodayError,
-  } = useGetLessonsCompletedTodayQuery(undefined, {
-    refetchOnMountOrArgChange: 15 * 60,
-  })
+  } = useGetLessonsCompletedTodayQuery()
+  const lessonsCompletedToday = useMemo(
+    () => dbLessonsCompletedToday ?? [],
+    [dbLessonsCompletedToday],
+  )
+  const lessonsCount = useMemo(() => lessons.length, [lessons])
+  const reviewsCount = useMemo(() => reviews.length, [reviews])
   const { isLoading: dbHydratorIsLoading, triggerUpdate: triggerDbUpdate } =
     useDbHydrator(true)
 
@@ -68,32 +64,16 @@ export default function Index() {
       lessonsCompletedTodayIsLoading,
     ],
   )
-  const error = useMemo(
-    () => lessonsError ?? reviewsError ?? lessonsCompletedTodayError,
-    [lessonsError, reviewsError, lessonsCompletedTodayError],
-  )
-  const errorMessage = useMemo(() => {
-    if (!error) return undefined
-
-    if ('status' in error) {
-      return `Error ${error.status}: ${error.data}`
-    }
-    if ('message' in error) {
-      return error.message
-    }
-  }, [error])
-
   const availableLessonsCount = useMemo(
     () =>
       Math.min(lessonsCount, settings.max_lessons_per_day ?? 15) -
-      (lessonsCompletedToday?.length ?? 0),
+      lessonsCompletedToday.length,
     [lessonsCount, settings.max_lessons_per_day, lessonsCompletedToday],
   )
 
-  const allLessons = useAppSelector(selectLessons)
   const lessonSubjects = useMemo(
-    () => allLessons.map(l => l.subject_id),
-    [allLessons],
+    () => lessons.map(l => l.subject_id),
+    [lessons],
   )
 
   const { subjects } = useSubjectCache(lessonSubjects, false)
@@ -101,18 +81,13 @@ export default function Index() {
   const dailyLessons = useMemo(() => {
     const batchSize = availableLessonsCount
 
-    return createLessonsBatch({ batchSize, assignments: allLessons, subjects })
-  }, [availableLessonsCount, allLessons, subjects])
-  const reviewBatch = useAppSelector(selectReviewsBatch)
-
+    return createLessonsBatch({ batchSize, assignments: lessons, subjects })
+  }, [availableLessonsCount, lessons, subjects])
   const lessonIdsBatch = useMemo(
     () => dailyLessons.map(r => r.id),
     [dailyLessons],
   )
-  const reviewIdsBatch = useMemo(
-    () => reviewBatch.map(r => r.id),
-    [reviewBatch],
-  )
+  const reviewIdsBatch = useMemo(() => reviews.map(r => r.id), [reviews])
 
   const refresh = useCallback(() => {
     triggerDbUpdate()
@@ -137,7 +112,7 @@ export default function Index() {
   )
 
   return (
-    <ErrorWithRetry error={errorMessage} onRetry={refresh}>
+    <ErrorWithRetry error={undefined} onRetry={refresh}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={

@@ -1,5 +1,5 @@
+import { useSearchSubjectsQuery } from '../api/localDb/subject'
 import { Subject } from '../types/subject'
-import { useSearchSubjectsQuery } from '../api/localDbApi'
 
 type Result = {
   subjects: Subject[]

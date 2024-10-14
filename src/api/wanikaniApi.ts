@@ -6,9 +6,7 @@ import { Assignment } from '../types/assignment'
 import { ReviewStatistic } from '../types/reviewStatistic'
 import { Subject } from '../types/subject'
 import { CreateReviewParams } from '../types/createReviewParams'
-import { createSelector } from '@reduxjs/toolkit'
-import { RootState } from '../redux/store'
-import { getLocalStartOfDayInUTC, isToday } from '../utils/dateUtils'
+import { dateToUnixTimestamp } from '../utils/dateUtils'
 import { LevelProgression } from '../types/levelProgression'
 
 // TODO: maybe refactor in future to look more like a data source which is
@@ -47,6 +45,8 @@ export const wanikaniApi = createApi({
         headers.set('Authorization', `Bearer ${apiKey}`)
       }
       headers.set('Wanikani-Revision', '20170710')
+      // headers.set('if-modified-since', 'Fri, 12 Oct 2024 16:30:03 GMT') //
+      // To debug 304
     },
   }),
   tagTypes: [
@@ -60,18 +60,20 @@ export const wanikaniApi = createApi({
   ],
   endpoints: build => ({
     getUser: build.query<User, void>({
-      query: () => 'user',
-      transformResponse: (response: ApiResponse<User>) => response.data,
       providesTags: ['User'],
+      query: () => 'user',
+      transformResponse: (response: ApiResponse<User>) =>
+        transformValues(response.data),
     }),
     setUserPreferences: build.mutation<User, Preferences>({
+      invalidatesTags: ['User'],
       query: (preferences: Preferences) => ({
         method: 'PUT',
         url: 'user',
         body: { user: { preferences } },
       }),
-      transformResponse: (response: ApiResponse<User>) => response.data,
-      invalidatesTags: ['User'],
+      transformResponse: (response: ApiResponse<User>) =>
+        transformValues(response.data),
       onQueryStarted: (arg, { dispatch, queryFulfilled }) => {
         const patchResult = dispatch(
           wanikaniApi.util.updateQueryData(
@@ -101,6 +103,7 @@ export const wanikaniApi = createApi({
       { data: Subject[]; hasMore: boolean; totalCount: number },
       { ids?: number[]; updatedAfter?: string; pageAfterId?: number }
     >({
+      providesTags: ['Subject'],
       query: ({ ids, updatedAfter, pageAfterId }) => {
         const params: {
           ids?: string
@@ -126,7 +129,7 @@ export const wanikaniApi = createApi({
           .map(el => {
             const type = el.object
             if (isValidSubjectType(type)) {
-              return { ...el.data, id: el.id, type } as Subject
+              return transformValues({ ...el.data, id: el.id, type }) as Subject
             } else {
               console.error('Unknown subject type: ', type)
               return undefined
@@ -140,22 +143,12 @@ export const wanikaniApi = createApi({
           hasMore: response.pages.next_url !== null,
         }
       },
-      providesTags: result =>
-        // TODO: check if this caching works correctly
-        result
-          ? [
-              ...result.data.map(({ id }) => ({
-                type: 'Subject' as const,
-                id,
-              })),
-              'Subject',
-            ]
-          : ['Subject'],
     }),
     getAssignments: build.query<
       { data: Assignment[]; hasMore: boolean; totalCount: number },
       { updatedAfter?: string; pageAfterId?: number }
     >({
+      providesTags: ['Assignment'],
       query: ({ updatedAfter, pageAfterId }) => {
         const params: {
           ids?: string
@@ -175,7 +168,12 @@ export const wanikaniApi = createApi({
       },
       transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) => {
         const data = response.data.map(
-          el => ({ ...el.data, id: el.id }) as Assignment,
+          el =>
+            transformValues({
+              ...el.data,
+              updated_at: el.data_updated_at,
+              id: el.id,
+            }) as Assignment,
         )
 
         return {
@@ -184,22 +182,12 @@ export const wanikaniApi = createApi({
           hasMore: response.pages.next_url !== null,
         }
       },
-      providesTags: result =>
-        // TODO: check if this caching works correctly
-        result
-          ? [
-              ...result.data.map(({ id }) => ({
-                type: 'Assignment' as const,
-                id,
-              })),
-              'Assignment',
-            ]
-          : ['Assignment'],
     }),
     getReviewStatistics: build.query<
       { data: ReviewStatistic[]; hasMore: boolean; totalCount: number },
       { updatedAfter?: string; pageAfterId?: number }
     >({
+      providesTags: ['ReviewStatistic'],
       query: ({ updatedAfter, pageAfterId }) => {
         const params: {
           ids?: string
@@ -221,7 +209,7 @@ export const wanikaniApi = createApi({
         response: ApiResponse<ApiResponse<ReviewStatistic>[]>,
       ) => {
         const data = response.data.map(
-          el => ({ ...el.data, id: el.id }) as ReviewStatistic,
+          el => transformValues({ ...el.data, id: el.id }) as ReviewStatistic,
         )
 
         return {
@@ -230,93 +218,52 @@ export const wanikaniApi = createApi({
           hasMore: response.pages.next_url !== null,
         }
       },
-      providesTags: result =>
-        // TODO: check if this caching works correctly
-        result
-          ? [
-              ...result.data.map(({ id }) => ({
-                type: 'ReviewStatistic' as const,
-                id,
-              })),
-              'ReviewStatistic',
-            ]
-          : ['ReviewStatistic'],
     }),
-    getReviews: build.query<Assignment[], void>({
-      query: () => ({
-        url: 'assignments',
-        params: { immediately_available_for_review: true },
-      }),
-      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) =>
-        response.data.map(el => ({ ...el.data, id: el.id })),
-      providesTags: ['Reviews'],
-    }),
-    getLessons: build.query<Assignment[], void>({
-      query: () => ({
-        url: 'assignments',
-        params: { immediately_available_for_lessons: true },
-      }),
-      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) =>
-        response.data.map(el => ({ ...el.data, id: el.id })),
-      providesTags: ['Lessons'],
-    }),
-    getLessonsCompletedToday: build.query<Assignment[], void>({
-      query: () => ({
-        url: 'assignments',
-        params: { updated_after: getLocalStartOfDayInUTC(), started: true },
-      }),
-      transformResponse: (response: ApiResponse<ApiResponse<Assignment>[]>) => {
-        const assignments: Assignment[] = response.data.map(el => ({
-          ...el.data,
-          id: el.id,
-        }))
-        const assignmentsCreatedToday = assignments.filter(el =>
-          isToday(el.started_at),
-        )
-        return assignmentsCreatedToday
-      },
-      providesTags: ['Lessons'],
-    }),
-    // TODO: save result to db
     startAssignment: build.mutation<Assignment, number>({
+      invalidatesTags: ['Lessons'],
       query: (id: number) => ({
         method: 'PUT',
         url: `assignments/${id}/start`,
       }),
-      transformResponse: (response: ApiResponse<Assignment>) => ({
-        ...response.data,
-        id: response.id,
-      }),
-      invalidatesTags: ['Lessons'],
+      transformResponse: (response: ApiResponse<Assignment>) =>
+        transformValues({
+          ...response.data,
+          updated_at: response.data_updated_at,
+          id: response.id,
+        }),
     }),
     createReview: build.mutation<
       [Review, CreateReviewResourcesUpdated],
       CreateReviewParams
     >({
+      invalidatesTags: ['Reviews'],
       query: (params: CreateReviewParams) => ({
         method: 'POST',
         url: `reviews`,
         body: { review: params },
       }),
       transformResponse: (response: CreateReviewApiResponse) => [
-        { ...response.data, id: response.id },
+        transformValues({ ...response.data, id: response.id }),
         {
-          assignment: {
+          assignment: transformValues({
             ...response.resources_updated.assignment.data,
+            updated_at: response.resources_updated.assignment.data_updated_at,
             id: response.resources_updated.assignment.id,
-          },
-          review_statistic: {
+          }),
+          review_statistic: transformValues({
             ...response.resources_updated.review_statistic.data,
+            updated_at:
+              response.resources_updated.review_statistic.data_updated_at,
             id: response.resources_updated.review_statistic.id,
-          },
+          }),
         },
       ],
-      invalidatesTags: ['Reviews'],
     }),
     getLevelProgressions: build.query<
       { data: LevelProgression[]; totalCount: number },
       { updatedAfter?: string; pageAfterId?: number }
     >({
+      providesTags: ['LevelProgressions'],
       query: ({ updatedAfter, pageAfterId }) => {
         const params: {
           ids?: string
@@ -337,19 +284,17 @@ export const wanikaniApi = createApi({
       transformResponse: (
         response: ApiResponse<ApiResponse<LevelProgression>[]>,
       ) => ({
-        data: response.data.map(el => ({ ...el.data, id: el.id })),
+        data: response.data.map(el =>
+          transformValues({ ...el.data, id: el.id }),
+        ),
         totalCount: response.total_count,
       }),
-      providesTags: ['LevelProgressions'],
     }),
   }),
 })
 
 export const {
   useGetUserQuery,
-  useGetLessonsQuery,
-  useGetLessonsCompletedTodayQuery,
-  useGetReviewsQuery,
   useGetSubjectsQuery,
   useGetAssignmentsQuery,
   useGetReviewStatisticsQuery,
@@ -359,50 +304,6 @@ export const {
   useCreateReviewMutation,
   useStartAssignmentMutation,
 } = wanikaniApi
-
-export const selectLessons = createSelector(
-  wanikaniApi.endpoints.getLessons.select(undefined),
-  result => result.data ?? [],
-)
-const reviewsSelector = createSelector(
-  wanikaniApi.endpoints.getReviews.select(undefined),
-  result => result.data ?? [],
-)
-
-export const selectReviewsBatch = (state: RootState) => reviewsSelector(state)
-
-const innerSelectAssignments = createSelector(
-  selectLessons,
-  reviewsSelector,
-  (_: RootState, ids: number[]) => ids,
-  (lessons, reviews, ids): Assignment[] => {
-    const selected = lessons.concat(reviews).filter(el => ids.includes(el.id))
-    selected.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
-    return selected
-  },
-)
-const innerSelectAssignment = createSelector(
-  selectLessons,
-  reviewsSelector,
-  (_: RootState, id: number | undefined) => id,
-  (lessons, reviews, id): Assignment | undefined => {
-    if (id === undefined) return undefined
-
-    return lessons.concat(reviews).find(el => el.id === id)
-  },
-)
-
-export const selectAssignments = (ids: number[]) => (state: RootState) =>
-  innerSelectAssignments(state, ids)
-
-export const selectAssignment =
-  (id: number | undefined) => (state: RootState) =>
-    innerSelectAssignment(state, id)
-
-export const selectLessonsCount = (state: RootState) =>
-  selectLessons(state).length
-export const selectReviewsCount = (state: RootState) =>
-  reviewsSelector(state).length
 
 /**
  * Checks if a given type is a valid SubjectType.
@@ -414,6 +315,25 @@ function isValidSubjectType(
   type: string,
 ): type is 'radical' | 'kanji' | 'vocabulary' | 'kana_vocabulary' {
   return ['radical', 'kanji', 'vocabulary', 'kana_vocabulary'].includes(type)
+}
+
+const transformValues = <T extends object>(input: any): T => {
+  for (const key in input) {
+    if (key.endsWith('_at') && typeof input[key] === 'string') {
+      // if (key === 'available_at') {
+      //   console.log(
+      //     'converrting',
+      //     input[key],
+      //     new Date(input[key]),
+      //     dateToUnixTimestamp(new Date(input[key])),
+      //     new Date(dateToUnixTimestamp(new Date(input[key]))),
+      //   )
+      // }
+      input[key] = dateToUnixTimestamp(new Date(input[key]))
+    }
+  }
+
+  return input as T
 }
 
 interface ApiResponse<T> {

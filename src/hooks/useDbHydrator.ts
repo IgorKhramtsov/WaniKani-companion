@@ -3,12 +3,12 @@ import { asyncStorageHelper } from '../utils/asyncStorageHelper'
 import { useAsyncFetch } from './useAsyncFetch'
 import { wanikaniApi } from '../api/wanikaniApi'
 import {
-  useSaveAssignmentsMutation,
   useSaveLevelProgressionsMutation,
   useSaveReviewStatisticsMutation,
-  useSaveSubjectsMutation,
-} from '../api/localDbApi'
+} from '../api/localDb/api'
 import { useDispatch } from 'react-redux'
+import { useSaveSubjectsMutation } from '../api/localDb/subject'
+import { useSaveAssignmentsMutation } from '../api/localDb/assignment'
 
 const timeDiffTrigger = 1000 * 60 * 60 * 24 // 24 hours
 
@@ -189,6 +189,7 @@ export const useDbHydrator = (enabled: boolean) => {
 
   useEffect(() => {
     if (assignments.length > 0) {
+      console.log('saving assignments', assignments.length)
       saveAssignments(assignments)
     }
   }, [saveAssignments, assignments])

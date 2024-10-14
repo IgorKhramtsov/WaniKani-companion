@@ -2,13 +2,19 @@ import { SessionProvider } from '@/src/context/authContext'
 import { createStore } from '@/src/redux/store'
 import { dbHelper } from '@/src/utils/dbHelper'
 import { Slot, useNavigationContainerRef } from 'expo-router'
-import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite'
+import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from 'expo-sqlite'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { Provider } from 'react-redux'
 import { RootSiblingParent } from 'react-native-root-siblings'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
-import { PropsWithChildren, useEffect, useMemo } from 'react'
+import {
+  PropsWithChildren,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { Platform, Text, useColorScheme } from 'react-native'
 import * as FS from 'expo-file-system'
 import { Directory } from 'expo-file-system/next'
@@ -20,6 +26,12 @@ import {
 import * as Sentry from '@sentry/react-native'
 import { isRunningInExpoGo } from 'expo'
 import { captureConsoleIntegration } from '@sentry/integrations'
+import { drizzle } from 'drizzle-orm/expo-sqlite'
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator'
+import migrations from '@/drizzle/migrations'
+import * as schema from '@/src/db/schema'
+import { FullPageLoading } from '@/src/components/FullPageLoading'
+import { asyncStorageHelper } from '@/src/utils/asyncStorageHelper'
 
 const queryClient = new QueryClient()
 
@@ -68,19 +80,22 @@ export function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
-          <SQLiteProvider
-            databaseName='wanikani.db'
-            directory={dbDirectory}
-            onInit={db => dbHelper.createTables(db)}>
-            <StoreProvider>
-              <RootSiblingParent>
-                <ThemeProvider
-                  value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Slot />
-                </ThemeProvider>
-              </RootSiblingParent>
-            </StoreProvider>
-          </SQLiteProvider>
+          <Suspense fallback={<FullPageLoading />}>
+            <SQLiteProvider
+              databaseName='wanikani.db'
+              onInit={runMigrations}
+              directory={dbDirectory}
+              useSuspense>
+              <StoreProvider>
+                <RootSiblingParent>
+                  <ThemeProvider
+                    value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <Slot />
+                  </ThemeProvider>
+                </RootSiblingParent>
+              </StoreProvider>
+            </SQLiteProvider>
+          </Suspense>
         </QueryClientProvider>
       </SessionProvider>
     </GestureHandlerRootView>
@@ -89,9 +104,23 @@ export function RootLayout() {
 
 export default Sentry.wrap(RootLayout)
 
+const runMigrations = async (db: SQLiteDatabase) => {
+  const drizzleDb = drizzle(db as any, { schema })
+  try {
+    console.log('Migrating db')
+    await migrate(drizzleDb, migrations)
+  } catch (e) {
+    console.log('Failed to migrate db, resetting db', e)
+    await dbHelper.resetDb(db)
+    await asyncStorageHelper.clearLastUpdateTime()
+    await migrate(drizzleDb, migrations)
+  }
+}
+
 /// A separate component to be able to access sqlite context
 const StoreProvider = ({ children }: PropsWithChildren) => {
-  const sqliteDb = useSQLiteContext()
-  const store = createStore(sqliteDb)
+  const db = useSQLiteContext()
+
+  const store = createStore(db)
   return <Provider store={store}>{children}</Provider>
 }

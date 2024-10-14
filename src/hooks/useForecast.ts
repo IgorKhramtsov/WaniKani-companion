@@ -1,18 +1,20 @@
 import { useMemo } from 'react'
-import { useGetAssignmentsQuery } from '../api/localDbApi'
 import { useHourlyTriggerOnRoundHour } from './useHourlyTrigger'
+import { Assignment } from '../types/assignment'
+import { useGetAssignmentsForForecastQuery } from '../api/localDb/assignment'
+
+type ExtendedAssignment = Assignment & { available_at_date: Date | null }
 
 export const useForecast = () => {
-  const { isLoading, data: assignments } = useGetAssignmentsQuery()
+  const { isLoading, data: assignments } = useGetAssignmentsForForecastQuery()
 
   const reviewAssignments = useMemo(
     () =>
-      assignments
-        ?.filter(a => a.srs_stage > 0)
-        .map(e => Object.assign({}, e)) // Copy to make mutable
+      (assignments ?? [])
+        .map(e => Object.assign({}, e) as ExtendedAssignment) // Copy to make mutable
         .map(e => {
           e.available_at_date = !!e.available_at
-            ? new Date(e.available_at)
+            ? new Date(e.available_at * 1000)
             : null
           return e
         }) ?? [],

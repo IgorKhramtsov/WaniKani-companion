@@ -31,9 +31,9 @@ import AnimatedToastWrapper, {
   AnimatedToastWrapperRef,
 } from './AnimatedToastWrapper'
 import { appStyles } from '@/src/constants/styles'
-import { selectAssignment } from '@/src/api/wanikaniApi'
 import { srsStageToMilestone } from '@/src/types/assignment'
 import { TaskStateWrapper } from './CardView'
+import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
 
 type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>
@@ -55,7 +55,9 @@ export const CardInputVariant = ({
   const floatingEmojisRef = useRef<FloatingEmojisRef>(null)
   const toastRef = useRef<AnimatedToastWrapperRef>(null)
 
-  const assignment = useAppSelector(selectAssignment(task.assignmentId))
+  const { data: assignment } = useGetAssignmentQuery(task.assignmentId ?? -1, {
+    skip: !task.assignmentId,
+  })
   const taskPair = useAppSelector(selectTaskPair(task))
 
   const showToast = useCallback((content: ReactNode) => {

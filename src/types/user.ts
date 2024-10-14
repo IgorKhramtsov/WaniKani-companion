@@ -9,7 +9,7 @@ export interface User {
    * If the user is on vacation, this will be the timestamp of when that vacation started.
    * If the user is not on vacation, this is null.
    */
-  current_vacation_started_at: Date | null
+  current_vacation_started_at: number | null
 
   /**
    * The current level of the user. This ignores subscription status.
@@ -29,7 +29,7 @@ export interface User {
   /**
    * The signup date for the user.
    */
-  started_at: Date
+  started_at: number
 
   /**
    * Details about the user's subscription state.
