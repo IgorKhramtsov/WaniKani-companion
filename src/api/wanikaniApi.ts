@@ -14,11 +14,6 @@ import { LevelProgression } from '../types/levelProgression'
 //
 // TODO: add api key verification (by making empty request to server) to check
 // permissions and disable app's features if not authorized.
-//
-// TODO: Rewrite to React Query (tanstack)
-//
-// TODO: update assignments table of local db with data after completing
-// review/lesson
 let apiKey: string | undefined
 export const setApiKey = (key: string) => {
   apiKey = key
