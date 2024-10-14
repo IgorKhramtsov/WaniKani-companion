@@ -29,24 +29,16 @@ export const wanikaniApi = createApi({
   reducerPath: 'wanikaniApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://api.wanikani.com/v2/',
-    validateStatus(response, body) {
-      // We don't want to treat 304(not modified) as an error.
-      //
-      // NOTE: fetchApi in production will use cache headers and 304 will be a
-      // common response.
-      return (
-        response.status === 304 ||
-        (response.status >= 200 && response.status < 300)
-      )
-    },
+    // In production fetch will have cache enabled with if-modified-since
+    // header that will often return 304 requests which we can't handle easily
+    // It causes any change to settings to fail
+    cache: 'no-cache',
     prepareHeaders: headers => {
       // TODO: getState can be used here. See documentation of fetchBaseQuery
       if (apiKey) {
         headers.set('Authorization', `Bearer ${apiKey}`)
       }
       headers.set('Wanikani-Revision', '20170710')
-      // headers.set('if-modified-since', 'Fri, 12 Oct 2024 16:30:03 GMT') //
-      // To debug 304
     },
   }),
   tagTypes: [
