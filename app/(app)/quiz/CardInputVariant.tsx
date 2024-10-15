@@ -194,7 +194,9 @@ export const CardInputVariant = ({
         <FloatingEmojis ref={floatingEmojisRef}>
           <View style={styles.textInputView}>
             {input.length === 0 && (
-              <Text style={styles.placeholder}>Your response</Text>
+              <View style={styles.placeholderContainer}>
+                <Text style={styles.placeholder}>Your response</Text>
+              </View>
             )}
             <TextInput
               ref={textInputRef}
@@ -254,6 +256,7 @@ const stylesheet = createStyleSheet({
   },
   textInputView: {
     alignItems: 'center',
+    position: 'relative',
   },
   textInput: {
     ...typography.titleC,
@@ -262,12 +265,17 @@ const stylesheet = createStyleSheet({
     zIndex: 1,
     borderRadius: 8,
   },
+  placeholderContainer: {
+    position: 'absolute',
+    bottom: 0,
+    top: 0,
+    justifyContent: 'center',
+  },
   placeholder: {
     ...typography.titleC,
+    lineHeight: typography.titleC.fontSize,
     color: '#FFFFFF60',
-    lineHeight: 48,
     zIndex: 0,
-    position: 'absolute',
   },
   toastContent: {
     ...appStyles.row,
