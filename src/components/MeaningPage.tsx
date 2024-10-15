@@ -181,5 +181,6 @@ const stylesheet = createStyleSheet({
   },
   meaningExplanation: {
     ...typography.body,
+    fontWeight: '300',
   },
 })

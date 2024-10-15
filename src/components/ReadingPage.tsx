@@ -197,11 +197,14 @@ const stylesheet = createStyleSheet({
   },
   readingType: {
     ...typography.overline,
+    fontWeight: '300',
   },
   readingText: {
     ...typography.titleC,
+    fontWeight: '300',
   },
   explanation: {
     ...typography.body,
+    fontWeight: '300',
   },
 })

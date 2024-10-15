@@ -61,12 +61,15 @@ const stylesheet = createStyleSheet({
   },
   jaText: {
     ...typography.body,
+    fontWeight: '300',
   },
   enText: {
     ...typography.body,
+    fontWeight: '300',
   },
   explanation: {
     ...typography.body,
     lineHeight: typography.body.fontSize * 1.4,
+    fontWeight: '300',
   },
 })
