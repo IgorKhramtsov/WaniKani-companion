@@ -1,4 +1,6 @@
 import { Colors } from '@/src/constants/Colors'
+import typography from '@/src/constants/typography'
+import { useMemo } from 'react'
 import { StyleSheet, Text, TextStyle, View } from 'react-native'
 
 const getGenericRenderer = (color: string) => {
@@ -16,10 +18,21 @@ const getGenericRenderer = (color: string) => {
       borderBottomColor: Colors.getBottomBorderColor(color),
     }
 
+    const lineHeight = useMemo(
+      () =>
+        style?.lineHeight ??
+        (style?.fontSize ?? typography.body.fontSize) * 1.6,
+      [style],
+    )
+
     return (
       <View style={[styles.container, colorsStyle]}>
         <Text
-          style={[style, styles.text]}
+          style={[
+            style,
+            styles.text,
+            { lineHeight: lineHeight - styles.container.borderBottomWidth },
+          ]}
           accessibilityLanguage={metaTags.includes('ja') ? 'ja' : undefined}>
           {text}
         </Text>
@@ -39,11 +52,9 @@ const renderers = {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.purple,
     borderRadius: 3,
     paddingHorizontal: 4,
     borderBottomWidth: 2.5,
-    borderBottomColor: Colors.getBottomBorderColor(Colors.purple),
   },
   text: {
     color: 'white',
