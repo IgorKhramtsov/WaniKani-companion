@@ -205,7 +205,7 @@ struct widgetEntryView: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
           }
       }
-    }
+    }.frame(maxWidth: .infinity) // make sure widget takes all the available space (for ios prior to 17)
   }
 }
 
