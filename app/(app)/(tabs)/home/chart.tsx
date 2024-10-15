@@ -31,7 +31,6 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import typography from '@/src/constants/typography'
 import tinycolor from 'tinycolor2'
-import { Colors } from '@/src/constants/Colors'
 
 interface LessonData {
   timestamp: number // Unix timestamp in milliseconds
@@ -55,6 +54,9 @@ const paragraphStyle = {
 
 const fontFaceProvider = Skia.TypefaceFontProvider.Make()
 
+// TODO: we should show somehow number of lessons in points of increase (but we
+// should prevent showing numbers of adjacent points without making it look
+// like a bug). Come up with a good approach.
 const Chart: React.FC<ChartProps> = ({
   data,
   height = 200,
@@ -66,11 +68,12 @@ const Chart: React.FC<ChartProps> = ({
 }) => {
   const labelSize = 14
   const paddingTop = 30
+  const paddingBottom = 20
   const horizontalPadding = 20
   const [width, setWidth] = useState(0)
   const innerWidth = useMemo(() => width - horizontalPadding * 2, [width])
   const rInnerWidth = useSharedValue(width)
-  const innerHeight = height - labelSize - paddingTop
+  const innerHeight = height - labelSize - paddingTop - paddingBottom
   const touchedPoint = useSharedValue<{ x: number; y: number } | null>(null)
   const hasTouch = useSharedValue(false)
 
@@ -472,7 +475,7 @@ const Chart: React.FC<ChartProps> = ({
                 key='time'
                 paragraph={touchedLabels.time.paragraph}
                 x={touchedLabels.time.x}
-                y={innerHeight + labelSize - 4}
+                y={innerHeight + labelSize + paddingBottom}
                 width={touchedLabels.time.width + 1}
               />
             </>
@@ -486,7 +489,7 @@ const Chart: React.FC<ChartProps> = ({
                 key={label.x}
                 paragraph={label.paragraph}
                 x={label.x - width / 2}
-                y={innerHeight + labelSize - 4}
+                y={innerHeight + labelSize + paddingBottom}
                 width={width}
               />
             )

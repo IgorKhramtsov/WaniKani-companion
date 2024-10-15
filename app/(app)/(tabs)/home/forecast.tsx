@@ -1,39 +1,13 @@
-import { Fragment } from 'react'
 import { Text, View } from 'react-native'
 import { useForecast } from '@/src/hooks/useForecast'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
-import { CartesianChart, Area, Line, Scatter } from 'victory-native'
 import { Colors } from '@/src/constants/Colors'
-import { Skia, matchFont } from '@shopify/react-native-skia'
 import typography from '@/src/constants/typography'
-import tinycolor from 'tinycolor2'
 import Chart from './chart'
-import { useTheme } from '@react-navigation/native'
 
 export const Forecast = () => {
-  const theme = useTheme()
   const { styles } = useStyles(stylesheet)
   const forecast = useForecast()
-  const font = matchFont(
-    {
-      ...typography.label,
-      fontFamily: 'Noto Sans',
-    },
-    Skia.FontMgr.System(),
-  )
-  const forecastAcc = forecast.forecast.reduce(
-    (acc, e) => {
-      const lastReviewsCount =
-        acc.length > 0 ? acc[acc.length - 1].assignmentsCount : 0
-      const newE = {
-        date: e.date,
-        assignmentsCount: e.assignmentsCount + lastReviewsCount,
-      }
-      acc.push(newE)
-      return acc
-    },
-    [] as { date: Date; assignmentsCount: number }[],
-  )
 
   const forecastMap = forecast.forecast.reduce(
     (acc, e) => {
