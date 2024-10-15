@@ -69,9 +69,11 @@ export const Forecast = () => {
       {!forecast.isLoading && (
         <View style={{ flex: 1 }}>
           <Chart
-            color={Colors.statisticsGreen}
-            lineColor={Colors.statisticsGreenLine}
-            bgColor={theme.colors.background ?? 'white'}
+            color={Colors.white}
+            height={170}
+            labelsColor={Colors.white}
+            lineColor={Colors.white}
+            bgColor={Colors.blue}
             labelCount={4}
             data={areaChartData.map(e => {
               return {
@@ -88,11 +90,13 @@ export const Forecast = () => {
 
 const stylesheet = createStyleSheet({
   view: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.blue,
     marginHorizontal: 20,
+    borderRadius: 3,
   },
   title: {
     ...typography.titleC,
+    color: Colors.white,
     paddingLeft: 20,
     paddingTop: 16,
   },

@@ -31,6 +31,7 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import typography from '@/src/constants/typography'
 import tinycolor from 'tinycolor2'
+import { Colors } from '@/src/constants/Colors'
 
 interface LessonData {
   timestamp: number // Unix timestamp in milliseconds
@@ -44,16 +45,12 @@ interface ChartProps {
   color: Color
   lineColor: Color
   labelCount?: number
+  labelsColor: Color
   bgColor?: Color
 }
 
 const paragraphStyle = {
   textAlign: TextAlign.Center,
-}
-const textStyle = {
-  color: Skia.Color('black'),
-  fontFamilies: ['Noto Sans'],
-  fontSize: typography.label.fontSize,
 }
 
 const fontFaceProvider = Skia.TypefaceFontProvider.Make()
@@ -64,6 +61,7 @@ const Chart: React.FC<ChartProps> = ({
   color = 'rgba(255, 69, 0, 0.2)',
   lineColor = '#FF4500',
   bgColor = 'white',
+  labelsColor = 'white',
   labelCount = 5,
 }) => {
   const labelSize = 14
@@ -80,20 +78,29 @@ const Chart: React.FC<ChartProps> = ({
     rInnerWidth.value = innerWidth
   }, [rInnerWidth, innerWidth])
 
+  const textStyle = useMemo(
+    () => ({
+      color: Skia.Color(labelsColor),
+      fontFamilies: ['Noto Sans'],
+      fontSize: typography.label.fontSize,
+    }),
+    [labelsColor],
+  )
+
   const fillPaint = useMemo(() => {
     const paint = Skia.Paint()
     paint.setStyle(PaintStyle.Fill)
-    paint.setColor(Skia.Color(lineColor))
+    paint.setColor(Skia.Color(bgColor))
     return paint
-  }, [lineColor])
+  }, [bgColor])
 
   const strokePaint = useMemo(() => {
     const paint = Skia.Paint()
     paint.setStyle(PaintStyle.Stroke)
     paint.setStrokeWidth(3)
-    paint.setColor(Skia.Color(bgColor))
+    paint.setColor(Skia.Color(color))
     return paint
-  }, [bgColor])
+  }, [color])
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => a.timestamp - b.timestamp)
@@ -179,35 +186,41 @@ const Chart: React.FC<ChartProps> = ({
     })
   }, [adjustedStartTime, labelCount, innerWidth, timeRange])
 
-  const getLabelForTime = useCallback((timestamp: number): SkParagraph => {
-    const date = new Date(timestamp)
-    const timeFormatter = Intl.DateTimeFormat(undefined, {
-      hour: 'numeric',
-      minute: 'numeric',
-    })
-    const formattedTime = timeFormatter.format(date)
-    const paragraph = Skia.ParagraphBuilder.Make(
-      paragraphStyle,
-      fontFaceProvider,
-    )
-      .pushStyle(textStyle)
-      .addText(formattedTime)
-      .build()
-    paragraph.layout(100)
-    return paragraph
-  }, [])
+  const getLabelForTime = useCallback(
+    (timestamp: number): SkParagraph => {
+      const date = new Date(timestamp)
+      const timeFormatter = Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: 'numeric',
+      })
+      const formattedTime = timeFormatter.format(date)
+      const paragraph = Skia.ParagraphBuilder.Make(
+        paragraphStyle,
+        fontFaceProvider,
+      )
+        .pushStyle(textStyle)
+        .addText(formattedTime)
+        .build()
+      paragraph.layout(100)
+      return paragraph
+    },
+    [textStyle],
+  )
 
-  const getLabelForLessons = useCallback((lessons: number): SkParagraph => {
-    const paragraph = Skia.ParagraphBuilder.Make(
-      paragraphStyle,
-      fontFaceProvider,
-    )
-      .pushStyle(textStyle)
-      .addText(lessons.toString())
-      .build()
-    paragraph.layout(100)
-    return paragraph
-  }, [])
+  const getLabelForLessons = useCallback(
+    (lessons: number): SkParagraph => {
+      const paragraph = Skia.ParagraphBuilder.Make(
+        paragraphStyle,
+        fontFaceProvider,
+      )
+        .pushStyle(textStyle)
+        .addText(lessons.toString())
+        .build()
+      paragraph.layout(100)
+      return paragraph
+    },
+    [textStyle],
+  )
 
   const timeLabels = useMemo(() => {
     return timePointsForLabels.map(({ timestamp, x }) => {
@@ -459,7 +472,7 @@ const Chart: React.FC<ChartProps> = ({
                 key='time'
                 paragraph={touchedLabels.time.paragraph}
                 x={touchedLabels.time.x}
-                y={innerHeight + labelSize - 14}
+                y={innerHeight + labelSize - 4}
                 width={touchedLabels.time.width + 1}
               />
             </>
@@ -473,13 +486,13 @@ const Chart: React.FC<ChartProps> = ({
                 key={label.x}
                 paragraph={label.paragraph}
                 x={label.x - width / 2}
-                y={innerHeight + labelSize - 14}
+                y={innerHeight + labelSize - 4}
                 width={width}
               />
             )
           })}
         </Group>
-        <Circle cx={touchX} cy={touchY} r={animatedRadius} color='blue' />
+        <Circle cx={touchX} cy={touchY} r={animatedRadius} color={lineColor} />
       </Canvas>
     </GestureDetector>
   )
