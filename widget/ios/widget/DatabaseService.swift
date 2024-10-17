@@ -23,9 +23,12 @@ struct DatabaseService {
     let query = """
     SELECT available_at, COUNT(*)
     FROM assignments
-    WHERE srs_stage > 0
+    WHERE
+      available_at IS NOT NULL AND
+      started_at IS NOT NULL
     GROUP BY available_at
     ORDER BY available_at
+
     """
     var statement: OpaquePointer?
     if sqlite3_prepare_v2(db, query, -1, &statement, nil) != SQLITE_OK {
