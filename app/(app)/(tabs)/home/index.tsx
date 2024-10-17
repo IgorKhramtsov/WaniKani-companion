@@ -183,7 +183,7 @@ export default function Index() {
             </View>
           }
         />
-        <View style={{ height: 16 }} />
+        <View style={{ height: 8 }} />
         <AssignmentsCard
           backgroundColor={Colors.blue}
           layoutAnimationDuration={duration * 0.6}
@@ -219,7 +219,7 @@ export default function Index() {
             </Animated.View>
           }
         />
-        <View style={{ height: 16 }} />
+        <View style={{ height: 8 }} />
         <Forecast />
         <View style={{ height: 64 }} />
       </ScrollView>
