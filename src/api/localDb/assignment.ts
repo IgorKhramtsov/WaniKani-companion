@@ -2,7 +2,6 @@ import {
   SQL,
   and,
   eq,
-  gt,
   gte,
   inArray,
   isNotNull,
@@ -26,6 +25,12 @@ export const localDbAssignmentsApi = localDbApi.injectEndpoints({
       query: assignments => upsertTable(table, assignments),
     }),
     getAssignment: builder.query<Assignment | undefined, number>({
+      providesTags: ['Assignment'],
+      query: id => qb.select().from(table).where(eq(table.id, id)).toSQL(),
+      transformResponse: (rows: any[]) =>
+        transformDrizzleResponse(rows, table, false),
+    }),
+    getAssignmentForSubject: builder.query<Assignment | undefined, number>({
       providesTags: ['Assignment'],
       query: subject_id =>
         qb.select().from(table).where(eq(table.subject_id, subject_id)).toSQL(),
@@ -112,8 +117,9 @@ export const localDbAssignmentsApi = localDbApi.injectEndpoints({
 })
 
 export const {
-  useGetAssignmentsQuery,
   useGetAssignmentQuery,
+  useGetAssignmentsQuery,
+  useGetAssignmentForSubjectQuery,
   useGetAssignmentsForForecastQuery,
   useGetReviewsQuery,
   useGetLessonsQuery,

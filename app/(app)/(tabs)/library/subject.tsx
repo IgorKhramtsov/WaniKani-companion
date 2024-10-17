@@ -1,5 +1,5 @@
 import { useGetReviewStatisticQuery } from '@/src/api/localDb/api'
-import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
+import { useGetAssignmentForSubjectQuery } from '@/src/api/localDb/assignment'
 import { CompositionSection } from '@/src/components/CompositionPage'
 import { ContextSection } from '@/src/components/ContextPage'
 import { ExamplesSection } from '@/src/components/ExamplesPage'
@@ -30,7 +30,7 @@ export default function Index() {
   const subject = useMemo((): Subject | undefined => subjects[0], [subjects])
 
   const { isLoading: isAssignmentLoading, data: assignment } =
-    useGetAssignmentQuery(subject?.id ?? -1, { skip: !subject?.id })
+    useGetAssignmentForSubjectQuery(subject?.id ?? -1, { skip: !subject?.id })
   const { isLoading: isReviewStatisticLoading, data: reviewStatistic } =
     useGetReviewStatisticQuery(subject?.id ?? -1, { skip: !subject?.id })
 
