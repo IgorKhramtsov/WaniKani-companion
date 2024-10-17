@@ -119,7 +119,7 @@ export default function Index() {
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
         }>
         <LevelProgress />
-        <View style={{ height: 16 }} />
+        <View style={{ height: 4 }} />
         <AssignmentsCard
           backgroundColor={Colors.pink}
           layoutAnimationDuration={duration * 0.6}
