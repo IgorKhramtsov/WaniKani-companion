@@ -95,7 +95,7 @@ export const CardInputVariant = ({
       task.numberOfErrors > 0 ||
       (taskPair === false ? false : taskPair.numberOfErrors > 0)
 
-    const newStage = assignment.srs_stage + (hasFailed ? -1 : 1)
+    const newStage = Math.max(1, assignment.srs_stage + (hasFailed ? -1 : 1))
     const newStageName = srsStageToMilestone(newStage)
 
     const backgroundColor = hasFailed ? Colors.incorrectRed : Colors.green
