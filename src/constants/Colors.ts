@@ -16,7 +16,7 @@ export const Colors = {
   black: '#000',
   white: '#fff',
   pink: '#FF00AA',
-  pinkDark: '#BF4095',
+  pinkDark: '#D7008F',
   blue: '#00AAFF',
   purple: '#9F01ED',
   apprenticePink: '#F01A96',
