@@ -1,4 +1,14 @@
-import { SQL, and, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm'
+import {
+  SQL,
+  and,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+} from 'drizzle-orm'
 import { QueryBuilder } from 'drizzle-orm/sqlite-core'
 import { localDbApi, transformDrizzleResponse, upsertTable } from './api'
 import { Assignment } from '@/src/types/assignment'
@@ -32,7 +42,15 @@ export const localDbAssignmentsApi = localDbApi.injectEndpoints({
       providesTags: ['Assignment'],
       // we want all reviews, we will use already available for the forecast
       query: () =>
-        qb.select().from(table).where(gt(table.srs_stage, 0)).toSQL(),
+        qb
+          .select()
+          .from(table)
+          // Burned items will have started_at but not available_at. Fetch only
+          // the ones that have started_at and available_at
+          .where(
+            and(isNotNull(table.started_at), isNotNull(table.available_at)),
+          )
+          .toSQL(),
       transformResponse: (rows: any[]) => transformDrizzleResponse(rows, table),
     }),
     findAssignmentsBy: builder.query<Assignment[], { subjectIds: number[] }>({
