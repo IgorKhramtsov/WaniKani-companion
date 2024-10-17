@@ -11,6 +11,9 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: 'black',
         headerShown: false,
+        tabBarStyle: {
+          paddingTop: 8,
+        },
       }}>
       <Tabs.Screen name='index' options={{ href: null }} />
       <Tabs.Screen
