@@ -3,9 +3,12 @@ import { useFindAssignmentsByQuery } from '@/src/api/localDb/assignment'
 import { useFindSubjectsByQuery } from '@/src/api/localDb/subject'
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
-import { useMemo } from 'react'
-import { Text, View } from 'react-native'
+import { useCallback, useMemo, useState } from 'react'
+import { LayoutChangeEvent, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
+
+const PROGRESS_BAR_HEIGHT = 34
+const SHADOW_OFFSET = 2
 
 export const LevelProgress = () => {
   const { styles } = useStyles(stylesheet)
@@ -39,8 +42,24 @@ export const LevelProgress = () => {
     [assignmentsOnLevel],
   )
   const progress = useMemo(
-    () => (passedCount / totalKanjiCount) * 100,
+    () => (totalKanjiCount > 0 ? (passedCount / totalKanjiCount) * 100 : 0),
     [passedCount, totalKanjiCount],
+  )
+  const [fullWidth, setFullWidth] = useState(0)
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => setFullWidth(e.nativeEvent.layout.width),
+    [setFullWidth],
+  )
+  const progressOffset = useMemo(
+    () =>
+      PROGRESS_BAR_HEIGHT +
+      (progress / 100) * (fullWidth - PROGRESS_BAR_HEIGHT),
+    [progress, fullWidth],
+  )
+
+  const kanjiOffset = useMemo(
+    () => (progressOffset > fullWidth / 2 ? 0 : progressOffset),
+    [progressOffset, fullWidth],
   )
 
   if (isLoading) {
@@ -49,16 +68,44 @@ export const LevelProgress = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={typography.titleC}>Level {currentLevel} Progress</Text>
-      <View style={{ height: 8 }} />
-      <View style={styles.progressBarOuter}>
-        <View style={[styles.progressBarInner, { width: `${progress}%` }]} />
-        <View style={[styles.progressBarDot, { left: `${progress - 1}%` }]} />
+      <Text style={styles.titleText}>Level {currentLevel} Progress</Text>
+      <View style={{ height: 6 }} />
+      <View style={styles.progressBarOuter} onLayout={onLayout}>
+        <View
+          style={[
+            styles.progressBarInner,
+            { width: progressOffset - SHADOW_OFFSET },
+          ]}
+        />
+        <View
+          style={[
+            styles.kanjiPassedContainer,
+            {
+              marginLeft: kanjiOffset,
+              width:
+                // removing (bar / 2) make the width start at the center of DOT
+                kanjiOffset > 0
+                  ? fullWidth - progressOffset - PROGRESS_BAR_HEIGHT / 2
+                  : progressOffset - PROGRESS_BAR_HEIGHT / 2,
+            },
+          ]}>
+          <Text
+            style={[
+              styles.kanjiPassedText,
+              kanjiOffset > 0 ? {} : { color: Colors.pink },
+            ]}>
+            {passedCount} of {totalKanjiCount} kanji passed
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.progressBarDot,
+            { left: progressOffset - PROGRESS_BAR_HEIGHT - SHADOW_OFFSET },
+          ]}>
+          <Text>🚀</Text>
+        </View>
       </View>
       <View style={{ height: 4 }} />
-      <Text style={typography.caption}>
-        {passedCount} of {totalKanjiCount} kanji passed
-      </Text>
     </View>
   )
 }
@@ -66,27 +113,55 @@ export const LevelProgress = () => {
 const stylesheet = createStyleSheet({
   container: {
     marginHorizontal: 20,
+    backgroundColor: Colors.pink,
+    borderRadius: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  titleText: {
+    ...typography.heading,
+    fontWeight: '400',
+    color: Colors.white,
+  },
+  kanjiPassedContainer: {
+    position: 'absolute',
+    width: 'auto',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  kanjiPassedText: {
+    ...typography.caption,
+    fontWeight: '500',
+    color: Colors.gray55,
   },
   progressBarOuter: {
-    backgroundColor: Colors.statisticsGreen,
-    height: 10,
-    borderRadius: 5,
+    backgroundColor: Colors.grayDA,
+    height: PROGRESS_BAR_HEIGHT,
+    borderRadius: 40,
     width: '100%',
+    borderColor: Colors.getDarker(Colors.grayDA, 10),
+    borderTopWidth: SHADOW_OFFSET,
+    borderRightWidth: SHADOW_OFFSET,
+    borderLeftWidth: SHADOW_OFFSET,
   },
   progressBarInner: {
-    backgroundColor: Colors.statisticsGreenLine,
-    height: 10,
-    borderRadius: 5,
-    width: '100%',
+    backgroundColor: Colors.white,
+    height: PROGRESS_BAR_HEIGHT - SHADOW_OFFSET,
+    borderRadius: 40,
   },
   progressBarDot: {
+    top: -SHADOW_OFFSET,
     position: 'absolute',
-    backgroundColor: Colors.statisticsGreenLine,
-    height: 18,
-    width: 18,
-    top: -4,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: PROGRESS_BAR_HEIGHT,
+    width: PROGRESS_BAR_HEIGHT,
     borderRadius: 40,
-    borderColor: 'white',
-    borderWidth: 2,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 1,
   },
 })
