@@ -1,8 +1,8 @@
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { ColorValue, Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import React, { useCallback, useMemo } from 'react'
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'
-import { Link } from 'expo-router'
+import { Href, Link } from 'expo-router'
 import typography from '@/src/constants/typography'
 import Animated, {
   LightSpeedInLeft,
@@ -94,22 +94,6 @@ export default function Index() {
   }, [triggerDbUpdate])
 
   const duration = 600
-  const enteringAnimationLeft = useMemo(
-    () => LightSpeedInLeft.duration(duration),
-    [],
-  )
-  const enteringAnimationRight = useMemo(
-    () => LightSpeedInRight.duration(duration),
-    [],
-  )
-  const exitingAnimationLeft = useMemo(
-    () => LightSpeedOutLeft.duration(duration),
-    [],
-  )
-  const exitingAnimationRight = useMemo(
-    () => LightSpeedOutRight.duration(duration),
-    [],
-  )
 
   return (
     <ErrorWithRetry error={undefined} onRetry={refresh}>
@@ -119,7 +103,7 @@ export default function Index() {
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
         }>
         <LevelProgress />
-        <View style={{ height: 4 }} />
+        <View style={{ height: 8 }} />
         <AssignmentsCard
           backgroundColor={Colors.pink}
           layoutAnimationDuration={duration * 0.6}
@@ -130,60 +114,46 @@ export default function Index() {
           message='We cooked up these lessons just for you.'
           actions={
             <View>
-              <Animated.View
-                key={'start'}
-                entering={enteringAnimationLeft}
-                exiting={exitingAnimationRight}>
-                <Link
-                  href={{
-                    pathname: '/lessons',
-                    params: { assignmentIds: lessonIdsBatch },
-                  }}
-                  asChild>
-                  <Pressable style={styles.startButton}>
-                    <View style={appStyles.row}>
-                      <Text
-                        style={[styles.startButtonText, { color: '#FF00AA' }]}>
-                        Start Lessons
-                      </Text>
-                      <View style={{ width: 4 }} />
-                      <AntDesign
-                        name='right'
-                        size={typography.body.fontSize}
-                        color='#FF00AA'
-                      />
-                    </View>
-                  </Pressable>
-                </Link>
-              </Animated.View>
+              <CardButton
+                animationDirection='left'
+                animationDuration={duration}
+                textColor={Colors.pink}
+                label='Start Lessons'
+                labelPostfix={
+                  <AntDesign
+                    name='right'
+                    size={typography.body.fontSize}
+                    color={Colors.pink}
+                  />
+                }
+                href={{
+                  pathname: '/lessons',
+                  params: { assignmentIds: lessonIdsBatch },
+                }}
+              />
               <View key={'spacer'} style={{ height: 16 }} />
-              <Animated.View
-                key={'advanced'}
-                entering={enteringAnimationRight}
-                exiting={exitingAnimationLeft}>
-                <Link
-                  href={{
-                    pathname: '/lessonPicker',
-                    params: { assignmentIds: lessonIdsBatch },
-                  }}
-                  asChild>
-                  <Pressable style={styles.advancedButton}>
-                    <View style={appStyles.row}>
-                      <MaterialIcons
-                        name='smart-toy'
-                        size={typography.body.fontSize}
-                        color='white'
-                      />
-                      <View style={{ width: 4 }} />
-                      <Text style={styles.advancedButtonText}>Advanced</Text>
-                    </View>
-                  </Pressable>
-                </Link>
-              </Animated.View>
+              <CardButton
+                animationDirection='right'
+                animationDuration={duration}
+                textColor={Colors.white}
+                style='outlined'
+                label='Advanced'
+                labelPrefix={
+                  <MaterialIcons
+                    name='smart-toy'
+                    size={typography.body.fontSize}
+                    color='white'
+                  />
+                }
+                href={{
+                  pathname: '/lessonPicker',
+                  params: { assignmentIds: lessonIdsBatch },
+                }}
+              />
             </View>
           }
         />
-        <View style={{ height: 8 }} />
+        <View style={{ height: 16 }} />
         <AssignmentsCard
           backgroundColor={Colors.blue}
           layoutAnimationDuration={duration * 0.6}
@@ -192,34 +162,26 @@ export default function Index() {
           assignmentsCount={reviewsCount}
           message='Review these items to level them up!'
           actions={
-            <Animated.View
-              entering={enteringAnimationLeft}
-              exiting={exitingAnimationRight}>
-              <Link
-                href={{
-                  pathname: '/review',
-                  params: { assignmentIds: reviewIdsBatch },
-                }}
-                asChild>
-                <Pressable style={styles.startButton}>
-                  <View style={appStyles.row}>
-                    <Text
-                      style={[styles.startButtonText, { color: '#00AAFF' }]}>
-                      Start Reviews
-                    </Text>
-                    <View style={{ width: 4 }} />
-                    <AntDesign
-                      name='right'
-                      size={typography.body.fontSize}
-                      color='#00AAFF'
-                    />
-                  </View>
-                </Pressable>
-              </Link>
-            </Animated.View>
+            <CardButton
+              animationDirection='left'
+              animationDuration={duration}
+              textColor={Colors.blue}
+              href={{
+                pathname: '/review',
+                params: { assignmentIds: reviewIdsBatch },
+              }}
+              label='Start Reviews'
+              labelPostfix={
+                <AntDesign
+                  name='right'
+                  size={typography.body.fontSize}
+                  color={Colors.blue}
+                />
+              }
+            />
           }
         />
-        <View style={{ height: 8 }} />
+        <View style={{ height: 16 }} />
         <Forecast />
         <View style={{ height: 64 }} />
       </ScrollView>
@@ -281,15 +243,9 @@ type AssignmentsCardProps = {
 }
 
 const AssignmentsCard = ({
-  backgroundColor,
-  title,
-  suptitle,
-  assignmentsCount,
-  message,
-  actions,
-  loading,
-  layoutAnimationDuration,
   bdageAnimationDuration = 125,
+  assignmentsCount,
+  ...props
 }: AssignmentsCardProps) => {
   const { styles } = useStyles(assignmentsCardStylesheet)
   const enteringAnimation = useMemo(
@@ -300,6 +256,64 @@ const AssignmentsCard = ({
     () => ZoomOut.duration(bdageAnimationDuration),
     [bdageAnimationDuration],
   )
+
+  return (
+    <Card
+      {...props}
+      actions={assignmentsCount > 0 ? props.actions : null}
+      badge={
+        assignmentsCount > 0 ? (
+          <Animated.View
+            style={styles.badge}
+            entering={enteringAnimation}
+            exiting={exitingAnimation}>
+            <Text style={[styles.badgeText, { color: props.backgroundColor }]}>
+              {assignmentsCount}
+            </Text>
+          </Animated.View>
+        ) : null
+      }
+    />
+  )
+}
+
+const assignmentsCardStylesheet = createStyleSheet({
+  badge: {
+    backgroundColor: 'white',
+    borderRadius: 18,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    // Adjust so that it's aligned visually at the same line as title
+    marginTop: 2.5,
+  },
+  badgeText: {
+    ...typography.label,
+    lineHeight: typography.label.fontSize * 1.2,
+  },
+})
+
+type CardProps = {
+  backgroundColor: string
+  textColor?: ColorValue
+  title: string
+  suptitle?: string
+  message: string
+  actions: React.ReactNode
+  layoutAnimationDuration: number
+  badge?: React.ReactNode
+}
+
+const Card = ({
+  backgroundColor,
+  textColor = 'white',
+  title,
+  suptitle,
+  message,
+  actions,
+  layoutAnimationDuration,
+  badge,
+}: CardProps) => {
+  const { styles } = useStyles(cardStylesheet)
   const layoutAnimation = useMemo(
     () => SequencedTransition.duration(layoutAnimationDuration),
     [layoutAnimationDuration],
@@ -310,31 +324,30 @@ const AssignmentsCard = ({
       style={[styles.view, { backgroundColor }]}
       layout={layoutAnimation}>
       <View>
-        {suptitle && <Text style={styles.text}>{suptitle}</Text>}
+        {suptitle && (
+          <Text style={[styles.text, { color: textColor }]}>{suptitle}</Text>
+        )}
         <View style={appStyles.row}>
-          <Text style={styles.textHeading}>{title}</Text>
-          <View style={{ width: 8 }} />
-          {assignmentsCount > 0 && (
-            <Animated.View
-              style={styles.badge}
-              entering={enteringAnimation}
-              exiting={exitingAnimation}>
-              <Text style={[styles.badgeText, { color: backgroundColor }]}>
-                {assignmentsCount}
-              </Text>
-            </Animated.View>
+          <Text style={[styles.textHeading, { color: textColor }]}>
+            {title}
+          </Text>
+          {badge && (
+            <>
+              <View style={{ width: 8 }} />
+              {badge}
+            </>
           )}
         </View>
       </View>
       <View style={{ height: 16 }} />
-      <Text style={styles.text}>{message}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{message}</Text>
       <View style={{ height: 12 }} />
-      {assignmentsCount > 0 && actions}
+      {actions}
     </Animated.View>
   )
 }
 
-const assignmentsCardStylesheet = createStyleSheet({
+const cardStylesheet = createStyleSheet({
   view: {
     marginHorizontal: 20,
     padding: 20,
@@ -349,16 +362,114 @@ const assignmentsCardStylesheet = createStyleSheet({
     ...typography.titleC,
     color: 'white',
   },
-  badge: {
+})
+
+type CardButtonProps = {
+  animationDirection: 'left' | 'right'
+  animationDuration: number
+  textColor: ColorValue
+  href: Href<string | object>
+  label: string
+  labelPrefix?: React.ReactNode
+  labelPostfix?: React.ReactNode
+  style?: 'filled' | 'outlined'
+}
+
+const CardButton = ({
+  animationDirection,
+  animationDuration,
+  textColor,
+  href,
+  label,
+  labelPrefix,
+  labelPostfix,
+  style = 'filled',
+}: CardButtonProps) => {
+  const { styles } = useStyles(cardButtonStylesheet)
+
+  const enteringAnimationLeft = useMemo(
+    () => LightSpeedInLeft.duration(animationDuration),
+    [animationDuration],
+  )
+  const enteringAnimationRight = useMemo(
+    () => LightSpeedInRight.duration(animationDuration),
+    [animationDuration],
+  )
+  const exitingAnimationLeft = useMemo(
+    () => LightSpeedOutLeft.duration(animationDuration),
+    [animationDuration],
+  )
+  const exitingAnimationRight = useMemo(
+    () => LightSpeedOutRight.duration(animationDuration),
+    [animationDuration],
+  )
+  const animations = useMemo(
+    () =>
+      animationDirection === 'left'
+        ? { entering: enteringAnimationLeft, exiting: exitingAnimationRight }
+        : { entering: enteringAnimationRight, exiting: exitingAnimationLeft },
+    [
+      animationDirection,
+      enteringAnimationLeft,
+      enteringAnimationRight,
+      exitingAnimationLeft,
+      exitingAnimationRight,
+    ],
+  )
+
+  return (
+    <Animated.View entering={animations.entering} exiting={animations.exiting}>
+      <Link href={href} asChild>
+        <Pressable
+          style={
+            style === 'filled' ? styles.filledButton : styles.outlinedButton
+          }>
+          <View style={appStyles.row}>
+            {labelPrefix && (
+              <>
+                {labelPrefix}
+                <View style={{ width: 4 }} />
+              </>
+            )}
+            <Text style={[styles.buttonText, { color: textColor }]}>
+              {label}
+            </Text>
+            {labelPostfix && (
+              <>
+                <View style={{ width: 4 }} />
+                {labelPostfix}
+              </>
+            )}
+          </View>
+        </Pressable>
+      </Link>
+    </Animated.View>
+  )
+}
+
+const cardButtonStylesheet = createStyleSheet({
+  button: {
+    color: 'transparent',
     backgroundColor: 'white',
-    borderRadius: 18,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    // Adjust so that it's aligned visually at the same line as title
-    marginTop: 2.5,
   },
-  badgeText: {
-    ...typography.label,
-    lineHeight: typography.label.fontSize * 1.2,
+  filledButton: {
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 3,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: typography.body.fontSize,
+    lineHeight: typography.body.fontSize * 1.1,
+  },
+  outlinedButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'white',
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 3,
+    alignItems: 'center',
   },
 })
