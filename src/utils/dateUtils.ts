@@ -1,7 +1,7 @@
 export const getLocalDayStart = (): Date => {
   const now = new Date()
   // Set the date to local midnight
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2)
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
 export const getLocalStartOfDayInUTCString = (): string => {
