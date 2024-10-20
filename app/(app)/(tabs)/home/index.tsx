@@ -96,96 +96,127 @@ export default function Index() {
   const duration = 600
 
   return (
-    <ErrorWithRetry error={undefined} onRetry={refresh}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refresh} />
-        }>
-        <LevelProgress />
-        <View style={{ height: 8 }} />
-        <AssignmentsCard
-          backgroundColor={Colors.pink}
-          layoutAnimationDuration={duration * 0.6}
-          loading={isLoading}
-          title='Lessons'
-          suptitle="Today's"
-          assignmentsCount={availableLessonsCount}
-          message='We cooked up these lessons just for you.'
-          actions={
-            <View>
+    <View>
+      <ErrorWithRetry error={undefined} onRetry={refresh}>
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={refresh} />
+          }>
+          <LevelProgress />
+          <View style={{ height: 8 }} />
+          <AssignmentsCard
+            backgroundColor={Colors.pink}
+            layoutAnimationDuration={duration * 0.6}
+            loading={isLoading}
+            title='Lessons'
+            suptitle="Today's"
+            assignmentsCount={availableLessonsCount}
+            message='We cooked up these lessons just for you.'
+            actions={
+              <View>
+                <CardButton
+                  animationDirection='left'
+                  animationDuration={duration}
+                  textColor={Colors.pink}
+                  label='Start Lessons'
+                  labelPostfix={
+                    <AntDesign
+                      name='right'
+                      size={typography.body.fontSize}
+                      color={Colors.pink}
+                    />
+                  }
+                  href={{
+                    pathname: '/lessons',
+                    params: { assignmentIds: lessonIdsBatch },
+                  }}
+                />
+                <View key={'spacer'} style={{ height: 16 }} />
+                <CardButton
+                  animationDirection='right'
+                  animationDuration={duration}
+                  textColor={Colors.white}
+                  style='outlined'
+                  label='Advanced'
+                  labelPrefix={
+                    <MaterialIcons
+                      name='smart-toy'
+                      size={typography.body.fontSize}
+                      color='white'
+                    />
+                  }
+                  href={{
+                    pathname: '/lessonPicker',
+                    params: { assignmentIds: lessonIdsBatch },
+                  }}
+                />
+              </View>
+            }
+          />
+          <View style={{ height: 16 }} />
+          <Card
+            // https://knowledge.wanikani.com/getting-started/extra-study/
+            backgroundColor={Colors.grayEA}
+            textColor={Colors.gray55}
+            layoutAnimationDuration={duration * 0.6}
+            title='Extra Study'
+            message='Practice outside of your regular Reviews and Lessons.'
+            actions={
+              <>
+                <CardButton
+                  animationDirection='left'
+                  animationDuration={duration}
+                  textColor={Colors.gray55}
+                  label='Study'
+                  href={{
+                    pathname: '/extraStudy',
+                  }}
+                  labelPostfix={
+                    <AntDesign
+                      name='right'
+                      size={typography.body.fontSize}
+                      color={Colors.gray55}
+                    />
+                  }
+                />
+              </>
+            }
+          />
+          <View style={{ height: 16 }} />
+          <AssignmentsCard
+            backgroundColor={Colors.blue}
+            layoutAnimationDuration={duration * 0.6}
+            loading={false}
+            title='Reviews'
+            assignmentsCount={reviewsCount}
+            message='Review these items to level them up!'
+            actions={
               <CardButton
                 animationDirection='left'
                 animationDuration={duration}
-                textColor={Colors.pink}
-                label='Start Lessons'
+                textColor={Colors.blue}
+                href={{
+                  pathname: '/review',
+                  params: { assignmentIds: reviewIdsBatch },
+                }}
+                label='Start Reviews'
                 labelPostfix={
                   <AntDesign
                     name='right'
                     size={typography.body.fontSize}
-                    color={Colors.pink}
+                    color={Colors.blue}
                   />
                 }
-                href={{
-                  pathname: '/lessons',
-                  params: { assignmentIds: lessonIdsBatch },
-                }}
               />
-              <View key={'spacer'} style={{ height: 16 }} />
-              <CardButton
-                animationDirection='right'
-                animationDuration={duration}
-                textColor={Colors.white}
-                style='outlined'
-                label='Advanced'
-                labelPrefix={
-                  <MaterialIcons
-                    name='smart-toy'
-                    size={typography.body.fontSize}
-                    color='white'
-                  />
-                }
-                href={{
-                  pathname: '/lessonPicker',
-                  params: { assignmentIds: lessonIdsBatch },
-                }}
-              />
-            </View>
-          }
-        />
-        <View style={{ height: 16 }} />
-        <AssignmentsCard
-          backgroundColor={Colors.blue}
-          layoutAnimationDuration={duration * 0.6}
-          loading={false}
-          title='Reviews'
-          assignmentsCount={reviewsCount}
-          message='Review these items to level them up!'
-          actions={
-            <CardButton
-              animationDirection='left'
-              animationDuration={duration}
-              textColor={Colors.blue}
-              href={{
-                pathname: '/review',
-                params: { assignmentIds: reviewIdsBatch },
-              }}
-              label='Start Reviews'
-              labelPostfix={
-                <AntDesign
-                  name='right'
-                  size={typography.body.fontSize}
-                  color={Colors.blue}
-                />
-              }
-            />
-          }
-        />
-        <View style={{ height: 16 }} />
-        <Forecast />
-        <View style={{ height: 64 }} />
-      </ScrollView>
-    </ErrorWithRetry>
+            }
+          />
+          <View style={{ height: 16 }} />
+          <Forecast />
+          <View style={{ height: 64 }} />
+        </ScrollView>
+      </ErrorWithRetry>
+    </View>
   )
 }
 
@@ -321,7 +352,13 @@ const Card = ({
 
   return (
     <Animated.View
-      style={[styles.view, { backgroundColor }]}
+      style={[
+        styles.view,
+        {
+          backgroundColor,
+          borderBottomColor: Colors.getBottomBorderColor(backgroundColor),
+        },
+      ]}
       layout={layoutAnimation}>
       <View>
         {suptitle && (
@@ -352,6 +389,7 @@ const cardStylesheet = createStyleSheet({
     marginHorizontal: 20,
     padding: 20,
     borderRadius: 4,
+    borderBottomWidth: 2,
   },
   text: {
     ...typography.body,

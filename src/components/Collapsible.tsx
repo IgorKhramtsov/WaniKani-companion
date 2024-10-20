@@ -1,41 +1,86 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { ThemedView } from './ThemedView';
-import { Colors } from '../constants/Colors';
-import { ThemedText } from './ThemedText';
+// AI
 
+// TODO: Fix flickering on first frame (when we measure the height)
+import React, { useState, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 
-export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const theme = useColorScheme() ?? 'light';
+interface CollapsibleProps {
+  children: React.ReactNode
+  disabled?: boolean
+  buttonBuilder?: (expanded: boolean) => React.ReactNode
+  previewHeight: number
+  expandButtonText?: string
+  collapseButtonText?: string
+}
+
+const Collapsible: React.FC<CollapsibleProps> = ({
+  children,
+  disabled = false,
+  previewHeight,
+  expandButtonText = 'Show More',
+  collapseButtonText = 'Show Less',
+  buttonBuilder,
+}) => {
+  const [expanded, setExpanded] = useState(false)
+  const [collapsible, setCollapsible] = useState(false)
+  const contentRef = useRef<View>(null)
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.measure((x, y, width, height) => {
+        setCollapsible(height > previewHeight)
+      })
+    }
+  }, [previewHeight])
+
+  const toggleExpanded = () => {
+    setExpanded(!expanded)
+  }
+
+  if (disabled) return <>{children}</>
 
   return (
-    <ThemedView>
-      <TouchableOpacity
-        style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}>
-        <Ionicons
-          name={isOpen ? 'chevron-down' : 'chevron-forward-outline'}
-          size={18}
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
-        />
-        <ThemedText type="defaultSemiBold">{title}</ThemedText>
-      </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
-  );
+    <View>
+      <View
+        ref={contentRef}
+        style={[
+          styles.content,
+          !expanded &&
+            collapsible && { height: previewHeight, overflow: 'hidden' },
+        ]}>
+        {children}
+      </View>
+      {collapsible && (
+        <Pressable onPress={toggleExpanded}>
+          {buttonBuilder ? (
+            buttonBuilder(expanded)
+          ) : (
+            <View style={styles.button}>
+              <Text style={styles.buttonText}>
+                {expanded ? collapseButtonText : expandButtonText}
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      )}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   content: {
-    marginTop: 6,
-    marginLeft: 24,
+    marginBottom: 10,
   },
-});
+  button: {
+    backgroundColor: '#e0e0e0',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#333',
+    fontWeight: 'bold',
+  },
+})
+
+export default Collapsible

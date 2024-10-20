@@ -1,13 +1,4 @@
-import {
-  SQL,
-  and,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-} from 'drizzle-orm'
+import { SQL, and, eq, gte, inArray, isNotNull, isNull, lte } from 'drizzle-orm'
 import { QueryBuilder } from 'drizzle-orm/sqlite-core'
 import { localDbApi, transformDrizzleResponse, upsertTable } from './api'
 import { Assignment } from '@/src/types/assignment'
@@ -41,6 +32,23 @@ export const localDbAssignmentsApi = localDbApi.injectEndpoints({
       providesTags: ['Assignment'],
       query: assignmentIds =>
         qb.select().from(table).where(inArray(table.id, assignmentIds)).toSQL(),
+      transformResponse: (rows: any[]) => transformDrizzleResponse(rows, table),
+    }),
+    getBurnedAssignments: builder.query<Assignment[], void>({
+      providesTags: ['Assignment'],
+      query: () =>
+        // An item could be resurrected, so burned_at might not be enough
+        qb.select().from(table).where(eq(table.srs_stage, 9)).toSQL(),
+      transformResponse: (rows: any[]) => transformDrizzleResponse(rows, table),
+    }),
+    getRecentLessons: builder.query<Assignment[], void>({
+      providesTags: ['Assignment'],
+      query: () =>
+        qb
+          .select()
+          .from(table)
+          .where(and(isNotNull(table.available_at), isNull(table.passed_at)))
+          .toSQL(),
       transformResponse: (rows: any[]) => transformDrizzleResponse(rows, table),
     }),
     getAssignmentsForForecast: builder.query<Assignment[], void>({
@@ -119,6 +127,8 @@ export const localDbAssignmentsApi = localDbApi.injectEndpoints({
 export const {
   useGetAssignmentQuery,
   useGetAssignmentsQuery,
+  useGetBurnedAssignmentsQuery,
+  useGetRecentLessonsQuery,
   useGetAssignmentForSubjectQuery,
   useGetAssignmentsForForecastQuery,
   useGetReviewsQuery,

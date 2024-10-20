@@ -87,6 +87,6 @@ export const SubjectSymbol = ({
   if (subject.characters) {
     return <Text style={textStyle}>{subject.characters}</Text>
   } else {
-    return '??'
+    return <Text>??</Text>
   }
 }

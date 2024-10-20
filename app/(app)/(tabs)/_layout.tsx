@@ -12,6 +12,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: 'black',
         headerShown: false,
         tabBarStyle: {
+          // TODO: make it glass like ?
           paddingTop: 8,
         },
       }}>

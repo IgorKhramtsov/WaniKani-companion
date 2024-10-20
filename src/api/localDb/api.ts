@@ -12,7 +12,7 @@ import {
   getTableConfig,
 } from 'drizzle-orm/sqlite-core'
 import '@/src/db/schema'
-import { Query, eq, getTableColumns } from 'drizzle-orm'
+import { Query, eq, lt, gte, and, getTableColumns, or } from 'drizzle-orm'
 import {
   levelProgressionsTable,
   reviewStatisticsTable,
@@ -21,6 +21,11 @@ import {
 import { ReviewStatistic } from '@/src/types/reviewStatistic'
 import { Review } from '@/src/types/review'
 import { LevelProgression } from '@/src/types/levelProgression'
+import {
+  dateToUnixTimestamp,
+  getLocalDayAgoTime,
+  getLocalDayStart,
+} from '@/src/utils/dateUtils'
 
 const qb = new QueryBuilder()
 
@@ -59,6 +64,11 @@ export const localDbApi = createApi({
     'LevelProgression',
   ],
   endpoints: builder => ({
+    saveReviewStatistics: builder.mutation<void, ReviewStatistic[]>({
+      invalidatesTags: ['ReviewStatistic'],
+      query: reviewStatistics =>
+        upsertTable(reviewStatisticsTable, reviewStatistics),
+    }),
     getReviewStatistic: builder.query<ReviewStatistic | undefined, number>({
       providesTags: ['ReviewStatistic'],
       query: subject_id =>
@@ -70,10 +80,19 @@ export const localDbApi = createApi({
       transformResponse: (rows: any[]) =>
         transformDrizzleResponse(rows, reviewStatisticsTable, false),
     }),
-    saveReviewStatistics: builder.mutation<void, ReviewStatistic[]>({
-      invalidatesTags: ['ReviewStatistic'],
-      query: reviewStatistics =>
-        upsertTable(reviewStatisticsTable, reviewStatistics),
+    getCriticalConditionReviewStatistics: builder.query<
+      ReviewStatistic[],
+      void
+    >({
+      providesTags: ['ReviewStatistic'],
+      query: () =>
+        qb
+          .select()
+          .from(reviewStatisticsTable)
+          .where(lt(reviewStatisticsTable.percentage_correct, 75))
+          .toSQL(),
+      transformResponse: (rows: any[]) =>
+        transformDrizzleResponse(rows, reviewStatisticsTable),
     }),
     saveReviews: builder.mutation<void, Review[]>({
       invalidatesTags: ['Review'],
@@ -90,12 +109,38 @@ export const localDbApi = createApi({
       transformResponse: (rows: any[]) =>
         transformDrizzleResponse(rows, levelProgressionsTable),
     }),
+    getRecentMistakeReviews: builder.query<Review[], void>({
+      providesTags: ['Review'],
+      query: () =>
+        qb
+          .select()
+          .from(reviewsTable)
+          .where(
+            and(
+              gte(
+                reviewsTable.created_at,
+                dateToUnixTimestamp(getLocalDayAgoTime()),
+              ),
+              or(
+                gte(reviewsTable.incorrect_meaning_answers, 0),
+                gte(reviewsTable.incorrect_reading_answers, 0),
+              ),
+            ),
+          )
+          .toSQL(),
+      transformResponse: (rows: any[]) =>
+        transformDrizzleResponse(rows, reviewsTable),
+    }),
   }),
 })
 
 export const {
   useGetReviewStatisticQuery,
+  useGetCriticalConditionReviewStatisticsQuery,
   useGetLevelProgressionsQuery,
+
+  useGetRecentMistakeReviewsQuery,
+
   useSaveReviewStatisticsMutation,
   useSaveLevelProgressionsMutation,
 } = localDbApi

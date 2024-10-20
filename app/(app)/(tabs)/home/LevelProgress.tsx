@@ -3,6 +3,7 @@ import { useFindAssignmentsByQuery } from '@/src/api/localDb/assignment'
 import { useFindSubjectsByQuery } from '@/src/api/localDb/subject'
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
+import { filterNotUndefined } from '@/src/utils/arrayUtils'
 import { useCallback, useMemo, useState } from 'react'
 import { LayoutChangeEvent, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
@@ -21,7 +22,7 @@ export const LevelProgress = () => {
     [levelProgressions],
   )
   const { data: kanjiOnLevel } = useFindSubjectsByQuery({
-    level: currentLevel,
+    levels: filterNotUndefined([currentLevel]),
     type: 'kanji',
   })
   const subjectIds = useMemo(

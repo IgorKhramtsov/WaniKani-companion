@@ -25,13 +25,13 @@ export const localDbSubjectsApi = localDbApi.injectEndpoints({
     }),
     findSubjectsBy: builder.query<
       Subject[],
-      { level?: number; type?: SubjectType }
+      { levels?: number[]; type?: SubjectType }
     >({
       providesTags: ['Subject'],
-      query: ({ level, type }) => {
+      query: ({ levels, type }) => {
         let sql: SQL[] = []
-        if (level !== undefined) {
-          sql.push(eq(table.level, level))
+        if (levels !== undefined) {
+          sql.push(inArray(table.level, levels))
         }
         if (type !== undefined) {
           sql.push(eq(table.type, type))

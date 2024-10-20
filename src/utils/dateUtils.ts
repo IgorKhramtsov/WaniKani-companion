@@ -4,6 +4,17 @@ export const getLocalDayStart = (): Date => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
+export const getLocalDayAgoTime = (): Date => {
+  const now = new Date()
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 1,
+    now.getHours(),
+    now.getMinutes(),
+  )
+}
+
 export const getLocalStartOfDayInUTCString = (): string => {
   const localMidnight = getLocalDayStart()
   // Convert local midnight to UTC
