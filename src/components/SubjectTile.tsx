@@ -104,6 +104,10 @@ export const SubjectTile = ({
     }
   })()
 
+  if (!isPressable) {
+    return node
+  }
+
   return (
     <Pressable
       disabled={!isPressable}

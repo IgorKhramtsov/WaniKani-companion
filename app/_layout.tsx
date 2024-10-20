@@ -1,3 +1,4 @@
+import '@/src/utils/time-polyfil'
 import { SessionProvider } from '@/src/context/authContext'
 import { createStore } from '@/src/redux/store'
 import { dbHelper } from '@/src/utils/dbHelper'

@@ -4,19 +4,20 @@ import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { Subject } from '@/src/types/subject'
 import { Fragment, useCallback, useState } from 'react'
-import {
-  LayoutChangeEvent,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeArea } from 'react-native-safe-area-context'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { BlurView } from 'expo-blur'
 import Collapsible from './Collapsible'
+import React from 'react'
 
 const MAX_CATEGORY_HEIGHT = 84
+
+// This optimizes rendering a lot
+const MemoizedSubjectTile = React.memo(({ subject }: { subject: Subject }) => {
+  return <SubjectTile subject={subject} variant='compact' isPressable={false} />
+})
+MemoizedSubjectTile.displayName = 'MemoizedSubjectTile'
 
 export type Category = {
   name: string
@@ -123,11 +124,7 @@ export const SubjectPickerPage = ({
                                     styles.subjectTile,
                                     { opacity: isSelected ? 1.0 : 0.55 },
                                   ]}>
-                                  <SubjectTile
-                                    subject={subject}
-                                    variant='compact'
-                                    isPressable={false}
-                                  />
+                                  <MemoizedSubjectTile subject={subject} />
                                 </View>
                               </Pressable>
                             )
