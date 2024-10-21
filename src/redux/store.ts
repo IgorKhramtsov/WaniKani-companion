@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit'
+import { Middleware, configureStore } from '@reduxjs/toolkit'
 import subjectsSlice from './subjectsSlice'
 import quizSlice from './quizSlice'
 import settingsSlice from './settingsSlice'
@@ -18,6 +18,27 @@ const sentryReduxEnhancer = Sentry.createReduxEnhancer({
   attachReduxState: false, // The state could easily be more than 1 mb
 })
 
+const performanceLoggingEnabled = false
+const timingMiddleware: Middleware = store => next => (action: any) => {
+  // TODO: performance can be used to integrate measures in chrom profiler
+  // https://gist.github.com/clarkbw/966732806e7a38f5b49fd770c62a6099
+  if (!performanceLoggingEnabled) return next(action)
+
+  if (!('type' in action)) return next(action)
+  let name = action.type
+  if (
+    'meta' in action &&
+    'arg' in action.meta &&
+    'endpointName' in action.meta.arg
+  ) {
+    name = `${action.type}/${action.meta.arg.endpointName}`
+  }
+  console.time(name)
+  let result = next(action)
+  console.timeEnd(name)
+  return result
+}
+
 export const createStore = (sqliteDb?: SQLiteDatabase) =>
   configureStore({
     middleware: getDefaultMiddleware =>
@@ -32,6 +53,7 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
         rtkQueryErrorLogger,
         loggerMiddleware,
         localDbSyncMiddleware,
+        timingMiddleware,
       ),
     reducer: {
       subjectsSlice,
@@ -42,10 +64,9 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
       [localDbApi.reducerPath]: localDbApi.reducer,
     },
     devTools: false,
-    // NOTE: This is not an error
     enhancers: getDefaultEnhancers =>
       getDefaultEnhancers()
-        .concat(devToolsEnhancer())
+        .concat(devToolsEnhancer({ trace: true }))
         .concat(sentryReduxEnhancer),
   })
 
