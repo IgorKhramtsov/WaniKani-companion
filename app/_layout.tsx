@@ -1,5 +1,5 @@
 import '@/src/utils/time-polyfil'
-import { SessionProvider } from '@/src/context/authContext'
+import { SessionProvider, useSession } from '@/src/context/authContext'
 import { createStore } from '@/src/redux/store'
 import { dbHelper } from '@/src/utils/dbHelper'
 import { Slot, useNavigationContainerRef } from 'expo-router'
@@ -121,7 +121,12 @@ const runMigrations = async (db: SQLiteDatabase) => {
 /// A separate component to be able to access sqlite context
 const StoreProvider = ({ children }: PropsWithChildren) => {
   const db = useSQLiteContext()
+  const { apiKey, isLoading: isSessionLoading } = useSession()
 
-  const store = createStore(db)
+  if (isSessionLoading) {
+    return <FullPageLoading />
+  }
+
+  const store = createStore(db, apiKey)
   return <Provider store={store}>{children}</Provider>
 }

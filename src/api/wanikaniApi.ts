@@ -9,26 +9,19 @@ import { CreateReviewParams } from '../types/createReviewParams'
 import { dateToUnixTimestamp } from '../utils/dateUtils'
 import { LevelProgression } from '../types/levelProgression'
 
-// TODO: maybe refactor in future to look more like a data source which is
-// injected to redux store?
-//
-// TODO: add api key verification (by making empty request to server) to check
-// permissions and disable app's features if not authorized.
-let apiKey: string | undefined
-export const setApiKey = (key: string) => {
-  apiKey = key
-}
-export const getApiKey = () => apiKey
-
 export const wanikaniApi = createApi({
   reducerPath: 'wanikaniApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://api.wanikani.com/v2/',
-    // In production fetch will have cache enabled with if-modified-since
-    // header that will often return 304 requests which we can't handle easily
-    // It causes any change to settings to fail
+    // In production, fetch will have cache enabled and if-modified-since
+    // header will be added that will often return 304 requests which we can't
+    // handle easily. It causes any change to settings to fail
     cache: 'no-cache',
-    prepareHeaders: headers => {
+    prepareHeaders: (headers, { extra }) => {
+      const { apiKey } = extra as any
+      if (!apiKey) {
+        console.error('apiKey is required')
+      }
       // TODO: getState can be used here. See documentation of fetchBaseQuery
       if (apiKey) {
         headers.set('Authorization', `Bearer ${apiKey}`)

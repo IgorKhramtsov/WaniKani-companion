@@ -39,13 +39,16 @@ const timingMiddleware: Middleware = store => next => (action: any) => {
   return result
 }
 
-export const createStore = (sqliteDb?: SQLiteDatabase) =>
+export const createStore = (
+  sqliteDb: SQLiteDatabase | null,
+  apiKey: string | null,
+) =>
   configureStore({
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({
         serializableCheck: { warnAfter: 300 },
         immutableCheck: { warnAfter: 300 },
-        thunk: { extraArgument: { sqliteDb } },
+        thunk: { extraArgument: { sqliteDb, apiKey } },
       }).concat(
         wanikaniApi.middleware,
         localDbApi.middleware,
@@ -70,7 +73,7 @@ export const createStore = (sqliteDb?: SQLiteDatabase) =>
         .concat(sentryReduxEnhancer),
   })
 
-const defaultStore = createStore(undefined)
+const defaultStore = createStore(null, null)
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof defaultStore.getState>
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}

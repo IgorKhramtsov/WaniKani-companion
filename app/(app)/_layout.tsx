@@ -1,4 +1,3 @@
-import { getApiKey, setApiKey } from '@/src/api/wanikaniApi'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { useSession } from '@/src/context/authContext'
 import { useDbHydrator } from '@/src/hooks/useDbHydrator'
@@ -6,7 +5,6 @@ import { useWidgetPropagator } from '@/src/hooks/useWidgetPropagator'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
 import { Redirect, Stack } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
-import { useEffect } from 'react'
 import { Text, View } from 'react-native'
 import * as Progress from 'react-native-progress'
 
@@ -18,21 +16,13 @@ export default function RootLayout() {
     useDrizzleStudio(db as any)
   }
 
-  useEffect(() => {
-    if (!apiKey || isSessionLoading) return
-
-    if (getApiKey() !== apiKey) {
-      setApiKey(apiKey)
-    }
-  }, [apiKey, isSessionLoading])
-
   // Run hydrator after apiKey has been set
   const {
     isLoading: isHydrating,
     progress: hydrationProgress,
     totalCount: hydrationTotalCount,
     objectsFetched: hydrationDoneCount,
-  } = useDbHydrator(getApiKey() != null)
+  } = useDbHydrator(apiKey != null)
   useWidgetPropagator()
 
   if (isSessionLoading) {

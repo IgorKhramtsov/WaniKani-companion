@@ -5,7 +5,7 @@ import { IS_DEV } from '../constants/helpers'
 const AuthContext = React.createContext<{
   signIn: (apiKey: string) => void
   signOut: () => void
-  apiKey?: string | null
+  apiKey: string | null
   isLoading: boolean
 }>({
   signIn: () => null,
