@@ -9,10 +9,12 @@ import { CreateReviewParams } from '../types/createReviewParams'
 import { dateToUnixTimestamp } from '../utils/dateUtils'
 import { LevelProgression } from '../types/levelProgression'
 
+export const wkBaseUrl = 'https://api.wanikani.com/v2/'
+
 export const wanikaniApi = createApi({
   reducerPath: 'wanikaniApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'https://api.wanikani.com/v2/',
+    baseUrl: wkBaseUrl,
     // In production, fetch will have cache enabled and if-modified-since
     // header will be added that will often return 304 requests which we can't
     // handle easily. It causes any change to settings to fail
