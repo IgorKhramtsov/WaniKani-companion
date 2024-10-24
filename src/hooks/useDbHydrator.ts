@@ -5,6 +5,7 @@ import { wanikaniApi } from '../api/wanikaniApi'
 import {
   useSaveLevelProgressionsMutation,
   useSaveReviewStatisticsMutation,
+  useSaveStudyMaterialsMutation,
 } from '../api/localDb/api'
 import { useDispatch } from 'react-redux'
 import { useSaveSubjectsMutation } from '../api/localDb/subject'
@@ -28,6 +29,10 @@ export const useDbHydrator = (enabled: boolean) => {
   >(undefined)
   const [levelProgressionsTotalCount, setLevelProgressionsTotalCount] =
     useState<number | undefined>(undefined)
+  const [studyMaterialsTotalCount, setStudyMaterialsTotalCount] = useState<
+    number | undefined
+  >(undefined)
+
   const [subjectIdToFetchAfter, setSubjectIdToFetchAfter] = useState<
     number | undefined
   >(undefined)
@@ -35,6 +40,8 @@ export const useDbHydrator = (enabled: boolean) => {
     number | undefined
   >(undefined)
   const [reviewStatisticIdToFetchAfter, setReviewStatisticIdToFetchAfter] =
+    useState<number | undefined>(undefined)
+  const [studyMaterialIdToFetchAfter, setStudyMaterialIdToFetchAfter] =
     useState<number | undefined>(undefined)
   const [updateStart, setUpdateStart] = useState<Date | undefined>(undefined)
   const [manualTrigger, setManualTrigger] = useState<boolean>(false)
@@ -50,6 +57,7 @@ export const useDbHydrator = (enabled: boolean) => {
         'Subject',
         'User',
         'LevelProgressions',
+        'StudyMaterials',
       ]),
     )
   }, [dispatch, setManualTrigger])
@@ -92,11 +100,20 @@ export const useDbHydrator = (enabled: boolean) => {
     { updatedAfter: lastUpdate.data },
     { skip: !shouldLoad },
   )
+  const { data: apiStudyMaterialsData, isLoading: apiStudyMaterialsIsLoading } =
+    wanikaniApi.useGetStudyMaterialsQuery(
+      {
+        updatedAfter: lastUpdate.data,
+        pageAfterId: studyMaterialIdToFetchAfter,
+      },
+      { skip: !shouldLoad },
+    )
 
   const [saveSubjects] = useSaveSubjectsMutation()
   const [saveAssignments] = useSaveAssignmentsMutation()
   const [saveReviewStatistics] = useSaveReviewStatisticsMutation()
   const [saveLevelProgressions] = useSaveLevelProgressionsMutation()
+  const [saveStudyMaterials] = useSaveStudyMaterialsMutation()
 
   useEffect(() => {
     if (apiSubjectsData) {
@@ -122,6 +139,12 @@ export const useDbHydrator = (enabled: boolean) => {
     }
   }, [apiLevelProgressionsData])
 
+  useEffect(() => {
+    if (apiStudyMaterialsData) {
+      setStudyMaterialsTotalCount(apiStudyMaterialsData?.totalCount)
+    }
+  }, [apiStudyMaterialsData])
+
   const subjects = useMemo(() => {
     if (!shouldLoad) return []
 
@@ -145,6 +168,12 @@ export const useDbHydrator = (enabled: boolean) => {
 
     return apiLevelProgressionsData?.data ?? []
   }, [shouldLoad, apiLevelProgressionsData])
+
+  const studyMaterials = useMemo(() => {
+    if (!shouldLoad) return []
+
+    return apiStudyMaterialsData?.data ?? []
+  }, [shouldLoad, apiStudyMaterialsData])
 
   useEffect(() => {
     if (subjects.length > 0) {
@@ -182,6 +211,17 @@ export const useDbHydrator = (enabled: boolean) => {
   }, [levelProgressions])
 
   useEffect(() => {
+    if (studyMaterials.length > 0) {
+      setObjectsFetched(prev => prev + studyMaterials.length)
+      if (apiStudyMaterialsData?.hasMore) {
+        setStudyMaterialIdToFetchAfter(
+          studyMaterials[studyMaterials.length - 1].id,
+        )
+      }
+    }
+  }, [studyMaterials, apiStudyMaterialsData?.hasMore])
+
+  useEffect(() => {
     if (subjects.length > 0) {
       saveSubjects(subjects)
     }
@@ -189,7 +229,6 @@ export const useDbHydrator = (enabled: boolean) => {
 
   useEffect(() => {
     if (assignments.length > 0) {
-      console.log('saving assignments', assignments.length)
       saveAssignments(assignments)
     }
   }, [saveAssignments, assignments])
@@ -207,15 +246,23 @@ export const useDbHydrator = (enabled: boolean) => {
   }, [saveLevelProgressions, levelProgressions])
 
   useEffect(() => {
+    if (studyMaterials.length > 0) {
+      saveStudyMaterials(studyMaterials)
+    }
+  }, [saveStudyMaterials, studyMaterials])
+
+  useEffect(() => {
     if (
       shouldLoad &&
       updateStart &&
       !apiSubjectsIsLoading &&
       !apiAssignmentsIsLoading &&
       !apiLevelProgressionsIsLoading &&
+      !apiStudyMaterialsIsLoading &&
       !apiSubjectsData?.hasMore &&
       !apiAssignmentsData?.hasMore &&
-      !apiReviewStatisticsData?.hasMore
+      !apiReviewStatisticsData?.hasMore &&
+      !apiStudyMaterialsData?.hasMore
     ) {
       setManualTrigger(false)
       asyncStorageHelper.setLastUpdateTime(updateStart.toISOString())
@@ -225,6 +272,7 @@ export const useDbHydrator = (enabled: boolean) => {
       setAssignmentsTotalCount(undefined)
       setReviewStatisticsTotalCount(undefined)
       setLevelProgressionsTotalCount(undefined)
+      setStudyMaterialsTotalCount(undefined)
     }
   }, [
     setManualTrigger,
@@ -233,9 +281,11 @@ export const useDbHydrator = (enabled: boolean) => {
     apiSubjectsIsLoading,
     apiAssignmentsIsLoading,
     apiLevelProgressionsIsLoading,
+    apiStudyMaterialsIsLoading,
     apiSubjectsData?.hasMore,
     apiAssignmentsData?.hasMore,
     apiReviewStatisticsData?.hasMore,
+    apiStudyMaterialsData?.hasMore,
   ])
 
   const isLoading = useMemo(() => {
@@ -244,10 +294,12 @@ export const useDbHydrator = (enabled: boolean) => {
       apiAssignmentsIsLoading ||
       apiReviewStatisticsIsLoading ||
       apiLevelProgressionsIsLoading ||
+      apiStudyMaterialsIsLoading ||
       apiSubjectsData?.hasMore === true ||
       apiAssignmentsData?.hasMore === true ||
       apiReviewStatisticsData?.hasMore === true ||
-      lastUpdate.isLoading
+      lastUpdate.isLoading ||
+      apiStudyMaterialsData?.hasMore === true
     )
   }, [
     apiAssignmentsData?.hasMore,
@@ -257,6 +309,8 @@ export const useDbHydrator = (enabled: boolean) => {
     apiSubjectsData?.hasMore,
     apiSubjectsIsLoading,
     apiLevelProgressionsIsLoading,
+    apiStudyMaterialsIsLoading,
+    apiStudyMaterialsData?.hasMore,
     lastUpdate.isLoading,
   ])
 
@@ -265,12 +319,14 @@ export const useDbHydrator = (enabled: boolean) => {
       (subjectsTotalCount ?? 0) +
       (assignmentsTotalCount ?? 0) +
       (reviewStatisticsTotalCount ?? 0) +
-      (levelProgressionsTotalCount ?? 0),
+      (levelProgressionsTotalCount ?? 0) +
+      (studyMaterialsTotalCount ?? 0),
     [
       subjectsTotalCount,
       assignmentsTotalCount,
       reviewStatisticsTotalCount,
       levelProgressionsTotalCount,
+      studyMaterialsTotalCount,
     ],
   )
 

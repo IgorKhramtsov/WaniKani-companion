@@ -2,6 +2,8 @@
  * Interface representing the structure of Study Material data.
  */
 export interface StudyMaterial {
+  id: number
+
   /**
    * Timestamp when the study material was created.
    */

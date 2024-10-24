@@ -8,6 +8,7 @@ import { Subject } from '../types/subject'
 import { CreateReviewParams } from '../types/createReviewParams'
 import { dateToUnixTimestamp } from '../utils/dateUtils'
 import { LevelProgression } from '../types/levelProgression'
+import { StudyMaterial } from '../types/studyMaterial'
 
 export const wkBaseUrl = 'https://api.wanikani.com/v2/'
 
@@ -39,6 +40,7 @@ export const wanikaniApi = createApi({
     'Reviews',
     'Lessons',
     'LevelProgressions',
+    'StudyMaterials',
   ],
   endpoints: build => ({
     getUser: build.query<User, void>({
@@ -272,6 +274,57 @@ export const wanikaniApi = createApi({
         totalCount: response.total_count,
       }),
     }),
+    getStudyMaterials: build.query<
+      { data: StudyMaterial[]; totalCount: number; hasMore?: boolean },
+      { updatedAfter?: string; pageAfterId?: number }
+    >({
+      providesTags: ['StudyMaterials'],
+      query: ({ updatedAfter, pageAfterId }) => {
+        const params: {
+          updated_after?: string
+          page_after_id?: number
+        } = {}
+        if (updatedAfter) {
+          params['updated_after'] = updatedAfter
+        }
+        if (pageAfterId) {
+          params['page_after_id'] = pageAfterId
+        }
+        return {
+          url: 'study_materials',
+          params,
+        }
+      },
+      transformResponse: (
+        response: ApiResponse<ApiResponse<StudyMaterial>[]>,
+      ) => ({
+        data: response.data.map(el =>
+          transformValues({ ...el.data, id: el.id }),
+        ),
+        totalCount: response.total_count,
+        hasMore: response.pages.next_url !== null,
+      }),
+    }),
+    createStudyMaterial: build.mutation<StudyMaterial, StudyMaterial>({
+      invalidatesTags: ['StudyMaterials'],
+      query: (studyMaterial: StudyMaterial) => ({
+        method: 'POST',
+        url: 'study_materials',
+        body: studyMaterial,
+      }),
+      transformResponse: (response: ApiResponse<StudyMaterial>) =>
+        transformValues({ ...response.data, id: response.id }),
+    }),
+    updateStudyMaterial: build.mutation<StudyMaterial, StudyMaterial>({
+      invalidatesTags: ['StudyMaterials'],
+      query: (studyMaterial: StudyMaterial) => ({
+        method: 'PUT',
+        url: 'study_materials',
+        body: studyMaterial,
+      }),
+      transformResponse: (response: ApiResponse<StudyMaterial>) =>
+        transformValues({ ...response.data, id: response.id }),
+    }),
   }),
 })
 
@@ -281,10 +334,13 @@ export const {
   useGetAssignmentsQuery,
   useGetReviewStatisticsQuery,
   useGetLevelProgressionsQuery,
+  useGetStudyMaterialsQuery,
 
   useSetUserPreferencesMutation,
   useCreateReviewMutation,
   useStartAssignmentMutation,
+  useCreateStudyMaterialMutation,
+  useUpdateStudyMaterialMutation,
 } = wanikaniApi
 
 /**

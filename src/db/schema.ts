@@ -104,3 +104,14 @@ export const levelProgressionsTable = sqliteTable('level_progressions', {
   completed_at: int(),
   abandoned_at: int(),
 })
+
+export const studyMaterialsTable = sqliteTable('study_materials', {
+  id: int().primaryKey(),
+  created_at: int().notNull(),
+  hidden: int({ mode: 'boolean' }),
+  meaning_note: text(),
+  meaning_synonyms: text({ mode: 'json' }).$type<string[]>().default([]),
+  reading_note: text(),
+  subject_id: int().notNull(),
+  subject_type: text().notNull(),
+})

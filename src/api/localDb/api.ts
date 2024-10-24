@@ -17,6 +17,7 @@ import {
   levelProgressionsTable,
   reviewStatisticsTable,
   reviewsTable,
+  studyMaterialsTable,
 } from '@/src/db/schema'
 import { ReviewStatistic } from '@/src/types/reviewStatistic'
 import { Review } from '@/src/types/review'
@@ -26,6 +27,7 @@ import {
   getLocalDayAgoTime,
   getLocalDayStart,
 } from '@/src/utils/dateUtils'
+import { StudyMaterial } from '@/src/types/studyMaterial'
 
 const qb = new QueryBuilder()
 
@@ -62,6 +64,7 @@ export const localDbApi = createApi({
     'ReviewStatistic',
     'Review',
     'LevelProgression',
+    'StudyMaterial',
   ],
   endpoints: builder => ({
     saveReviewStatistics: builder.mutation<void, ReviewStatistic[]>({
@@ -131,6 +134,10 @@ export const localDbApi = createApi({
       transformResponse: (rows: any[]) =>
         transformDrizzleResponse(rows, reviewsTable),
     }),
+    saveStudyMaterials: builder.mutation<void, StudyMaterial[]>({
+      invalidatesTags: ['StudyMaterial'],
+      query: materials => upsertTable(studyMaterialsTable, materials),
+    }),
   }),
 })
 
@@ -143,6 +150,7 @@ export const {
 
   useSaveReviewStatisticsMutation,
   useSaveLevelProgressionsMutation,
+  useSaveStudyMaterialsMutation,
 } = localDbApi
 
 export const upsertTable = <S extends TableConfig, T>(
