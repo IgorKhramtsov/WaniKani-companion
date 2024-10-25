@@ -13,16 +13,15 @@ type CheckAnswerParams = {
   taskType: TaskType
   input: string
   subject: EnrichedSubject
-  userSynonyms: string[]
 }
 
 export const checkAnswer = ({
   taskType,
   input,
   subject,
-  userSynonyms,
 }: CheckAnswerParams): AnswerCheckResult => {
   let normalizedInput = normalizeString(input)
+  const userSynonyms = subject.studyMaterial?.meaning_synonyms ?? []
   const checkResult =
     taskType === 'meaning'
       ? checkMeaning(normalizedInput, subject.subject, userSynonyms)

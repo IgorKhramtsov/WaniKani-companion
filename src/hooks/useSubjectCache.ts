@@ -1,9 +1,14 @@
 import { useEffect, useMemo } from 'react'
 import { Subject, SubjectUtils } from '../types/subject'
-import { selectSubjects, subjectsReceived } from '../redux/subjectsSlice'
+import {
+  selectSubjects,
+  studyMaterialsReceived,
+  subjectsReceived,
+} from '../redux/subjectsSlice'
 import { useAppDispatch, useAppSelector } from './redux'
 import _ from 'lodash'
 import { useGetSubjectsQuery } from '../api/localDb/subject'
+import { useGetStudyMaterialsQuery } from '../api/localDb/api'
 
 type Result = {
   subjects: Subject[]
@@ -51,19 +56,35 @@ const useFetchSubjectsAndHydrate_v2 = (
     log('[useSubjectCache_hydrate] useEffect: sliceMissingIds')
   }, [sliceMissingIds])
 
-  const { data: dbSubjects, isLoading: dbIsLoading } = useGetSubjectsQuery(
-    sliceMissingIds,
-    { skip: sliceMissingIds.length === 0 },
+  const { data: dbSubjects, isLoading: dbSubjectsIsLoading } =
+    useGetSubjectsQuery(sliceMissingIds, { skip: sliceMissingIds.length === 0 })
+
+  const { data: dbStudyMaterials, isLoading: dbStudyMaterialsIsLoading } =
+    useGetStudyMaterialsQuery(sliceMissingIds, {
+      skip: sliceMissingIds.length === 0,
+    })
+
+  const dbIsLoading = useMemo(
+    () => dbSubjectsIsLoading || dbStudyMaterialsIsLoading,
+    [dbSubjectsIsLoading, dbStudyMaterialsIsLoading],
   )
 
   useEffect(() => {
-    if (dbIsLoading) return
+    if (dbSubjectsIsLoading) return
 
     if (dbSubjects && dbSubjects.length > 0) {
       log('[useSubjectCache_hydrate] hydrate slice:', dbSubjects.length)
       dispatch(subjectsReceived(dbSubjects))
     }
-  }, [dispatch, dbSubjects, dbIsLoading])
+  }, [dispatch, dbSubjects, dbSubjectsIsLoading])
+
+  useEffect(() => {
+    if (dbStudyMaterialsIsLoading) return
+
+    if (dbStudyMaterials && dbStudyMaterials.length > 0) {
+      dispatch(studyMaterialsReceived(dbStudyMaterials))
+    }
+  }, [dispatch, dbStudyMaterials, dbStudyMaterialsIsLoading])
 
   const isLoading = useMemo(() => {
     // Ensures that subjects slice state gets hydrated before the UI is

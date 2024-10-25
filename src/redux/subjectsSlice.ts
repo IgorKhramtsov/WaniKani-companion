@@ -5,13 +5,16 @@ import { EnrichedSubject } from '../utils/answerChecker/types/enrichedSubject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { Radical } from '../types/radical'
+import { StudyMaterial } from '../types/studyMaterial'
 
 export interface SubjectsSlice {
   subjects: Record<number, Subject>
+  studyMaterials: Record<number, StudyMaterial>
 }
 
 const initialState: SubjectsSlice = {
   subjects: {},
+  studyMaterials: {},
 }
 
 export const subjectsSlice = createSlice({
@@ -23,9 +26,14 @@ export const subjectsSlice = createSlice({
         (acc, subject) => ({ ...acc, [subject.id]: subject }),
         state.subjects,
       )
-      console.log(
-        '[subjectsSlice] subjects length after subjectsReceived:',
-        Object.keys(state.subjects).length,
+    },
+    studyMaterialsReceived(state, action: PayloadAction<StudyMaterial[]>) {
+      state.studyMaterials = action.payload.reduce(
+        (acc, studyMaterial) => ({
+          ...acc,
+          [studyMaterial.subject_id]: studyMaterial,
+        }),
+        state.studyMaterials,
       )
     },
   },
@@ -44,13 +52,15 @@ export const selectSubjects = (ids: number[]) => (state: RootState) =>
 
 const selectEnrichedSubjectsInner = createSelector(
   selectAllSubjects,
+  (state: RootState) => state.subjectsSlice.studyMaterials,
   (_: RootState, ids: number[]) => ids,
-  (allSubjects, ids): EnrichedSubject[] => {
+  (allSubjects, allStudyMaterials, ids): EnrichedSubject[] => {
     const subjects = ids
       .map(id => allSubjects[id])
       .filter((e): e is Subject => e !== undefined)
     const enrichedSubjects: EnrichedSubject[] = []
     for (const subject of subjects) {
+      const studyMaterial = allStudyMaterials[subject.id]
       const radicals: Radical[] = []
       const kanji: Kanji[] = []
       const vocabulary: Vocabulary[] = []
@@ -84,6 +94,7 @@ const selectEnrichedSubjectsInner = createSelector(
       }
       enrichedSubjects.push({
         subject,
+        studyMaterial,
         radicals,
         kanji,
         vocabulary,
@@ -96,6 +107,7 @@ const selectEnrichedSubjectsInner = createSelector(
 export const selectEnrichedSubjects = (ids: number[]) => (state: RootState) =>
   selectEnrichedSubjectsInner(state, ids)
 
-export const { subjectsReceived } = subjectsSlice.actions
+export const { subjectsReceived, studyMaterialsReceived } =
+  subjectsSlice.actions
 
 export default subjectsSlice.reducer

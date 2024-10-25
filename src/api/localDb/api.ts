@@ -12,7 +12,16 @@ import {
   getTableConfig,
 } from 'drizzle-orm/sqlite-core'
 import '@/src/db/schema'
-import { Query, eq, lt, gte, and, getTableColumns, or } from 'drizzle-orm'
+import {
+  Query,
+  eq,
+  lt,
+  gte,
+  and,
+  getTableColumns,
+  or,
+  inArray,
+} from 'drizzle-orm'
 import {
   levelProgressionsTable,
   reviewStatisticsTable,
@@ -138,6 +147,17 @@ export const localDbApi = createApi({
       invalidatesTags: ['StudyMaterial'],
       query: materials => upsertTable(studyMaterialsTable, materials),
     }),
+    getStudyMaterials: builder.query<StudyMaterial[], number[]>({
+      providesTags: ['StudyMaterial'],
+      query: subjectIds =>
+        qb
+          .select()
+          .from(studyMaterialsTable)
+          .where(inArray(studyMaterialsTable.subject_id, subjectIds))
+          .toSQL(),
+      transformResponse: (rows: any[]) =>
+        transformDrizzleResponse(rows, studyMaterialsTable),
+    }),
   }),
 })
 
@@ -145,6 +165,7 @@ export const {
   useGetReviewStatisticQuery,
   useGetCriticalConditionReviewStatisticsQuery,
   useGetLevelProgressionsQuery,
+  useGetStudyMaterialsQuery,
 
   useGetRecentMistakeReviewsQuery,
 

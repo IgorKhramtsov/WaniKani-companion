@@ -149,7 +149,6 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         taskType: task.type,
         input,
         subject: task.subject,
-        userSynonyms: [],
       })
 
       if (checkResult.status === 'correct') {
