@@ -3,50 +3,26 @@ import {
   useGetStudyMaterialsQuery,
 } from '@/src/api/localDb/api'
 import { useGetAssignmentForSubjectQuery } from '@/src/api/localDb/assignment'
-import {
-  useCreateStudyMaterialMutation,
-  useUpdateStudyMaterialMutation,
-} from '@/src/api/wanikaniApi'
 import { CompositionSection } from '@/src/components/CompositionPage'
 import { ContextSection } from '@/src/components/ContextPage'
 import { ExamplesSection } from '@/src/components/ExamplesPage'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { MeaningSection } from '@/src/components/MeaningPage'
 import { ReadingSection } from '@/src/components/ReadingPage'
+import {
+  SubjectMeaningsAndSynonyms,
+  SubjectMeaningsAndSynonymsRef,
+} from '@/src/components/SubjectMeaningsAndSynonyms'
 import { SubjectSymbol } from '@/src/components/SubjectSymbol'
 import { Colors } from '@/src/constants/Colors'
 import { appStyles } from '@/src/constants/styles'
 import typography from '@/src/constants/typography'
 import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { srsStageToColor, srsStageToMilestone } from '@/src/types/assignment'
-import { StudyMaterial } from '@/src/types/studyMaterial'
 import { Subject, SubjectUtils } from '@/src/types/subject'
-import { arraysEqual } from '@/src/utils/arrayUtils'
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation } from 'expo-router'
-import { toLower } from 'lodash'
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import { useAutosave } from 'react-autosave'
-import {
-  NativeSyntheticEvent,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  TextInputChangeEventData,
-  TextInputKeyPressEventData,
-  TextInputSelectionChangeEventData,
-  TextInputSubmitEditingEventData,
-  View,
-} from 'react-native'
+import { Fragment, useLayoutEffect, useMemo, useRef } from 'react'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 
 export default function Index() {
@@ -56,7 +32,7 @@ export default function Index() {
     id: string
   }>()
   const ids = useMemo(() => [parseInt(params.id ?? '')], [params.id])
-  const synonymInputRef = useRef<TextInput>(null)
+  const synonymInputRef = useRef<SubjectMeaningsAndSynonymsRef>(null)
 
   const { subjects, isLoading: isSubjectsLoading } = useSubjectCache(ids)
   const subject = useMemo((): Subject | undefined => subjects[0], [subjects])
@@ -67,124 +43,8 @@ export default function Index() {
     useGetReviewStatisticQuery(subject?.id ?? -1, { skip: !subject?.id })
   const { isLoading: isStudyMaterialLoading, data: studyMaterials } =
     useGetStudyMaterialsQuery(ids)
-  const [createStudyMaterials] = useCreateStudyMaterialMutation()
-  const [updateStudyMaterials] = useUpdateStudyMaterialMutation()
 
   const studyMaterial = useMemo(() => studyMaterials?.[0], [studyMaterials])
-  const otherPredefinedMeanings = useMemo(
-    () =>
-      subject?.meanings
-        .filter(e => !e.primary)
-        .map(e => e.meaning)
-        .map(toLower) ?? [],
-    [subject?.meanings],
-  )
-  const userSynonyms = useMemo(
-    () => (studyMaterial?.meaning_synonyms ?? []).map(toLower),
-    [studyMaterial?.meaning_synonyms],
-  )
-
-  const [synonymsValue, setSynonymsValue] = useState(userSynonyms.join(', '))
-  const [synonymsInputFocused, setSynonymsInputFocused] = useState(false)
-  const onSynonymsInputFocus = useCallback(() => {
-    // If there are no predefined meanings, we don't need to show the comma
-    if (
-      otherPredefinedMeanings.length === 0 &&
-      userSynonyms.length === 0 &&
-      synonymsValue.length === 0
-    ) {
-      // add empty whitespace at the end to track backspace
-      setSynonymsValue(prev => prev + ' ')
-      return
-    }
-
-    setSynonymsValue(prev => prev + ', ')
-    setSynonymsInputFocused(true)
-  }, [otherPredefinedMeanings, userSynonyms, synonymsValue, setSynonymsValue])
-  const onSynonymsInputBlur = useCallback(() => {
-    setSynonymsValue(prev => {
-      if (prev.trim().endsWith(',')) {
-        return prev.trim().slice(0, -1)
-      }
-      return prev
-    })
-    setSynonymsInputFocused(false)
-  }, [setSynonymsInputFocused, setSynonymsValue])
-  const synonymSubmitPressed = useCallback(
-    (e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
-      const text = e.nativeEvent.text
-      if (text.trim().endsWith(',') || text.trim().length === 0) {
-        synonymInputRef.current?.blur()
-      } else {
-        setSynonymsValue(prev => `${prev}, `)
-      }
-    },
-    [],
-  )
-  const synonymSelectionChange = useCallback(
-    (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
-      const selection = e.nativeEvent.selection
-      if (synonymsValue.startsWith(' ') && selection.start < 1) {
-        setTimeout(() => {
-          if (synonymInputRef.current) {
-            synonymInputRef.current?.setSelection(1, Math.max(selection.end, 1))
-          }
-        }, 0)
-      }
-    },
-    [synonymsValue],
-  )
-  const synonymsOnChange = useCallback(
-    (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
-      const text = e.nativeEvent.text
-      if (text.trim().length === 0) {
-        synonymInputRef.current?.blur()
-      }
-      setSynonymsValue(text)
-    },
-    [setSynonymsValue],
-  )
-  // This ensures we save the synonyms only when the user is done typing
-  const synonymsValueForSave = useMemo(
-    () => (synonymsInputFocused ? undefined : synonymsValue),
-    [synonymsInputFocused, synonymsValue],
-  )
-  useAutosave({
-    data: synonymsValueForSave,
-    onSave: data => {
-      if (data === undefined) return
-      const synonyms = data
-        .split(',')
-        .map(e => e.trim())
-        .filter(e => e.length > 0)
-      console.log('synonyms', synonyms)
-      if (arraysEqual(userSynonyms, synonyms)) return
-
-      console.log('saving synonyms', userSynonyms, synonyms)
-      try {
-        if (studyMaterial) {
-          updateStudyMaterials({
-            ...studyMaterial,
-            meaning_synonyms: synonyms,
-          }).unwrap()
-        } else {
-          if (!subject) {
-            console.error('Subject is not defined. Tried to save user synonyms')
-            return
-          }
-          createStudyMaterials({
-            subject_id: subject.id,
-            meaning_synonyms: synonyms,
-          } as StudyMaterial).unwrap()
-        }
-      } catch (e) {
-        console.error('Failed to save study material', e)
-        // Reset synonyms value if saving fails
-        setSynonymsValue(userSynonyms.join(', '))
-      }
-    },
-    saveOnUnmount: true,
-  })
 
   const isLoading = useMemo(
     () =>
@@ -286,28 +146,10 @@ export default function Index() {
             <Text style={styles.subjectMeaning}>
               {SubjectUtils.getPrimaryMeaning(subject)?.meaning ?? ''}
             </Text>
-            <View style={appStyles.row}>
-              {otherPredefinedMeanings.length > 0 && (
-                <Text style={styles.subjectOtherMeanings}>
-                  {otherPredefinedMeanings?.join(', ')}
-                </Text>
-              )}
-              <TextInput
-                style={styles.subjectOtherMeaningsInput}
-                ref={synonymInputRef}
-                value={synonymsValue}
-                blurOnSubmit={false}
-                autoCorrect={false}
-                autoCapitalize='none'
-                onFocus={onSynonymsInputFocus}
-                onBlur={onSynonymsInputBlur}
-                onChange={synonymsOnChange}
-                onSubmitEditing={synonymSubmitPressed}
-                onSelectionChange={synonymSelectionChange}
-              />
-              <View style={{ width: 8 }} />
-              <FontAwesome6 name='edit' size={18} color={Colors.gray55} />
-            </View>
+            <SubjectMeaningsAndSynonyms
+              subjectId={ids[0]}
+              ref={synonymInputRef}
+            />
           </Pressable>
         </View>
       </Fragment>
@@ -376,14 +218,5 @@ const stylesheet = createStyleSheet({
   subjectMeaning: {
     ...typography.titleB,
     height: typography.titleB.fontSize,
-  },
-  subjectOtherMeanings: {
-    ...typography.body,
-    height: typography.body.fontSize * 1.18,
-    color: Colors.gray55,
-  },
-  subjectOtherMeaningsInput: {
-    ...typography.body,
-    color: Colors.gray55,
   },
 })

@@ -10,6 +10,7 @@ import { Hint } from './Hint'
 import { Radical } from '@/src/types/radical'
 import { KanaVocabulary } from '@/src/types/kanaVocabulary'
 import { Fragment } from 'react'
+import { SubjectMeaningsAndSynonyms } from './SubjectMeaningsAndSynonyms'
 
 interface BaseProps {
   /*
@@ -68,9 +69,6 @@ export const VocabularySection = ({
   const { styles } = useStyles(stylesheet)
 
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
-  const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
-    el => el.meaning,
-  )
 
   return (
     <Fragment>
@@ -82,10 +80,10 @@ export const VocabularySection = ({
           <View style={{ height: 16 }} />
         </View>
       )}
-      {showOtherMeanings && otherMeanings.length > 0 && (
+      {showOtherMeanings && (
         <View>
           <PageSection title='Other meanings'>
-            <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
+            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>
@@ -109,12 +107,13 @@ interface KanjiProps extends BaseProps {
   subject: Kanji
 }
 
-export const KanjiSection = ({ subject, showMeaning }: KanjiProps) => {
+export const KanjiSection = ({
+  subject,
+  showMeaning,
+  showOtherMeanings = true,
+}: KanjiProps) => {
   const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
-  const otherMeanings = SubjectUtils.getOtherMeaning(subject).map(
-    el => el.meaning,
-  )
 
   return (
     <Fragment>
@@ -126,10 +125,10 @@ export const KanjiSection = ({ subject, showMeaning }: KanjiProps) => {
           <View style={{ height: 16 }} />
         </View>
       )}
-      {otherMeanings.length > 0 && (
+      {showOtherMeanings && (
         <View>
           <PageSection title='Other meanings'>
-            <Text style={typography.body}>{otherMeanings.join(', ')}</Text>
+            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>
@@ -149,7 +148,11 @@ interface RadicalProps extends BaseProps {
   subject: Radical
 }
 
-export const RadicalSection = ({ subject, showMeaning }: RadicalProps) => {
+export const RadicalSection = ({
+  subject,
+  showMeaning,
+  showOtherMeanings = true,
+}: RadicalProps) => {
   const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
@@ -159,6 +162,14 @@ export const RadicalSection = ({ subject, showMeaning }: RadicalProps) => {
         <View>
           <PageSection title='Meaning'>
             <Text style={typography.body}>{primaryMeaning}</Text>
+          </PageSection>
+          <View style={{ height: 16 }} />
+        </View>
+      )}
+      {showOtherMeanings && (
+        <View>
+          <PageSection title='Other meanings'>
+            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>
