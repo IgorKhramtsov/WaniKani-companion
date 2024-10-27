@@ -307,20 +307,20 @@ export const wanikaniApi = createApi({
     }),
     createStudyMaterial: build.mutation<StudyMaterial, StudyMaterial>({
       invalidatesTags: ['StudyMaterials'],
-      query: (studyMaterial: StudyMaterial) => ({
+      query: (param: StudyMaterial) => ({
         method: 'POST',
         url: 'study_materials',
-        body: studyMaterial,
+        body: { study_material: param },
       }),
       transformResponse: (response: ApiResponse<StudyMaterial>) =>
         transformValues({ ...response.data, id: response.id }),
     }),
     updateStudyMaterial: build.mutation<StudyMaterial, StudyMaterial>({
       invalidatesTags: ['StudyMaterials'],
-      query: (studyMaterial: StudyMaterial) => ({
+      query: (param: StudyMaterial) => ({
         method: 'PUT',
-        url: 'study_materials',
-        body: studyMaterial,
+        url: `study_materials/${param.id}`,
+        body: { study_material: param },
       }),
       transformResponse: (response: ApiResponse<StudyMaterial>) =>
         transformValues({ ...response.data, id: response.id }),

@@ -27,5 +27,18 @@ export const localDbSyncMiddleware: Middleware =
       )
     }
 
+    if (wanikaniApi.endpoints.createStudyMaterial.matchFulfilled(action)) {
+      const studyMaterial = action.payload
+      dispatch(
+        localDbApi.endpoints.saveStudyMaterials.initiate([studyMaterial]),
+      )
+    }
+    if (wanikaniApi.endpoints.updateStudyMaterial.matchFulfilled(action)) {
+      const studyMaterial = action.payload
+      dispatch(
+        localDbApi.endpoints.saveStudyMaterials.initiate([studyMaterial]),
+      )
+    }
+
     return next(action)
   }
