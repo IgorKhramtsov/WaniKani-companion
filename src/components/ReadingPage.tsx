@@ -18,6 +18,7 @@ import { appStyles } from '@/src/constants/styles'
 import { Colors } from '@/src/constants/Colors'
 import * as wanakana from 'wanakana'
 import { isKatakanaPresent } from '../utils/kanaUtils'
+import { SubjectUserReadingHint } from './SubjectUserHint'
 
 interface PageProps {
   topContent?: React.ReactNode
@@ -100,6 +101,8 @@ export const VocabularySection = ({ subject }: VocabularyProps) => {
           {subject.reading_mnemonic}
         </CustomTagRenderer>
       </PageSection>
+      <View style={{ height: 8 }} />
+      <SubjectUserReadingHint subjectId={subject.id} />
     </Fragment>
   )
 }
@@ -173,6 +176,8 @@ export const KanjiSection = ({ subject, variant }: KanjiProps) => {
         <CustomTagRenderer style={styles.explanation}>
           {subject.reading_mnemonic}
         </CustomTagRenderer>
+        <View style={{ height: 8 }} />
+        <SubjectUserReadingHint subjectId={subject.id} />
         {subject.reading_hint && (
           <View>
             <View style={{ height: 16 }} />

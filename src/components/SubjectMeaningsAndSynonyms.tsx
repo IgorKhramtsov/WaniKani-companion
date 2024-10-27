@@ -151,6 +151,7 @@ export const SubjectMeaningsAndSynonyms = forwardRef<
     [synonymsInputFocused, synonymsValue],
   )
   useAutosave({
+    interval: 100,
     data: synonymsValueForSave,
     onSave: data => {
       if (data === undefined) return

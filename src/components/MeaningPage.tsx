@@ -11,6 +11,7 @@ import { Radical } from '@/src/types/radical'
 import { KanaVocabulary } from '@/src/types/kanaVocabulary'
 import { Fragment } from 'react'
 import { SubjectMeaningsAndSynonyms } from './SubjectMeaningsAndSynonyms'
+import { SubjectUserMeaningHint } from './SubjectUserHint'
 
 interface BaseProps {
   /*
@@ -99,6 +100,8 @@ export const VocabularySection = ({
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
       </PageSection>
+      <View style={{ height: 8 }} />
+      <SubjectUserMeaningHint subjectId={subject.id} />
     </Fragment>
   )
 }
@@ -137,8 +140,14 @@ export const KanjiSection = ({
         <CustomTagRenderer style={styles.meaningExplanation}>
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
-        <View style={{ height: 16 }} />
-        <Hint>{subject.meaning_hint}</Hint>
+        <View style={{ height: 8 }} />
+        <SubjectUserMeaningHint subjectId={subject.id} />
+        {subject.meaning_hint && (
+          <>
+            <View style={{ height: 16 }} />
+            <Hint>{subject.meaning_hint}</Hint>
+          </>
+        )}
       </PageSection>
     </Fragment>
   )
@@ -179,6 +188,8 @@ export const RadicalSection = ({
           {subject.meaning_mnemonic}
         </CustomTagRenderer>
       </PageSection>
+      <View style={{ height: 8 }} />
+      <SubjectUserMeaningHint subjectId={subject.id} />
     </Fragment>
   )
 }
