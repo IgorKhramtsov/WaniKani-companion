@@ -207,6 +207,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       <Pressable style={styles.viewInfoNextButton} onPress={() => submit('')}>
         <Text style={styles.viewInfoNextButtonText}>Next</Text>
       </Pressable>
+      <View style={{ height: 160 }} />
     </View>
   )
 

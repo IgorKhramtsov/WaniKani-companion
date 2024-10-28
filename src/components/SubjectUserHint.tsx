@@ -25,6 +25,7 @@ import {
   Text,
   TextInput,
   TextInputChangeEventData,
+  TextInputKeyPressEventData,
   TextInputSubmitEditingEventData,
   View,
 } from 'react-native'
@@ -108,6 +109,16 @@ const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
         inputRef.current?.blur(),
       [],
     )
+    const onKeyPress = useCallback(
+      (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+        const key = e.nativeEvent.key
+        if (key === 'Enter') {
+          inputRef.current?.blur()
+          e.preventDefault()
+        }
+      },
+      [],
+    )
     const onChange = useCallback(
       (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
         let text = e.nativeEvent.text
@@ -126,9 +137,9 @@ const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
       data: noteValueForSave,
       onSave: data => {
         if (data === undefined) return
-        if (data.length === 0) return
+        if (data === note) return
 
-        console.log('saving note', note, noteValueForSave)
+        console.log('saving note', note, data)
         try {
           if (studyMaterial) {
             const data = Object.assign({}, studyMaterial ?? {}) as any
@@ -167,6 +178,7 @@ const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
           <TextInput
             style={styles.input}
             ref={inputRef}
+            multiline={true}
             value={noteValue}
             blurOnSubmit={false}
             autoCorrect={false}
@@ -174,6 +186,7 @@ const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
             onBlur={onBlur}
             onChange={onChange}
             onSubmitEditing={onSubmitEditing}
+            onKeyPress={onKeyPress}
           />
           {noteValue.length === 0 && (
             <View style={styles.placeholderContainer}>
@@ -209,6 +222,7 @@ const stylesheet = createStyleSheet({
   placeholder: {
     ...typography.body,
     fontWeight: '300',
+    height: typography.body.fontSize * 1.38,
     color: Colors.gray88,
   },
 })

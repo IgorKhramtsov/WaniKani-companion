@@ -84,7 +84,10 @@ export const VocabularySection = ({
       {showOtherMeanings && (
         <View>
           <PageSection title='Other meanings'>
-            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
+            <SubjectMeaningsAndSynonyms
+              location='meaning_section'
+              subjectId={subject.id}
+            />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>
@@ -131,7 +134,10 @@ export const KanjiSection = ({
       {showOtherMeanings && (
         <View>
           <PageSection title='Other meanings'>
-            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
+            <SubjectMeaningsAndSynonyms
+              location='meaning_section'
+              subjectId={subject.id}
+            />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>
@@ -178,7 +184,10 @@ export const RadicalSection = ({
       {showOtherMeanings && (
         <View>
           <PageSection title='Other meanings'>
-            <SubjectMeaningsAndSynonyms subjectId={subject.id} />
+            <SubjectMeaningsAndSynonyms
+              location='meaning_section'
+              subjectId={subject.id}
+            />
           </PageSection>
           <View style={{ height: 16 }} />
         </View>

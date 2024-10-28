@@ -147,6 +147,7 @@ export default function Index() {
               {SubjectUtils.getPrimaryMeaning(subject)?.meaning ?? ''}
             </Text>
             <SubjectMeaningsAndSynonyms
+              location='subject_page'
               subjectId={ids[0]}
               ref={synonymInputRef}
             />

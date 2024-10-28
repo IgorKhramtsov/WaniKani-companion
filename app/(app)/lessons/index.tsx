@@ -207,7 +207,7 @@ export default function Index() {
                   <Button title={buttonTitle} onPress={onPress} />
                 )}
 
-                <View style={{ height: 64 }} />
+                <View style={{ height: 300 }} />
               </View>
             )
           }
@@ -235,7 +235,7 @@ export default function Index() {
                   SubjectUtils.isKanaVocabulary(subject) ? (
                     getBottomContent({ direction: 'prev' })
                   ) : (
-                    <View style={{ height: 64 }} />
+                    <View style={{ height: 300 }} />
                   )
                 }
               />
