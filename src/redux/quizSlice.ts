@@ -89,7 +89,8 @@ const initialState: QuizSlice = {
 }
 
 export const quizSlice = createSlice({
-  name: 'subjects',
+  reducerPath: 'quizSlice',
+  name: 'quiz',
   initialState,
   reducers: {
     init(

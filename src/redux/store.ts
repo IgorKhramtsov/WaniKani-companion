@@ -1,7 +1,13 @@
-import { Middleware, configureStore } from '@reduxjs/toolkit'
-import subjectsSlice from './subjectsSlice'
-import quizSlice from './quizSlice'
-import settingsSlice from './settingsSlice'
+import {
+  Middleware,
+  combineReducers,
+  configureStore,
+  ThunkDispatch,
+  ThunkAction as TAction,
+} from '@reduxjs/toolkit'
+import { subjectsSlice } from './subjectsSlice'
+import { quizSlice } from './quizSlice'
+import { settingsSlice } from './settingsSlice'
 import { wanikaniApi } from '@/src/api/wanikaniApi'
 import { localSettingsApi } from '../api/localStorageApi'
 import {
@@ -20,7 +26,7 @@ const sentryReduxEnhancer = Sentry.createReduxEnhancer({
 
 const performanceLoggingEnabled = false
 const timingMiddleware: Middleware = store => next => (action: any) => {
-  // TODO: performance can be used to integrate measures in chrom profiler
+  // TODO: performance can be used to integrate measures in chrome profiler
   // https://gist.github.com/clarkbw/966732806e7a38f5b49fd770c62a6099
   if (!performanceLoggingEnabled) return next(action)
 
@@ -38,6 +44,15 @@ const timingMiddleware: Middleware = store => next => (action: any) => {
   console.timeEnd(name)
   return result
 }
+
+const rootReducer = combineReducers({
+  [subjectsSlice.reducerPath]: subjectsSlice.reducer,
+  [quizSlice.reducerPath]: quizSlice.reducer,
+  [settingsSlice.reducerPath]: settingsSlice.reducer,
+  [wanikaniApi.reducerPath]: wanikaniApi.reducer,
+  [localSettingsApi.reducerPath]: localSettingsApi.reducer,
+  [localDbApi.reducerPath]: localDbApi.reducer,
+})
 
 export const createStore = (
   sqliteDb: SQLiteDatabase | null,
@@ -58,23 +73,56 @@ export const createStore = (
         localDbSyncMiddleware,
         timingMiddleware,
       ),
-    reducer: {
-      subjectsSlice,
-      quizSlice,
-      settingsSlice,
-      [wanikaniApi.reducerPath]: wanikaniApi.reducer,
-      [localSettingsApi.reducerPath]: localSettingsApi.reducer,
-      [localDbApi.reducerPath]: localDbApi.reducer,
-    },
+    reducer: rootReducer,
     devTools: false,
-    enhancers: getDefaultEnhancers =>
-      getDefaultEnhancers()
-        .concat(sentryReduxEnhancer)
-        .concat(devToolsEnhancer({ trace: true })),
+    enhancers: getDefaultEnhancers => {
+      const enhancers = getDefaultEnhancers().concat(sentryReduxEnhancer)
+      return enhancers.concat(
+        devToolsEnhancer({
+          name: 'Wanikani Companion',
+          trace: true,
+          maxAge: 100,
+          actionsDenylist: [
+            'localDbApi/.*',
+            'wanikaniApi/.*',
+            'localSettingsApi/.*',
+          ],
+        }),
+      )
+    },
   })
 
-const defaultStore = createStore(null, null)
-// Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof defaultStore.getState>
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof defaultStore.dispatch
+export type RootState = ReturnType<typeof rootReducer>
+
+type SubjectsSliceAction = ReturnType<
+  (typeof subjectsSlice.actions)[keyof typeof subjectsSlice.actions]
+>
+type QuizSliceAction = ReturnType<
+  (typeof quizSlice.actions)[keyof typeof quizSlice.actions]
+>
+type SettingsSliceAction = ReturnType<
+  (typeof settingsSlice.actions)[keyof typeof settingsSlice.actions]
+>
+type WanikaniApiAction = ReturnType<
+  (typeof wanikaniApi.internalActions)[keyof typeof wanikaniApi.internalActions]
+>
+type LocalSettingsApiAction = ReturnType<
+  (typeof localSettingsApi.internalActions)[keyof typeof localSettingsApi.internalActions]
+>
+type LocalDbApiAction = ReturnType<
+  (typeof localDbApi.internalActions)[keyof typeof localDbApi.internalActions]
+>
+
+type Action =
+  | SubjectsSliceAction
+  | QuizSliceAction
+  | SettingsSliceAction
+  | WanikaniApiAction
+  | LocalSettingsApiAction
+  | LocalDbApiAction
+export type ThunkAction = TAction<any, RootState, any, Action>
+export interface AppDispatch extends ThunkDispatch<RootState, any, Action> {
+  <Action>(
+    action: Action,
+  ): Action extends (...args: any) => infer R ? R : Action
+}
