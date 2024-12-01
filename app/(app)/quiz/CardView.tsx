@@ -34,6 +34,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { useSettings } from '@/src/hooks/useSettings'
+import { useGetSubjectQuery } from '@/src/api/localDb/subject'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -62,14 +63,24 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
   const { settings } = useSettings()
+  const { data: subjectData, isLoading: subjectIsLoading } = useGetSubjectQuery(
+    task.subjectId,
+  )
+  const subject = useMemo(() => {
+    if (subjectData === undefined) return undefined
+    return subjectData
+  }, [subjectData])
+  const isLoading = useMemo(() => {
+    return subjectIsLoading
+  }, [subjectIsLoading])
   const pronunciationAudio = useMemo(() => {
-    if (SubjectUtils.isVocabulary(task.subject.subject)) {
+    if (SubjectUtils.isVocabulary(subject)) {
       return getPreferedAudio(
-        task.subject.subject.pronunciation_audios,
+        subject.pronunciation_audios,
         settings.default_voice,
       )
     }
-  }, [task.subject.subject, settings.default_voice])
+  }, [subject, settings.default_voice])
   const { playSound } = usePronunciationAudio(pronunciationAudio)
 
   const frontAnimatedStyle = useAnimatedStyle(() => {
@@ -123,15 +134,20 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const submit = useCallback(
     (input: string) => {
+      if (subject === undefined) {
+        console.error('Subject is undefined')
+        return
+      }
       // Second submit will actually submit the task and move to the next (the
       //  same as web app works)
       if (taskState.state === 'correct' || taskState.state === 'incorrect') {
         const args = {
-          id: task.subject.subject.id,
+          id: subject.id,
           type: task.type,
         }
         if (taskState.state === 'incorrect') {
-          dispatch(answeredIncorrectly(args))
+          dispatch(answeredCorrectly(args))
+          // dispatch(answeredIncorrectly(args))
         } else {
           dispatch(answeredCorrectly(args))
         }
@@ -148,7 +164,13 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       const checkResult = checkAnswer({
         taskType: task.type,
         input,
-        subject: task.subject,
+        subject: {
+          subject,
+          studyMaterial: undefined,
+          radicals: [],
+          kanji: [],
+          vocabulary: [],
+        },
       })
 
       if (checkResult.status === 'correct') {
@@ -172,6 +194,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     [
       dispatch,
       task,
+      subject,
       taskState,
       onSubmit,
       playSound,
@@ -184,8 +207,10 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     setCardState(cardState === 'input' ? 'viewInfo' : 'input')
   }, [cardState])
 
-  const subject = task.subject
-  const subjectColor = SubjectUtils.getAssociatedColor(subject.subject)
+  // const subject = task.subject
+  const subjectColor = SubjectUtils.getAssociatedColorType(
+    subject?.type ?? 'radical',
+  )
   const infoButtonVisible =
     taskState.state === 'correct' || taskState.state === 'incorrect'
 
@@ -250,22 +275,22 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         pointerEvents={cardState === 'viewInfo' ? 'auto' : 'none'}
         style={[backAnimatedStyle, styles.card, { backgroundColor: 'white' }]}>
         <View style={styles.viewInfoContainer}>
-          {task.type === 'reading' && (
+          {subject && SubjectUtils.hasReading(subject) && (
             <ReadingPage
               topContent={turnBackButton}
               bottomContent={nextButton}
               variant='extended'
-              subject={task.subject.subject}
+              subject={subject}
             />
           )}
-          {task.type === 'meaning' && (
+          {subject && task.type === 'meaning' && (
             <MeaningPage
               topContent={turnBackButton}
               // TODO: use another page layout when it is implemented
               // (subjects library view)
               showMeaning={true}
               bottomContent={nextButton}
-              subject={task.subject.subject}
+              subject={subject}
             />
           )}
         </View>

@@ -9,6 +9,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -34,6 +35,7 @@ import { appStyles } from '@/src/constants/styles'
 import { srsStageToMilestone } from '@/src/types/assignment'
 import { TaskStateWrapper } from './CardView'
 import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
+import { useGetSubjectQuery } from '@/src/api/localDb/subject'
 
 type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>
@@ -148,7 +150,24 @@ export const CardInputVariant = ({
     [setInput, task.type],
   )
 
-  const subject = task.subject.subject
+  const { data: subjectData, isLoading: subjectIsLoading } = useGetSubjectQuery(
+    task.subjectId,
+  )
+  const subject = useMemo(() => {
+    if (subjectData === undefined) return undefined
+    return subjectData
+  }, [subjectData])
+
+  if (subject === undefined) {
+    return (
+      <Fragment>
+        <View style={styles.cardTextContainer}>
+          <Text style={styles.glyphText}>{task.subjectId}</Text>
+        </View>
+      </Fragment>
+    )
+  }
+
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
   const taskStateColor =

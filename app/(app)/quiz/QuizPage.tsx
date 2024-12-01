@@ -267,8 +267,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             return
           }
           if (
-            meaningTask.subject.subject.type === 'kanji' ||
-            meaningTask.subject.subject.type === 'vocabulary'
+            meaningTask.subjectType === 'kanji' ||
+            meaningTask.subjectType === 'vocabulary'
           ) {
             if (readingTask === undefined) {
               if (__DEV__) {
@@ -280,18 +280,18 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             }
           }
           const params: CreateReviewParams = {
-            subject_id: meaningTask.subject.subject.id,
+            subject_id: meaningTask.subjectId,
             incorrect_meaning_answers: meaningTask.numberOfErrors,
             incorrect_reading_answers: readingTask?.numberOfErrors ?? 0,
           }
-          createReview(params).then(result => {
-            if (result.error === undefined) {
-              console.log('Review created successfully')
-              dispatch(markTaskPairAsReported({ taskPair: taskPair }))
-            } else {
-              console.error('Error reporting task pair', result.error)
-            }
-          })
+          // createReview(params).then(result => {
+          //   if (result.error === undefined) {
+          //     console.log('Review created successfully')
+          //     dispatch(markTaskPairAsReported({ taskPair: taskPair }))
+          //   } else {
+          //     console.error('Error reporting task pair', result.error)
+          //   }
+          // })
           break
       }
     }
@@ -415,7 +415,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                     <Text style={typeStyle}>
                       {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
                     </Text>
-                    <Text>{el.item.subject.subject.characters}</Text>
+                    <Text>{el.item.subjectId}</Text>
                     <Text>
                       {el.item.numberOfErrors > 0
                         ? `(${el.item.numberOfErrors})`
@@ -482,11 +482,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             // support seamless focus move for the keyboard.
             <Animated.View
               pointerEvents='none'
-              key={
-                nextTask.subject.subject.id +
-                nextTask.type +
-                nextTask.numberOfErrors
-              }
+              key={nextTask.subjectId + nextTask.type + nextTask.numberOfErrors}
               style={{
                 height: '100%',
                 width: '100%',
@@ -505,7 +501,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
           {currentTask && (
             <Animated.View
               key={
-                currentTask.subject.subject.id +
+                currentTask.subjectId +
                 currentTask.type +
                 currentTask.numberOfErrors
               }

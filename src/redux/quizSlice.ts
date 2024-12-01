@@ -4,7 +4,7 @@ import {
   createSelector,
   createSlice,
 } from '@reduxjs/toolkit'
-import { Subject, SubjectUtils } from '../types/subject'
+import { Subject, SubjectType, SubjectUtils } from '../types/subject'
 import { Vocabulary } from '../types/vocabulary'
 import { Kanji } from '../types/kanji'
 import { RootState } from './store'
@@ -19,35 +19,38 @@ interface BaseQuizTask {
   completed: boolean
   reported: boolean
   type: TaskType
+  subjectId: number
+  subjectType: SubjectType
   assignmentId?: number
 }
 
 interface QuizReadingTask extends BaseQuizTask {
-  subject: EnrichedSubject<Vocabulary | Kanji>
+  // subject: EnrichedSubject<Vocabulary | Kanji>
   type: 'reading'
 }
 interface QuizMeaningTask extends BaseQuizTask {
-  subject: EnrichedSubject<Subject>
+  // subject: EnrichedSubject<Subject>
   type: 'meaning'
 }
 
-export type QuizTask = QuizReadingTask | QuizMeaningTask
+export type QuizTask = BaseQuizTask
 
-export namespace QuizTaskUtils {
-  export function isMeaningTask(task: QuizTask): task is QuizMeaningTask {
-    return task.type === 'meaning'
-  }
-
-  export function isReadingTask(task: QuizTask): task is QuizReadingTask {
-    return task.type === 'reading'
-  }
-}
+// export namespace QuizTaskUtils {
+//   export function isMeaningTask(task: QuizTask): task is QuizMeaningTask {
+//     return task.type === 'meaning'
+//   }
+//
+//   export function isReadingTask(task: QuizTask): task is QuizReadingTask {
+//     return task.type === 'reading'
+//   }
+// }
 
 const createReadingTask = (
   subject: EnrichedSubject<Vocabulary | Kanji>,
   assignmentId?: number,
 ): QuizTask => ({
-  subject,
+  subjectId: subject.subject.id,
+  subjectType: subject.subject.type,
   type: 'reading',
   numberOfErrors: 0,
   completed: false,
@@ -59,7 +62,8 @@ const createMeaningTask = (
   subject: EnrichedSubject<Subject>,
   assignmentId?: number,
 ): QuizTask => ({
-  subject,
+  subjectId: subject.subject.id,
+  subjectType: subject.subject.type,
   type: 'meaning',
   numberOfErrors: 0,
   completed: false,
@@ -186,7 +190,7 @@ export const quizSlice = createSlice({
       const task = state.remainingTasks.find(
         task =>
           task.type === action.payload.type &&
-          task.subject.subject.id === action.payload.id,
+          task.subjectId === action.payload.id,
       )
       if (task === undefined) {
         console.error(
@@ -197,7 +201,19 @@ export const quizSlice = createSlice({
         )
         return
       }
-      state.remainingTasks.splice(state.remainingTasks.indexOf(task), 1)
+      // {
+      //   const start = performance.now()
+      //   const newArr = [...state.remainingTasks]
+      //   const end = performance.now()
+      //   // 20 ms for 800 subjects
+      //   console.log('new arr creation', end - start)
+      // }
+      const index = state.remainingTasks.indexOf(task)
+      const popped = state.remainingTasks.pop()
+      if (popped !== undefined) {
+        state.remainingTasks[index] = popped
+        // state.remainingTasks.splice(index, 1, popped)
+      }
       task.completed = true
       state.completedTasks.push(task)
     },
@@ -208,7 +224,7 @@ export const quizSlice = createSlice({
       const task = state.remainingTasks.find(
         task =>
           task.type === action.payload.type &&
-          task.subject.subject.id === action.payload.id,
+          task.subjectId === action.payload.id,
       )
       if (task === undefined) {
         console.error(
@@ -238,9 +254,7 @@ export const quizSlice = createSlice({
       action: PayloadAction<{ taskPair: QuizTask[] }>,
     ) {
       const tasks = state.completedTasks.filter(
-        task =>
-          task.subject.subject.id ===
-          action.payload.taskPair[0].subject.subject.id,
+        task => task.subjectId === action.payload.taskPair[0].subjectId,
       )
 
       if (tasks === undefined) {
@@ -310,16 +324,14 @@ export const selectWrapUpRemainingTasks = createSelector(
   (state: RootState) => state.quizSlice.remainingTasks,
   (state: RootState) => state.quizSlice.completedTasks,
   (remainingTasks: QuizTask[], completedTasks: QuizTask[]) => {
-    const completedSubjectIds = completedTasks.map(
-      task => task.subject.subject.id,
-    )
+    const completedSubjectIds = completedTasks.map(task => task.subjectId)
     const incorrectAnsweredSubjectIds = remainingTasks
       .filter(e => e.numberOfErrors > 0)
-      .map(e => e.subject.subject.id)
+      .map(e => e.subjectId)
     return remainingTasks.filter(
       task =>
-        completedSubjectIds.includes(task.subject.subject.id) ||
-        incorrectAnsweredSubjectIds.includes(task.subject.subject.id),
+        completedSubjectIds.includes(task.subjectId) ||
+        incorrectAnsweredSubjectIds.includes(task.subjectId),
     )
   },
 )
@@ -389,14 +401,13 @@ export const selectTaskPairsForReport = createSelector(
     )
     const readyForReportPairs = notReportedMeaningTasks.map(task => {
       if (
-        task.subject.subject.type === 'radical' ||
-        task.subject.subject.type === 'kana_vocabulary'
+        task.subjectType === 'radical' ||
+        task.subjectType === 'kana_vocabulary'
       ) {
         return [task]
       }
       const answeredReadingPair = notReportedReadings.find(
-        readingTask =>
-          readingTask.subject.subject.id === task.subject.subject.id,
+        readingTask => readingTask.subjectId === task.subjectId,
       )
       if (answeredReadingPair !== undefined) {
         return [task, answeredReadingPair]
@@ -418,15 +429,15 @@ export const selectTaskPair = (task: QuizTask) =>
     (tasks): QuizTask | undefined | false => {
       if (task.type === 'meaning') {
         if (
-          task.subject.subject.type === 'radical' ||
-          task.subject.subject.type === 'kana_vocabulary'
+          task.subjectType === 'radical' ||
+          task.subjectType === 'kana_vocabulary'
         ) {
           return false
         }
 
         const readingTask = tasks.find(
           readingTask =>
-            readingTask.subject.subject.id === task.subject.subject.id &&
+            readingTask.subjectId === task.subjectId &&
             readingTask.type === 'reading',
         )
 
@@ -435,7 +446,7 @@ export const selectTaskPair = (task: QuizTask) =>
         // This is reading task. Look for meaning pair
         const meaningTask = tasks.find(
           meaningTask =>
-            meaningTask.subject.subject.id === task.subject.subject.id &&
+            meaningTask.subjectId === task.subjectId &&
             meaningTask.type === 'meaning',
         )
 
