@@ -69,8 +69,8 @@ export const createStore = (
     devTools: false,
     enhancers: getDefaultEnhancers =>
       getDefaultEnhancers()
-        .concat(devToolsEnhancer({ trace: true }))
-        .concat(sentryReduxEnhancer),
+        .concat(sentryReduxEnhancer)
+        .concat(devToolsEnhancer({ trace: true })),
   })
 
 const defaultStore = createStore(null, null)
