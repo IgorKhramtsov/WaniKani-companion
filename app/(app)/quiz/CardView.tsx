@@ -275,14 +275,16 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         pointerEvents={cardState === 'viewInfo' ? 'auto' : 'none'}
         style={[backAnimatedStyle, styles.card, { backgroundColor: 'white' }]}>
         <View style={styles.viewInfoContainer}>
-          {subject && SubjectUtils.hasReading(subject) && (
-            <ReadingPage
-              topContent={turnBackButton}
-              bottomContent={nextButton}
-              variant='extended'
-              subject={subject}
-            />
-          )}
+          {subject &&
+            SubjectUtils.hasReading(subject) &&
+            task.type === 'reading' && (
+              <ReadingPage
+                topContent={turnBackButton}
+                bottomContent={nextButton}
+                variant='extended'
+                subject={subject}
+              />
+            )}
           {subject && task.type === 'meaning' && (
             <MeaningPage
               topContent={turnBackButton}
