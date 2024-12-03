@@ -77,18 +77,21 @@ export const createStore = (
     devTools: false,
     enhancers: getDefaultEnhancers => {
       const enhancers = getDefaultEnhancers().concat(sentryReduxEnhancer)
-      return enhancers.concat(
-        devToolsEnhancer({
-          name: 'Wanikani Companion',
-          trace: true,
-          maxAge: 100,
-          actionsDenylist: [
-            'localDbApi/.*',
-            'wanikaniApi/.*',
-            'localSettingsApi/.*',
-          ],
-        }),
-      )
+      if (__DEV__) {
+        return enhancers.concat(
+          devToolsEnhancer({
+            name: 'Wanikani Companion',
+            trace: true,
+            maxAge: 100,
+            actionsDenylist: [
+              'localDbApi/.*',
+              'wanikaniApi/.*',
+              'localSettingsApi/.*',
+            ],
+          }),
+        )
+      }
+      return enhancers
     },
   })
 
