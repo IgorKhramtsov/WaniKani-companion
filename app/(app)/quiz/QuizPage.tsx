@@ -3,6 +3,7 @@ import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
+  QuizInitElement,
   init,
   markTaskPairAsReported,
   selectAllTasksDebug,
@@ -27,7 +28,6 @@ import Animated, {
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CardView } from './CardView'
-import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { QuizMode } from '@/src/types/quizType'
 import {
@@ -35,7 +35,6 @@ import {
   useStartAssignmentMutation,
 } from '@/src/api/wanikaniApi'
 import { CreateReviewParams } from '@/src/types/createReviewParams'
-import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { AntDesign, FontAwesome6 } from '@expo/vector-icons'
 import { useSettings } from '@/src/hooks/useSettings'
@@ -44,6 +43,7 @@ import { appStyles } from '@/src/constants/styles'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { completionTitleCopywritings, getRandomCopywritings } from './utils'
 import { useGetAssignmentsQuery } from '@/src/api/localDb/assignment'
+import { useGetSubjectsQuery } from '@/src/api/localDb/subject'
 
 interface BaseProps {
   mode: QuizMode
@@ -94,6 +94,13 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     return []
   }, [props])
 
+  const subjectIds = useMemo(() => {
+    if (isSubjectProps(props)) {
+      return props.subjectIds
+    }
+    return []
+  }, [props])
+
   const { completionCopy, completionTitle } = useMemo(() => {
     switch (props.mode) {
       case 'lessonsQuiz':
@@ -119,23 +126,31 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     [moreLessonIds],
   )
 
-  const { data: assignments } = useGetAssignmentsQuery(assignmentIds)
+  const { data: assignments, isLoading: areAssignmentsLoading } =
+    useGetAssignmentsQuery(assignmentIds, {
+      skip: isSubjectProps(props),
+    })
 
-  const resolvedSubjectIds = useMemo(() => {
-    console.log('[QuizPage] resolving subjectIds')
-    if (isSubjectProps(props)) {
-      return props.subjectIds
-    }
-    return assignments?.map(assignment => assignment.subject_id) ?? []
-  }, [props, assignments])
-
-  // Hydrate subjectsSlice with data
-  const { isLoading: isSubjectCacheLoading } =
-    useSubjectCache(resolvedSubjectIds)
-  // Select enriched data from the subjectsSlice
-  const enrichedSubjects = useAppSelector(
-    selectEnrichedSubjects(resolvedSubjectIds),
+  const { data: subjects, isLoading: areSubjectsLoading } = useGetSubjectsQuery(
+    subjectIds,
+    { skip: !isSubjectProps(props) },
   )
+
+  const subjectsData = useMemo(() => {
+    return (subjects ?? [])
+      .map<QuizInitElement>(e => ({
+        assignmentId: undefined,
+        subjectId: e.id,
+        subjectType: e.type,
+      }))
+      .concat(
+        (assignments ?? []).map<QuizInitElement>(e => ({
+          assignmentId: e.id,
+          subjectId: e.subject_id,
+          subjectType: e.subject_type,
+        })),
+      )
+  }, [subjects, assignments])
 
   const wrapUpEnabled = useAppSelector(selectWrapUpEnabled)
   const wrapUpRemaningTasks = useAppSelector(selectWrapUpRemainingTasks)
@@ -152,16 +167,21 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const [debugViewEnabled, setDebugViewEnabled] = useState(false)
 
   const isLoading = useMemo(() => {
-    console.log('[QuizPage]: isLoading', isSubjectCacheLoading, initiated)
-    return isSubjectCacheLoading || !initiated
-  }, [isSubjectCacheLoading, initiated])
+    console.log(
+      '[QuizPage]: isLoading',
+      areAssignmentsLoading,
+      areSubjectsLoading,
+      initiated,
+    )
+    return areAssignmentsLoading || areSubjectsLoading || !initiated
+  }, [areAssignmentsLoading, areSubjectsLoading, initiated])
 
   const progressValue = useSharedValue(0)
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
   const isReadyToInit = useMemo(() => {
-    return resolvedSubjectIds.length === enrichedSubjects.length
-  }, [enrichedSubjects.length, resolvedSubjectIds.length])
+    return subjectsData.length > 0
+  }, [subjectsData])
 
   useEffect(() => {
     // When new report is created, the api slice will invalidate Reviews cache
@@ -174,16 +194,16 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
     if (isSubjectProps(props)) {
       console.log('[QuizPage]: dispatching init for quiz')
-      dispatch(init({ enrichedSubjects, mode: props.mode }))
+      dispatch(init({ elements: subjectsData, mode: props.mode }))
     } else if (isAssignmentProps(props)) {
-      if (enrichedSubjects.length === 0 || (assignments?.length ?? 0) === 0) {
-        console.log('[QuizPage]: subjects or assignments are empty. Waiting.')
+      if ((subjectsData?.length ?? 0) === 0) {
+        console.log('[QuizPage]: subjectsData is empty. Waiting.')
         return
       } else {
         console.log(
           '[QuizPage]: dispatching init with assignments and subjects',
         )
-        dispatch(init({ enrichedSubjects, assignments, mode: props.mode }))
+        dispatch(init({ elements: subjectsData, mode: props.mode }))
       }
     } else {
       throw new Error(
@@ -191,7 +211,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
       )
     }
     setInitiated(true)
-  }, [enrichedSubjects, dispatch, assignments, props, initiated, isReadyToInit])
+  }, [subjectsData, dispatch, assignments, props, initiated, isReadyToInit])
 
   const menuActions = useMemo(() => {
     const actions: MenuAction[] = []

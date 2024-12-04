@@ -159,13 +159,7 @@ export const CardInputVariant = ({
   }, [subjectData])
 
   if (subject === undefined) {
-    return (
-      <Fragment>
-        <View style={styles.cardTextContainer}>
-          <Text style={styles.glyphText}>{task.subjectId}</Text>
-        </View>
-      </Fragment>
-    )
+    return undefined
   }
 
   const subjectName = SubjectUtils.getSubjectName(subject)

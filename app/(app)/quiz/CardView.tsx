@@ -34,7 +34,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { useSettings } from '@/src/hooks/useSettings'
-import { useGetSubjectQuery } from '@/src/api/localDb/subject'
+import { useGetEnrichedSubjectQuery } from '@/src/api/localDb/subject'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -63,13 +63,14 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
   const { settings } = useSettings()
-  const { data: subjectData, isLoading: subjectIsLoading } = useGetSubjectQuery(
-    task.subjectId,
-  )
-  const subject = useMemo(() => {
+  // TODO: fetch study material in parallel
+  const { data: subjectData, isLoading: subjectIsLoading } =
+    useGetEnrichedSubjectQuery(task.subjectId)
+  const enrichedSubject = useMemo(() => {
     if (subjectData === undefined) return undefined
     return subjectData
   }, [subjectData])
+  const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const isLoading = useMemo(() => {
     return subjectIsLoading
   }, [subjectIsLoading])
@@ -134,7 +135,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const submit = useCallback(
     (input: string) => {
-      if (subject === undefined) {
+      if (!enrichedSubject || !subject) {
         console.error('Subject is undefined')
         return
       }
@@ -164,13 +165,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       const checkResult = checkAnswer({
         taskType: task.type,
         input,
-        subject: {
-          subject,
-          studyMaterial: undefined,
-          radicals: [],
-          kanji: [],
-          vocabulary: [],
-        },
+        subject: enrichedSubject,
       })
 
       if (checkResult.status === 'correct') {
@@ -194,6 +189,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     [
       dispatch,
       task,
+      enrichedSubject,
       subject,
       taskState,
       onSubmit,
@@ -207,10 +203,6 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     setCardState(cardState === 'input' ? 'viewInfo' : 'input')
   }, [cardState])
 
-  // const subject = task.subject
-  const subjectColor = SubjectUtils.getAssociatedColorType(
-    subject?.type ?? 'radical',
-  )
   const infoButtonVisible =
     taskState.state === 'correct' || taskState.state === 'incorrect'
 
@@ -235,6 +227,12 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       <View style={{ height: 160 }} />
     </View>
   )
+
+  if (subject === undefined) {
+    return undefined
+  }
+
+  const subjectColor = SubjectUtils.getAssociatedColorType(subject.type)
 
   return (
     <View style={{ flexGrow: 1 }}>

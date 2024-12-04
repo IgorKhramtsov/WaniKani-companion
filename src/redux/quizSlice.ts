@@ -4,17 +4,13 @@ import {
   createSelector,
   createSlice,
 } from '@reduxjs/toolkit'
-import { Subject, SubjectType, SubjectUtils } from '../types/subject'
-import { Vocabulary } from '../types/vocabulary'
-import { Kanji } from '../types/kanji'
 import { RootState } from './store'
-import { Assignment } from '../types/assignment'
 import { QuizMode } from '../types/quizType'
 import { TaskType } from '../types/quizTaskType'
-import { EnrichedSubject } from '../utils/answerChecker/types/enrichedSubject'
 import _ from 'lodash'
+import { SubjectType } from '../types/subject'
 
-interface BaseQuizTask {
+export interface QuizTask {
   numberOfErrors: number
   completed: boolean
   reported: boolean
@@ -24,51 +20,30 @@ interface BaseQuizTask {
   assignmentId?: number
 }
 
-interface QuizReadingTask extends BaseQuizTask {
-  // subject: EnrichedSubject<Vocabulary | Kanji>
-  type: 'reading'
-}
-interface QuizMeaningTask extends BaseQuizTask {
-  // subject: EnrichedSubject<Subject>
-  type: 'meaning'
+export interface QuizInitElement {
+  assignmentId?: number
+  subjectId: number
+  subjectType: SubjectType
 }
 
-export type QuizTask = BaseQuizTask
-
-// export namespace QuizTaskUtils {
-//   export function isMeaningTask(task: QuizTask): task is QuizMeaningTask {
-//     return task.type === 'meaning'
-//   }
-//
-//   export function isReadingTask(task: QuizTask): task is QuizReadingTask {
-//     return task.type === 'reading'
-//   }
-// }
-
-const createReadingTask = (
-  subject: EnrichedSubject<Vocabulary | Kanji>,
-  assignmentId?: number,
-): QuizTask => ({
-  subjectId: subject.subject.id,
-  subjectType: subject.subject.type,
+const createReadingTask = (element: QuizInitElement): QuizTask => ({
+  subjectId: element.subjectId,
+  subjectType: element.subjectType,
   type: 'reading',
   numberOfErrors: 0,
   completed: false,
   reported: false,
-  assignmentId,
+  assignmentId: element.assignmentId,
 })
 
-const createMeaningTask = (
-  subject: EnrichedSubject<Subject>,
-  assignmentId?: number,
-): QuizTask => ({
-  subjectId: subject.subject.id,
-  subjectType: subject.subject.type,
+const createMeaningTask = (element: QuizInitElement): QuizTask => ({
+  subjectId: element.subjectId,
+  subjectType: element.subjectType,
   type: 'meaning',
   numberOfErrors: 0,
   completed: false,
   reported: false,
-  assignmentId,
+  assignmentId: element.assignmentId,
 })
 
 export interface QuizSlice {
@@ -96,64 +71,38 @@ export const quizSlice = createSlice({
     init(
       state,
       action: PayloadAction<{
-        assignments?: Assignment[]
-        enrichedSubjects: EnrichedSubject[]
+        elements: QuizInitElement[]
         mode: QuizMode
       }>,
     ) {
       console.log(
         '[QuizSlice] INIT mode: ',
         action.payload.mode,
-        'subjects: ',
-        action.payload.enrichedSubjects.length,
+        'elements: ',
+        action.payload.elements.length,
         ' assignments: ',
-        action.payload?.assignments?.length,
+        action.payload?.elements?.length,
       )
-      if (action.payload.enrichedSubjects.length === 0) return
+      if (action.payload.elements.length === 0) return
 
       const readingTasks: QuizTask[] = []
       const meaningTasks: QuizTask[] = []
 
-      const createTasksFor = (
-        subject: EnrichedSubject,
-        assignment?: Assignment,
-      ) => {
-        const isReadingTaskRequired = (
-          subject: EnrichedSubject,
-        ): subject is EnrichedSubject<Vocabulary | Kanji> =>
-          SubjectUtils.isVocabulary(subject.subject) ||
-          SubjectUtils.isKanji(subject.subject)
+      const createTasksFor = (element: QuizInitElement) => {
+        const isReadingTaskRequired = (element: QuizInitElement): boolean =>
+          element.subjectType === 'vocabulary' ||
+          element.subjectType === 'kanji'
 
-        if (isReadingTaskRequired(subject)) {
-          readingTasks.push(createReadingTask(subject, assignment?.id))
+        if (isReadingTaskRequired(element)) {
+          readingTasks.push(createReadingTask(element))
         }
-        meaningTasks.push(createMeaningTask(subject, assignment?.id))
+        meaningTasks.push(createMeaningTask(element))
       }
 
       // Shuffle subjects so that we have radicals kanji and vocabulary mixed
-      const shuffledAssignments = _.shuffle(action.payload.assignments)
-
-      if (shuffledAssignments.length > 0) {
-        for (const assignment of shuffledAssignments) {
-          const subject = action.payload.enrichedSubjects.find(
-            subject => subject.subject.id === assignment.subject_id,
-          )
-          if (subject === undefined) {
-            console.error('Can not find subject for assignment: ', assignment)
-            continue
-          }
-          createTasksFor(subject, assignment)
-        }
-      } else {
-        // If there are no assignments - we might be in a quiz mode. Create
-        // tasks just based on subjects.
-
-        const shuffledEnrichedSubjects = _.shuffle(
-          action.payload.enrichedSubjects,
-        )
-        for (const subject of shuffledEnrichedSubjects) {
-          createTasksFor(subject)
-        }
+      const shuffledElements = _.shuffle(action.payload.elements)
+      for (const el of shuffledElements) {
+        createTasksFor(el)
       }
 
       const newState = Object.assign({}, initialState)
