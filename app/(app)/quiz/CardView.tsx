@@ -35,6 +35,7 @@ import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useGetEnrichedSubjectQuery } from '@/src/api/localDb/subject'
+import { useGetStudyMaterialsQuery } from '@/src/api/localDb/api'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -63,17 +64,25 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
   const { settings } = useSettings()
-  // TODO: fetch study material in parallel
   const { data: subjectData, isLoading: subjectIsLoading } =
     useGetEnrichedSubjectQuery(task.subjectId)
+  const { data: studyMaterialData, isLoading: studyMaterialIsLoading } =
+    useGetStudyMaterialsQuery([task.subjectId])
+  const studyMaterial = useMemo(() => {
+    if (studyMaterialData === undefined) return undefined
+    return studyMaterialData[0]
+  }, [studyMaterialData])
   const enrichedSubject = useMemo(() => {
     if (subjectData === undefined) return undefined
-    return subjectData
-  }, [subjectData])
+    return {
+      ...subjectData,
+      studyMaterial,
+    }
+  }, [subjectData, studyMaterial])
   const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const isLoading = useMemo(() => {
-    return subjectIsLoading
-  }, [subjectIsLoading])
+    return subjectIsLoading || studyMaterialIsLoading
+  }, [subjectIsLoading, studyMaterialIsLoading])
   const pronunciationAudio = useMemo(() => {
     if (SubjectUtils.isVocabulary(subject)) {
       return getPreferedAudio(
