@@ -31,30 +31,35 @@ import {
 import { ReviewStatistic } from '@/src/types/reviewStatistic'
 import { Review } from '@/src/types/review'
 import { LevelProgression } from '@/src/types/levelProgression'
-import {
-  dateToUnixTimestamp,
-  getLocalDayAgoTime,
-  getLocalDayStart,
-} from '@/src/utils/dateUtils'
+import { dateToUnixTimestamp, getLocalDayAgoTime } from '@/src/utils/dateUtils'
 import { StudyMaterial } from '@/src/types/studyMaterial'
+import * as Sentry from '@sentry/react-native'
 
 const qb = new QueryBuilder()
 
 const baseQueryWithSqlite =
   (db: SQLiteDatabase): BaseQueryFn<Query, unknown, unknown, any, any> =>
   async ({ sql, params }, api, extraOptions) => {
-    const statement = await db.prepareAsync(sql)
-    try {
-      const result = await statement.executeAsync(
-        params as SQLiteVariadicBindParams,
-      )
-      const values = await result.getAllAsync()
-      return { data: values }
-    } catch (error) {
-      return { error }
-    } finally {
-      await statement.finalizeAsync()
-    }
+    return Sentry.startSpan(
+      {
+        name: api.endpoint,
+        op: 'sql.query',
+      },
+      async () => {
+        const statement = await db.prepareAsync(sql)
+        try {
+          const result = await statement.executeAsync(
+            params as SQLiteVariadicBindParams,
+          )
+          const values = await result.getAllAsync()
+          return { data: values }
+        } catch (error) {
+          return { error }
+        } finally {
+          await statement.finalizeAsync()
+        }
+      },
+    )
   }
 
 export const localDbApi = createApi({
