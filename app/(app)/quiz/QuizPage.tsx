@@ -44,6 +44,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { completionTitleCopywritings, getRandomCopywritings } from './utils'
 import { useGetAssignmentsQuery } from '@/src/api/localDb/assignment'
 import { useGetSubjectsQuery } from '@/src/api/localDb/subject'
+import * as Sentry from '@sentry/react-native'
 
 interface BaseProps {
   mode: QuizMode
@@ -374,6 +375,12 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     transitionProgress.value = 0
     transitionProgress.value = withTiming(1, { duration: transitionDuration })
   }, [currentTask, transitionProgress])
+  useEffect(() => {
+    Sentry.startIdleNavigationSpan({
+      name: 'quiz/cardView',
+      op: 'navigation',
+    })
+  })
 
   const closeFunc = useCallback(() => {
     router.back()
@@ -514,7 +521,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                 ],
               }}>
               <Animated.View>
-                <CardView task={nextTask} textInputRef={nextInputRef} />
+                <CardView active={false} task={nextTask} textInputRef={nextInputRef} />
               </Animated.View>
             </Animated.View>
           )}
@@ -543,6 +550,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                   currentTaskStyle,
                 ]}>
                 <CardView
+                  active={true}
                   task={currentTask}
                   textInputRef={currentInputRef}
                   onSubmit={() => nextInputRef.current?.focus()}

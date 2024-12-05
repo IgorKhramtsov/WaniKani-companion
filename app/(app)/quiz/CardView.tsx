@@ -7,7 +7,7 @@ import {
   answeredIncorrectly,
 } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -36,6 +36,8 @@ import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { useSettings } from '@/src/hooks/useSettings'
 import { useGetEnrichedSubjectQuery } from '@/src/api/localDb/subject'
 import { useGetStudyMaterialsQuery } from '@/src/api/localDb/api'
+import { EnrichedSubject } from '@/src/utils/answerChecker/types/enrichedSubject'
+import * as Sentry from '@sentry/react-native'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -46,6 +48,10 @@ type TaskState = 'correct' | 'incorrect' | 'notAnswered' | 'warning'
 type CardState = 'input' | 'viewInfo'
 
 type CardProps = {
+  /*
+   * Whether the card is currently active (i.e. it is in the foreground)
+   */
+  active: boolean
   task: QuizTask
   textInputRef: React.RefObject<TextInput>
   onSubmit?: () => void
@@ -53,21 +59,13 @@ type CardProps = {
 
 const flipCardAnimationDuration = 500
 
-export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
-  const { styles } = useStyles(stylesheet)
-  const dispatch = useAppDispatch()
-
-  const [taskState, setTaskState] = useState<TaskStateWrapper>({
-    state: 'notAnswered',
-  })
-  const [hint, setHint] = useState<string | undefined>(undefined)
-  const [cardState, setCardState] = useState<CardState>('input')
-  const rotateY = useSharedValue(0)
-  const { settings } = useSettings()
+const useFetchEnrichedSubject = (
+  id: number,
+): { enrichedSubject: EnrichedSubject | undefined; isLoading: boolean } => {
   const { data: subjectData, isLoading: subjectIsLoading } =
-    useGetEnrichedSubjectQuery(task.subjectId)
+    useGetEnrichedSubjectQuery(id)
   const { data: studyMaterialData, isLoading: studyMaterialIsLoading } =
-    useGetStudyMaterialsQuery([task.subjectId])
+    useGetStudyMaterialsQuery([id])
   const studyMaterial = useMemo(() => {
     if (studyMaterialData === undefined) return undefined
     return studyMaterialData[0]
@@ -79,10 +77,30 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       studyMaterial,
     }
   }, [subjectData, studyMaterial])
-  const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const isLoading = useMemo(() => {
     return subjectIsLoading || studyMaterialIsLoading
   }, [subjectIsLoading, studyMaterialIsLoading])
+  return { enrichedSubject, isLoading }
+}
+
+export const CardView = ({
+  active,
+  task,
+  textInputRef,
+  onSubmit,
+}: CardProps) => {
+  const { styles } = useStyles(stylesheet)
+  const dispatch = useAppDispatch()
+
+  const [taskState, setTaskState] = useState<TaskStateWrapper>({
+    state: 'notAnswered',
+  })
+  const [hint, setHint] = useState<string | undefined>(undefined)
+  const [cardState, setCardState] = useState<CardState>('input')
+  const rotateY = useSharedValue(0)
+  const { settings } = useSettings()
+  const { enrichedSubject, isLoading } = useFetchEnrichedSubject(task.subjectId)
+  const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const pronunciationAudio = useMemo(() => {
     if (SubjectUtils.isVocabulary(subject)) {
       return getPreferedAudio(
@@ -238,13 +256,19 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   )
 
   if (subject === undefined) {
-    return undefined
+    return (
+      <Fragment>
+        <Sentry.TimeToInitialDisplay record={active} />
+      </Fragment>
+    )
   }
 
   const subjectColor = SubjectUtils.getAssociatedColorType(subject.type)
 
   return (
     <View style={{ flexGrow: 1 }}>
+      <Sentry.TimeToInitialDisplay record={active} />
+      <Sentry.TimeToFullDisplay record={active && !!subject} />
       <Animated.View
         pointerEvents={cardState === 'input' ? 'auto' : 'none'}
         style={[

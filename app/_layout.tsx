@@ -35,9 +35,12 @@ const routingInstrumentation = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: !isRunningInExpoGo(),
 })
 
+const DEBUG_SENTRY = false
+
 Sentry.init({
+  debug: __DEV__ && DEBUG_SENTRY,
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.2,
+  tracesSampleRate: __DEV__ && DEBUG_SENTRY ? 1.0 : 0.2,
   integrations: [
     routingInstrumentation,
     captureConsoleIntegration({ levels: ['warning', 'error'] }),

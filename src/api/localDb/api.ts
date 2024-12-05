@@ -34,29 +34,42 @@ import { LevelProgression } from '@/src/types/levelProgression'
 import { dateToUnixTimestamp, getLocalDayAgoTime } from '@/src/utils/dateUtils'
 import { StudyMaterial } from '@/src/types/studyMaterial'
 import * as Sentry from '@sentry/react-native'
+import { SPAN_STATUS_ERROR, SPAN_STATUS_OK } from '@sentry/core'
 
 const qb = new QueryBuilder()
 
 const baseQueryWithSqlite =
   (db: SQLiteDatabase): BaseQueryFn<Query, unknown, unknown, any, any> =>
   async ({ sql, params }, api, extraOptions) => {
-    return Sentry.startSpan(
+    return Sentry.startSpanManual(
       {
         name: api.endpoint,
         op: 'sql.query',
       },
-      async () => {
+      async span => {
         const statement = await db.prepareAsync(sql)
         try {
           const result = await statement.executeAsync(
             params as SQLiteVariadicBindParams,
           )
           const values = await result.getAllAsync()
+          span.setStatus({ code: SPAN_STATUS_OK })
           return { data: values }
         } catch (error) {
+          let errorMessage = 'Unknown error'
+          if (error instanceof Error) {
+            errorMessage = error.message
+          } else if (typeof error === 'string') {
+            errorMessage = error
+          }
+          span.setStatus({
+            code: SPAN_STATUS_ERROR,
+            message: errorMessage,
+          })
           return { error }
         } finally {
           await statement.finalizeAsync()
+          span.end()
         }
       },
     )
