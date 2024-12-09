@@ -193,24 +193,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     // We don't want to initialize the slice if we don't have all the data yet.
     if (!isReadyToInit) return
 
-    if (isSubjectProps(props)) {
-      console.log('[QuizPage]: dispatching init for quiz')
-      dispatch(init({ elements: subjectsData, mode: props.mode }))
-    } else if (isAssignmentProps(props)) {
-      if ((subjectsData?.length ?? 0) === 0) {
-        console.log('[QuizPage]: subjectsData is empty. Waiting.')
-        return
-      } else {
-        console.log(
-          '[QuizPage]: dispatching init with assignments and subjects',
-        )
-        dispatch(init({ elements: subjectsData, mode: props.mode }))
-      }
-    } else {
-      throw new Error(
-        'Invalid state. QuizPage should be passed either subject or assignment props.',
-      )
-    }
+    console.log('[QuizPage]: dispatching init for', props.mode)
+    dispatch(init({ elements: subjectsData, mode: props.mode }))
     setInitiated(true)
   }, [subjectsData, dispatch, assignments, props, initiated, isReadyToInit])
 
@@ -521,7 +505,11 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                 ],
               }}>
               <Animated.View>
-                <CardView active={false} task={nextTask} textInputRef={nextInputRef} />
+                <CardView
+                  active={false}
+                  task={nextTask}
+                  textInputRef={nextInputRef}
+                />
               </Animated.View>
             </Animated.View>
           )}

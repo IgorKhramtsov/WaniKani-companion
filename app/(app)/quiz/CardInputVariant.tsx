@@ -1,7 +1,7 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
-import { QuizTask, selectTaskPair } from '@/src/redux/quizSlice'
+import { QuizTask, selectCompletedTaskPair } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import {
@@ -60,7 +60,7 @@ export const CardInputVariant = ({
   const { data: assignment } = useGetAssignmentQuery(task.assignmentId ?? -1, {
     skip: !task.assignmentId,
   })
-  const taskPair = useAppSelector(selectTaskPair(task))
+  const taskPair = useAppSelector(selectCompletedTaskPair(task))
 
   const showToast = useCallback((content: ReactNode) => {
     toastRef.current?.show(content)
