@@ -76,7 +76,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
   const navigation = useNavigation()
-  const { settings } = useSettings()
   const currentInputRef = useRef<TextInput>(null)
   const nextInputRef = useRef<TextInput>(null)
 
@@ -271,14 +270,14 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             incorrect_meaning_answers: meaningTask.numberOfErrors,
             incorrect_reading_answers: readingTask?.numberOfErrors ?? 0,
           }
-          // createReview(params).then(result => {
-          //   if (result.error === undefined) {
-          //     console.log('Review created successfully')
-          //     dispatch(markTaskPairAsReported({ taskPair: taskPair }))
-          //   } else {
-          //     console.error('Error reporting task pair', result.error)
-          //   }
-          // })
+          createReview(params).then(result => {
+            if (result.error === undefined) {
+              console.log('Review created successfully')
+              dispatch(markTaskPairAsReported({ taskPair: taskPair }))
+            } else {
+              console.error('Error reporting task pair', result.error)
+            }
+          })
           break
       }
     }

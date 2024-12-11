@@ -174,8 +174,7 @@ export const CardView = ({
           type: task.type,
         }
         if (taskState.state === 'incorrect') {
-          dispatch(answeredCorrectly(args))
-          // dispatch(answeredIncorrectly(args))
+          dispatch(answeredIncorrectly(args))
         } else {
           dispatch(answeredCorrectly(args))
         }
