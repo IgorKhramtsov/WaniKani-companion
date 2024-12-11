@@ -1,8 +1,8 @@
 import { QuizTask } from '../types/quizTask'
 import { TaskType } from '../types/quizTaskType'
 
-const PUSH_DISTANCE = 5
-const TASKS_IN_A_ROW_THRESHOLD = 8
+export const PUSH_DISTANCE = 5
+export const TASKS_IN_A_ROW_THRESHOLD = 8
 
 export interface QueueState {
   readingTasks: QuizTask[]
