@@ -339,12 +339,14 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     transitionProgress.value = 0
     transitionProgress.value = withTiming(1, { duration: transitionDuration })
   }, [currentTask, transitionProgress])
+
+  // Start sentry navigation event on currentTask change
   useEffect(() => {
     Sentry.startIdleNavigationSpan({
       name: 'quiz/cardView',
       op: 'navigation',
     })
-  })
+  }, [currentTask])
 
   const closeFunc = useCallback(() => {
     router.back()
