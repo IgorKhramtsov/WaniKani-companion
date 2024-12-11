@@ -13,18 +13,9 @@ import {
   QueueState,
   QueueManagerHelpers,
   initialQueueState,
-} from './QueueManager'
+} from '@/src/utils/QueueManager'
 import { filterNotUndefined } from '../utils/arrayUtils'
-
-export interface QuizTask {
-  numberOfErrors: number
-  completed: boolean
-  reported: boolean
-  type: TaskType
-  subjectId: number
-  subjectType: SubjectType
-  assignmentId?: number
-}
+import { QuizTask } from '../types/quizTask'
 
 export interface QuizInitElement {
   assignmentId?: number

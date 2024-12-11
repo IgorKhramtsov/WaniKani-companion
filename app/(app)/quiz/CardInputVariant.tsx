@@ -1,7 +1,7 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
-import { QuizTask, selectCompletedTaskPair } from '@/src/redux/quizSlice'
+import { selectCompletedTaskPair } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import {
@@ -35,6 +35,7 @@ import { srsStageToMilestone } from '@/src/types/assignment'
 import { TaskStateWrapper } from './CardView'
 import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
 import { useGetSubjectQuery } from '@/src/api/localDb/subject'
+import { QuizTask } from '@/src/types/quizTask'
 
 type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>

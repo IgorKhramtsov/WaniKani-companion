@@ -1,5 +1,5 @@
+import { QuizTask } from '../types/quizTask'
 import { TaskType } from '../types/quizTaskType'
-import { QuizTask } from './quizSlice'
 
 const PUSH_DISTANCE = 5
 const TASKS_IN_A_ROW_THRESHOLD = 8

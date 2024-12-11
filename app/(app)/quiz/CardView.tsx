@@ -1,11 +1,7 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch } from '@/src/hooks/redux'
-import {
-  QuizTask,
-  answeredCorrectly,
-  answeredIncorrectly,
-} from '@/src/redux/quizSlice'
+import { answeredCorrectly, answeredIncorrectly } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -38,6 +34,7 @@ import { useGetEnrichedSubjectQuery } from '@/src/api/localDb/subject'
 import { useGetStudyMaterialsQuery } from '@/src/api/localDb/api'
 import { EnrichedSubject } from '@/src/utils/answerChecker/types/enrichedSubject'
 import * as Sentry from '@sentry/react-native'
+import { QuizTask } from '@/src/types/quizTask'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
