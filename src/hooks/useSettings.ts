@@ -37,8 +37,8 @@ export const useSettings = () => {
   useAutosave({
     data: remotePreferencesState,
     onSave: data => {
-      console.log('trying to save preferences')
       if (!data) return
+      console.log('saving preferences')
       setRemotePreferences(data)
     },
     saveOnUnmount: true,
@@ -46,8 +46,8 @@ export const useSettings = () => {
   useAutosave({
     data: localSettingsState,
     onSave: data => {
-      console.log('trying to save local settings')
       if (!data) return
+      console.log('saving local settings')
       setLocalSettings(data)
     },
     saveOnUnmount: true,

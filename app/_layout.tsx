@@ -9,16 +9,10 @@ import { Provider } from 'react-redux'
 import { RootSiblingParent } from 'react-native-root-siblings'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useReactQueryDevTools } from '@dev-plugins/react-query/build/useReactQueryDevTools'
-import {
-  PropsWithChildren,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { PropsWithChildren, Suspense, useEffect, useMemo } from 'react'
 import { Platform, Text, useColorScheme } from 'react-native'
 import * as FS from 'expo-file-system'
-import { Directory } from 'expo-file-system/next'
+import { Paths } from 'expo-file-system/next'
 import {
   DarkTheme,
   DefaultTheme,
@@ -26,7 +20,7 @@ import {
 } from '@react-navigation/native'
 import * as Sentry from '@sentry/react-native'
 import { isRunningInExpoGo } from 'expo'
-import { captureConsoleIntegration } from '@sentry/integrations'
+import { captureConsoleIntegration } from '@sentry/core'
 import { drizzle } from 'drizzle-orm/expo-sqlite'
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator'
 import migrations from '@/drizzle/migrations'
@@ -37,19 +31,21 @@ import { asyncStorageHelper } from '@/src/utils/asyncStorageHelper'
 const queryClient = new QueryClient()
 
 // Construct a new instrumentation instance. This is needed to communicate between the integration and React
-const routingInstrumentation = new Sentry.ReactNavigationInstrumentation()
+const routingInstrumentation = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: !isRunningInExpoGo(),
+})
+
+const DEBUG_SENTRY = false
 
 Sentry.init({
+  debug: __DEV__ && DEBUG_SENTRY,
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.2,
+  tracesSampleRate: __DEV__ && DEBUG_SENTRY ? 1.0 : 0.2,
   integrations: [
-    new Sentry.ReactNativeTracing({
-      // Pass instrumentation to be used as `routingInstrumentation`
-      routingInstrumentation,
-      enableNativeFramesTracking: !isRunningInExpoGo(),
-    }),
+    routingInstrumentation,
     captureConsoleIntegration({ levels: ['warning', 'error'] }),
   ],
+  enableNativeFramesTracking: !isRunningInExpoGo(),
 })
 
 export function RootLayout() {
@@ -68,8 +64,7 @@ export function RootLayout() {
   const colorScheme = useColorScheme()
   const dbDirectory = useMemo(() => {
     if (Platform.OS === 'ios') {
-      return Directory.getSharedContainerUri('group.dev.khramtsov.wanikani')
-        ?.path
+      return Paths.appleSharedContainers['group.dev.khramtsov.wanikani']?.uri
     }
     return FS.documentDirectory + 'SQLite'
   }, [])

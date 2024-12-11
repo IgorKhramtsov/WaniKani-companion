@@ -154,14 +154,23 @@ export namespace SubjectUtils {
   }
 
   export function map<T>(
-    subject: Subject,
-    mapping: Record<Subject['type'], T>,
+    type: SubjectType,
+    mapping: Record<SubjectType, T>,
   ): T {
-    return mapping[subject.type]
+    return mapping[type]
   }
 
   export function getAssociatedColor(subject: Subject): string {
-    return map(subject, {
+    return map(subject.type, {
+      kana_vocabulary: Colors.purple,
+      vocabulary: Colors.purple,
+      kanji: Colors.pink,
+      radical: Colors.blue,
+    })
+  }
+
+  export function getAssociatedColorType(type: SubjectType): string {
+    return map(type, {
       kana_vocabulary: Colors.purple,
       vocabulary: Colors.purple,
       kanji: Colors.pink,

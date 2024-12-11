@@ -1,13 +1,9 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch } from '@/src/hooks/redux'
-import {
-  QuizTask,
-  answeredCorrectly,
-  answeredIncorrectly,
-} from '@/src/redux/quizSlice'
+import { answeredCorrectly, answeredIncorrectly } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   KeyboardAvoidingView,
   Platform,
@@ -34,6 +30,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { usePronunciationAudio } from '@/src/hooks/usePronunciationAudio'
 import { getPreferedAudio } from '@/src/types/pronunciationAudio'
 import { useSettings } from '@/src/hooks/useSettings'
+import { useGetEnrichedSubjectQuery } from '@/src/api/localDb/subject'
+import { useGetStudyMaterialsQuery } from '@/src/api/localDb/api'
+import { EnrichedSubject } from '@/src/utils/answerChecker/types/enrichedSubject'
+import * as Sentry from '@sentry/react-native'
+import { QuizTask } from '@/src/types/quizTask'
 
 // Wrapper that will force component to be re-rendered even when the state is
 // the same. This allows to show incorrect animation for subsequent warnings.
@@ -44,6 +45,10 @@ type TaskState = 'correct' | 'incorrect' | 'notAnswered' | 'warning'
 type CardState = 'input' | 'viewInfo'
 
 type CardProps = {
+  /*
+   * Whether the card is currently active (i.e. it is in the foreground)
+   */
+  active: boolean
   task: QuizTask
   textInputRef: React.RefObject<TextInput>
   onSubmit?: () => void
@@ -51,7 +56,36 @@ type CardProps = {
 
 const flipCardAnimationDuration = 500
 
-export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
+const useFetchEnrichedSubject = (
+  id: number,
+): { enrichedSubject: EnrichedSubject | undefined; isLoading: boolean } => {
+  const { data: subjectData, isLoading: subjectIsLoading } =
+    useGetEnrichedSubjectQuery(id)
+  const { data: studyMaterialData, isLoading: studyMaterialIsLoading } =
+    useGetStudyMaterialsQuery([id])
+  const studyMaterial = useMemo(() => {
+    if (studyMaterialData === undefined) return undefined
+    return studyMaterialData[0]
+  }, [studyMaterialData])
+  const enrichedSubject = useMemo(() => {
+    if (subjectData === undefined) return undefined
+    return {
+      ...subjectData,
+      studyMaterial,
+    }
+  }, [subjectData, studyMaterial])
+  const isLoading = useMemo(() => {
+    return subjectIsLoading || studyMaterialIsLoading
+  }, [subjectIsLoading, studyMaterialIsLoading])
+  return { enrichedSubject, isLoading }
+}
+
+export const CardView = ({
+  active,
+  task,
+  textInputRef,
+  onSubmit,
+}: CardProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
 
@@ -62,14 +96,16 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
   const { settings } = useSettings()
+  const { enrichedSubject } = useFetchEnrichedSubject(task.subjectId)
+  const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const pronunciationAudio = useMemo(() => {
-    if (SubjectUtils.isVocabulary(task.subject.subject)) {
+    if (SubjectUtils.isVocabulary(subject)) {
       return getPreferedAudio(
-        task.subject.subject.pronunciation_audios,
+        subject.pronunciation_audios,
         settings.default_voice,
       )
     }
-  }, [task.subject.subject, settings.default_voice])
+  }, [subject, settings.default_voice])
   const { playSound } = usePronunciationAudio(pronunciationAudio)
 
   const frontAnimatedStyle = useAnimatedStyle(() => {
@@ -123,11 +159,15 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
 
   const submit = useCallback(
     (input: string) => {
+      if (!enrichedSubject || !subject) {
+        console.error('Subject is undefined')
+        return
+      }
       // Second submit will actually submit the task and move to the next (the
       //  same as web app works)
       if (taskState.state === 'correct' || taskState.state === 'incorrect') {
         const args = {
-          id: task.subject.subject.id,
+          id: subject.id,
           type: task.type,
         }
         if (taskState.state === 'incorrect') {
@@ -148,7 +188,7 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
       const checkResult = checkAnswer({
         taskType: task.type,
         input,
-        subject: task.subject,
+        subject: enrichedSubject,
       })
 
       if (checkResult.status === 'correct') {
@@ -172,6 +212,8 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     [
       dispatch,
       task,
+      enrichedSubject,
+      subject,
       taskState,
       onSubmit,
       playSound,
@@ -184,8 +226,6 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     setCardState(cardState === 'input' ? 'viewInfo' : 'input')
   }, [cardState])
 
-  const subject = task.subject
-  const subjectColor = SubjectUtils.getAssociatedColor(subject.subject)
   const infoButtonVisible =
     taskState.state === 'correct' || taskState.state === 'incorrect'
 
@@ -211,8 +251,20 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
     </View>
   )
 
+  if (subject === undefined) {
+    return (
+      <Fragment>
+        <Sentry.TimeToInitialDisplay record={active} />
+      </Fragment>
+    )
+  }
+
+  const subjectColor = SubjectUtils.getAssociatedColorType(subject.type)
+
   return (
     <View style={{ flexGrow: 1 }}>
+      <Sentry.TimeToInitialDisplay record={active} />
+      <Sentry.TimeToFullDisplay record={active && !!subject} />
       <Animated.View
         pointerEvents={cardState === 'input' ? 'auto' : 'none'}
         style={[
@@ -250,22 +302,24 @@ export const CardView = ({ task, textInputRef, onSubmit }: CardProps) => {
         pointerEvents={cardState === 'viewInfo' ? 'auto' : 'none'}
         style={[backAnimatedStyle, styles.card, { backgroundColor: 'white' }]}>
         <View style={styles.viewInfoContainer}>
-          {task.type === 'reading' && (
-            <ReadingPage
-              topContent={turnBackButton}
-              bottomContent={nextButton}
-              variant='extended'
-              subject={task.subject.subject}
-            />
-          )}
-          {task.type === 'meaning' && (
+          {subject &&
+            SubjectUtils.hasReading(subject) &&
+            task.type === 'reading' && (
+              <ReadingPage
+                topContent={turnBackButton}
+                bottomContent={nextButton}
+                variant='extended'
+                subject={subject}
+              />
+            )}
+          {subject && task.type === 'meaning' && (
             <MeaningPage
               topContent={turnBackButton}
               // TODO: use another page layout when it is implemented
               // (subjects library view)
               showMeaning={true}
               bottomContent={nextButton}
-              subject={task.subject.subject}
+              subject={subject}
             />
           )}
         </View>

@@ -4,6 +4,11 @@ import { subjectsTable } from '@/src/db/schema'
 import { SQL, and, eq, or, inArray, sql, like, Column } from 'drizzle-orm'
 import { QueryBuilder } from 'drizzle-orm/sqlite-core'
 import wanakana from 'wanakana'
+import { EnrichedSubject } from '@/src/utils/answerChecker/types/enrichedSubject'
+import { filterNotUndefined } from '@/src/utils/arrayUtils'
+import { Radical } from '@/src/types/radical'
+import { Kanji } from '@/src/types/kanji'
+import { Vocabulary } from '@/src/types/vocabulary'
 
 const qb = new QueryBuilder()
 const table = subjectsTable
@@ -16,6 +21,72 @@ export const localDbSubjectsApi = localDbApi.injectEndpoints({
       query: id => qb.select().from(table).where(eq(table.id, id)).toSQL(),
       transformResponse: (rows: any[]) =>
         transformDrizzleResponse(rows, table, false),
+    }),
+    getEnrichedSubject: builder.query<EnrichedSubject | undefined, number>({
+      providesTags: ['Subject'],
+      query: id => {
+        const subjectSq = qb
+          .$with('subject')
+          .as(qb.select().from(table).where(eq(table.id, id)))
+        const amalgamatedIdsSq = qb.$with('amalgamated_ids').as(
+          qb
+            .select({ id: sql<number>`json_each.value`.as('id') })
+            .from(table)
+            .fullJoin(sql`json_each(amalgamation_subject_ids)`, sql`true`),
+        )
+        const componentIdsSq = qb.$with('component_ids').as(
+          qb
+            .select({ id: sql<number>`json_each.value`.as('id') })
+            .from(table)
+            .fullJoin(sql`json_each(component_subject_ids)`, sql`true`),
+        )
+        // TODO: can be reduced to just searching for subjects with eq
+        // characters. Add index for that.
+        return qb
+          .with(subjectSq, amalgamatedIdsSq, componentIdsSq)
+          .select()
+          .from(table)
+          .where(
+            and(
+              or(
+                eq(table.id, qb.select({ id: subjectSq.id }).from(subjectSq)),
+                inArray(
+                  table.id,
+                  qb.select({ id: amalgamatedIdsSq.id }).from(amalgamatedIdsSq),
+                ),
+                inArray(
+                  table.id,
+                  qb.select({ id: componentIdsSq.id }).from(componentIdsSq),
+                ),
+              ),
+              eq(
+                table.characters,
+                qb.select({ characters: subjectSq.characters }).from(subjectSq),
+              ),
+            ),
+          )
+          .toSQL()
+      },
+      transformResponse: (rows: any[], _, arg) => {
+        const subjects: Subject[] = transformDrizzleResponse(rows, table)
+        const subject = subjects.find(e => e.id === arg)
+        if (!subject) {
+          console.log('subject not found', arg)
+          return undefined
+        }
+        const filter = (subjects: Subject[], type: SubjectType) => {
+          return filterNotUndefined(
+            subjects.filter(e => e.id !== arg && e.type === type),
+          )
+        }
+
+        return {
+          subject: subject,
+          radicals: filter(subjects, 'radical') as Radical[],
+          kanji: filter(subjects, 'kanji') as Kanji[],
+          vocabulary: filter(subjects, 'vocabulary') as Vocabulary[],
+        }
+      },
     }),
     getSubjects: builder.query<Subject[], number[]>({
       providesTags: ['Subject'],
@@ -85,6 +156,7 @@ export const localDbSubjectsApi = localDbApi.injectEndpoints({
 export const {
   useGetSubjectQuery,
   useGetSubjectsQuery,
+  useGetEnrichedSubjectQuery,
 
   useFindSubjectsByQuery,
 

@@ -9,6 +9,7 @@ export interface SettingsSlice {
 const initialState: SettingsSlice = {}
 
 export const settingsSlice = createSlice({
+  reducerPath: 'settingsSlice',
   name: 'settings',
   initialState,
   reducers: {

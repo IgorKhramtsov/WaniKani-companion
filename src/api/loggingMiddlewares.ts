@@ -9,7 +9,7 @@ import {
 const shouldLogExpanded = true
 const enableLogging = true
 const log = (msg: any, ...params: any[]) => {
-  if (enableLogging) console.log('[api]', msg, ...params)
+  if (enableLogging) console.log('[query]', msg, ...params)
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const logExpanded = (msg: any, ...params: any[]) => {
@@ -37,7 +37,7 @@ export const rtkQueryErrorLogger: Middleware =
           baseQueryMeta.request.url
       }
       console.error(
-        '[api]',
+        '[query]',
         'We got a rejected action!',
         `\n  error.data: "${errorData}"`,
         `\n  payload: ${payload}`,

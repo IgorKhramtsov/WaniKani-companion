@@ -1,7 +1,7 @@
 import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppSelector } from '@/src/hooks/redux'
-import { QuizTask, selectTaskPair } from '@/src/redux/quizSlice'
+import { selectCompletedTaskPair } from '@/src/redux/quizSlice'
 import { SubjectUtils } from '@/src/types/subject'
 import { StringUtils } from '@/src/utils/stringUtils'
 import {
@@ -34,6 +34,8 @@ import { appStyles } from '@/src/constants/styles'
 import { srsStageToMilestone } from '@/src/types/assignment'
 import { TaskStateWrapper } from './CardView'
 import { useGetAssignmentQuery } from '@/src/api/localDb/assignment'
+import { useGetSubjectQuery } from '@/src/api/localDb/subject'
+import { QuizTask } from '@/src/types/quizTask'
 
 type CardInputVariantProps = {
   textInputRef: React.RefObject<TextInput>
@@ -58,7 +60,7 @@ export const CardInputVariant = ({
   const { data: assignment } = useGetAssignmentQuery(task.assignmentId ?? -1, {
     skip: !task.assignmentId,
   })
-  const taskPair = useAppSelector(selectTaskPair(task))
+  const taskPair = useAppSelector(selectCompletedTaskPair(task))
 
   const showToast = useCallback((content: ReactNode) => {
     toastRef.current?.show(content)
@@ -148,7 +150,12 @@ export const CardInputVariant = ({
     [setInput, task.type],
   )
 
-  const subject = task.subject.subject
+  const { data: subject } = useGetSubjectQuery(task.subjectId)
+
+  if (subject === undefined) {
+    return undefined
+  }
+
   const subjectName = SubjectUtils.getSubjectName(subject)
   const taskName = StringUtils.capitalizeFirstLetter(task.type.toString())
   const taskStateColor =

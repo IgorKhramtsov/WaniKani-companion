@@ -3,9 +3,9 @@ import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { useAppDispatch, useAppSelector } from '@/src/hooks/redux'
 import {
+  QuizInitElement,
   init,
   markTaskPairAsReported,
-  selectAllTasksDebug,
   selectCurrentTask,
   selectNextTask,
   selectProgress,
@@ -16,7 +16,7 @@ import {
 } from '@/src/redux/quizSlice'
 import { Link, router, useNavigation } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, Keyboard, Pressable, Text, View } from 'react-native'
+import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -27,7 +27,6 @@ import Animated, {
 } from 'react-native-reanimated'
 import { createStyleSheet, useStyles } from 'react-native-unistyles'
 import { CardView } from './CardView'
-import { useSubjectCache } from '@/src/hooks/useSubjectCache'
 import { FullPageLoading } from '@/src/components/FullPageLoading'
 import { QuizMode } from '@/src/types/quizType'
 import {
@@ -35,15 +34,15 @@ import {
   useStartAssignmentMutation,
 } from '@/src/api/wanikaniApi'
 import { CreateReviewParams } from '@/src/types/createReviewParams'
-import { selectEnrichedSubjects } from '@/src/redux/subjectsSlice'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { AntDesign, FontAwesome6 } from '@expo/vector-icons'
-import { useSettings } from '@/src/hooks/useSettings'
 import { clamp } from 'lodash'
 import { appStyles } from '@/src/constants/styles'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { completionTitleCopywritings, getRandomCopywritings } from './utils'
 import { useGetAssignmentsQuery } from '@/src/api/localDb/assignment'
+import { useGetSubjectsQuery } from '@/src/api/localDb/subject'
+import * as Sentry from '@sentry/react-native'
 
 interface BaseProps {
   mode: QuizMode
@@ -76,7 +75,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const { styles } = useStyles(stylesheet)
   const dispatch = useAppDispatch()
   const navigation = useNavigation()
-  const { settings } = useSettings()
   const currentInputRef = useRef<TextInput>(null)
   const nextInputRef = useRef<TextInput>(null)
 
@@ -90,6 +88,13 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   let moreLessonIds = useMemo(() => {
     if (isAssignmentProps(props)) {
       return props.moreLessonIds ?? []
+    }
+    return []
+  }, [props])
+
+  const subjectIds = useMemo(() => {
+    if (isSubjectProps(props)) {
+      return props.subjectIds
     }
     return []
   }, [props])
@@ -119,23 +124,31 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     [moreLessonIds],
   )
 
-  const { data: assignments } = useGetAssignmentsQuery(assignmentIds)
+  const { data: assignments, isLoading: areAssignmentsLoading } =
+    useGetAssignmentsQuery(assignmentIds, {
+      skip: isSubjectProps(props),
+    })
 
-  const resolvedSubjectIds = useMemo(() => {
-    console.log('[QuizPage] resolving subjectIds')
-    if (isSubjectProps(props)) {
-      return props.subjectIds
-    }
-    return assignments?.map(assignment => assignment.subject_id) ?? []
-  }, [props, assignments])
-
-  // Hydrate subjectsSlice with data
-  const { isLoading: isSubjectCacheLoading } =
-    useSubjectCache(resolvedSubjectIds)
-  // Select enriched data from the subjectsSlice
-  const enrichedSubjects = useAppSelector(
-    selectEnrichedSubjects(resolvedSubjectIds),
+  const { data: subjects, isLoading: areSubjectsLoading } = useGetSubjectsQuery(
+    subjectIds,
+    { skip: !isSubjectProps(props) },
   )
+
+  const subjectsData = useMemo(() => {
+    return (subjects ?? [])
+      .map<QuizInitElement>(e => ({
+        assignmentId: undefined,
+        subjectId: e.id,
+        subjectType: e.type,
+      }))
+      .concat(
+        (assignments ?? []).map<QuizInitElement>(e => ({
+          assignmentId: e.id,
+          subjectId: e.subject_id,
+          subjectType: e.subject_type,
+        })),
+      )
+  }, [subjects, assignments])
 
   const wrapUpEnabled = useAppSelector(selectWrapUpEnabled)
   const wrapUpRemaningTasks = useAppSelector(selectWrapUpRemainingTasks)
@@ -143,25 +156,28 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
   const taskPairsForReport = useAppSelector(selectTaskPairsForReport)
-  const allTasksDebug = useAppSelector(selectAllTasksDebug)
   const [startAssignment] = useStartAssignmentMutation()
   const [createReview] = useCreateReviewMutation()
   // Prevent old slice state from being used before we hydrated it with new
   // data.
   const [initiated, setInitiated] = useState(false)
-  const [debugViewEnabled, setDebugViewEnabled] = useState(false)
 
   const isLoading = useMemo(() => {
-    console.log('[QuizPage]: isLoading', isSubjectCacheLoading, initiated)
-    return isSubjectCacheLoading || !initiated
-  }, [isSubjectCacheLoading, initiated])
+    console.log(
+      '[QuizPage]: isLoading',
+      areAssignmentsLoading,
+      areSubjectsLoading,
+      initiated,
+    )
+    return areAssignmentsLoading || areSubjectsLoading || !initiated
+  }, [areAssignmentsLoading, areSubjectsLoading, initiated])
 
   const progressValue = useSharedValue(0)
   const [isKeyboardVisible, setKeyboardVisible] = useState(false)
 
   const isReadyToInit = useMemo(() => {
-    return resolvedSubjectIds.length === enrichedSubjects.length
-  }, [enrichedSubjects.length, resolvedSubjectIds.length])
+    return subjectsData.length > 0
+  }, [subjectsData])
 
   useEffect(() => {
     // When new report is created, the api slice will invalidate Reviews cache
@@ -172,26 +188,10 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     // We don't want to initialize the slice if we don't have all the data yet.
     if (!isReadyToInit) return
 
-    if (isSubjectProps(props)) {
-      console.log('[QuizPage]: dispatching init for quiz')
-      dispatch(init({ enrichedSubjects, mode: props.mode }))
-    } else if (isAssignmentProps(props)) {
-      if (enrichedSubjects.length === 0 || (assignments?.length ?? 0) === 0) {
-        console.log('[QuizPage]: subjects or assignments are empty. Waiting.')
-        return
-      } else {
-        console.log(
-          '[QuizPage]: dispatching init with assignments and subjects',
-        )
-        dispatch(init({ enrichedSubjects, assignments, mode: props.mode }))
-      }
-    } else {
-      throw new Error(
-        'Invalid state. QuizPage should be passed either subject or assignment props.',
-      )
-    }
+    console.log('[QuizPage]: dispatching init for', props.mode)
+    dispatch(init({ elements: subjectsData, mode: props.mode }))
     setInitiated(true)
-  }, [enrichedSubjects, dispatch, assignments, props, initiated, isReadyToInit])
+  }, [subjectsData, dispatch, assignments, props, initiated, isReadyToInit])
 
   const menuActions = useMemo(() => {
     const actions: MenuAction[] = []
@@ -204,19 +204,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         ? 'Cancel Wrap Up'
         : `Wrap Up (${wrapUpRemaningTasks.length})`,
     })
-    if (settings.debug_mode_enabled) {
-      actions.push({
-        id: 'debug-view-all',
-        title: debugViewEnabled ? 'Disable Debug View' : 'Enable Debug View',
-      })
-    }
     return actions
-  }, [
-    debugViewEnabled,
-    settings.debug_mode_enabled,
-    wrapUpEnabled,
-    wrapUpRemaningTasks.length,
-  ])
+  }, [wrapUpEnabled, wrapUpRemaningTasks.length])
 
   useEffect(() => {
     navigation.setOptions({
@@ -225,8 +214,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
           onPressAction={({ nativeEvent }) => {
             if (nativeEvent.event === 'wrap-up') {
               dispatch(toggleWrapUp())
-            } else if (nativeEvent.event === 'debug-view-all') {
-              setDebugViewEnabled(!debugViewEnabled)
             }
           }}
           actions={menuActions}>
@@ -236,8 +223,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     })
   }, [
     menuActions,
-    settings.debug_mode_enabled,
-    debugViewEnabled,
     dispatch,
     navigation,
     wrapUpEnabled,
@@ -267,8 +252,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             return
           }
           if (
-            meaningTask.subject.subject.type === 'kanji' ||
-            meaningTask.subject.subject.type === 'vocabulary'
+            meaningTask.subjectType === 'kanji' ||
+            meaningTask.subjectType === 'vocabulary'
           ) {
             if (readingTask === undefined) {
               if (__DEV__) {
@@ -280,7 +265,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             }
           }
           const params: CreateReviewParams = {
-            subject_id: meaningTask.subject.subject.id,
+            subject_id: meaningTask.subjectId,
             incorrect_meaning_answers: meaningTask.numberOfErrors,
             incorrect_reading_answers: readingTask?.numberOfErrors ?? 0,
           }
@@ -355,6 +340,14 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     transitionProgress.value = withTiming(1, { duration: transitionDuration })
   }, [currentTask, transitionProgress])
 
+  // Start sentry navigation event on currentTask change
+  useEffect(() => {
+    Sentry.startIdleNavigationSpan({
+      name: 'quiz/cardView',
+      op: 'navigation',
+    })
+  }, [currentTask])
+
   const closeFunc = useCallback(() => {
     router.back()
   }, [])
@@ -382,54 +375,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
 
   if (isLoading) {
     return <FullPageLoading />
-  }
-
-  if (settings.debug_mode_enabled && debugViewEnabled) {
-    return (
-      <SafeAreaView edges={['top']}>
-        <View style={styles.pageContainerDebug}>
-          <View style={appStyles.rowSpaceBetween}>
-            <View />
-            <Pressable onPress={() => setDebugViewEnabled(false)}>
-              <View style={(styles.topBarCloseButton, [{ marginRight: 16 }])}>
-                <AntDesign name='close' size={32} color={Colors.gray55} />
-              </View>
-            </Pressable>
-          </View>
-          <FlatList
-            contentContainerStyle={{
-              marginHorizontal: 16,
-              paddingBottom: 82,
-            }}
-            data={allTasksDebug}
-            ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
-            renderItem={el => {
-              const typeStyle =
-                el.item.type === 'meaning'
-                  ? { color: 'black' }
-                  : { color: 'blue' }
-              return (
-                <View>
-                  <Text style={typography.body}>
-                    <Text>{el.item.completed ? '✅' : '❌'} </Text>
-                    <Text style={typeStyle}>
-                      {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
-                    </Text>
-                    <Text>{el.item.subject.subject.characters}</Text>
-                    <Text>
-                      {el.item.numberOfErrors > 0
-                        ? `(${el.item.numberOfErrors})`
-                        : ''}
-                    </Text>
-                    <Text>{el.item.reported ? '📝' : ''}</Text>
-                  </Text>
-                </View>
-              )
-            }}
-          />
-        </View>
-      </SafeAreaView>
-    )
   }
 
   return (
@@ -465,8 +410,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               onPressAction={({ nativeEvent }) => {
                 if (nativeEvent.event === 'wrap-up') {
                   dispatch(toggleWrapUp())
-                } else if (nativeEvent.event === 'debug-view-all') {
-                  setDebugViewEnabled(!debugViewEnabled)
                 }
               }}
               actions={menuActions}>
@@ -482,11 +425,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
             // support seamless focus move for the keyboard.
             <Animated.View
               pointerEvents='none'
-              key={
-                nextTask.subject.subject.id +
-                nextTask.type +
-                nextTask.numberOfErrors
-              }
+              key={nextTask.subjectId + nextTask.type + nextTask.numberOfErrors}
               style={{
                 height: '100%',
                 width: '100%',
@@ -498,14 +437,18 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                 ],
               }}>
               <Animated.View>
-                <CardView task={nextTask} textInputRef={nextInputRef} />
+                <CardView
+                  active={false}
+                  task={nextTask}
+                  textInputRef={nextInputRef}
+                />
               </Animated.View>
             </Animated.View>
           )}
           {currentTask && (
             <Animated.View
               key={
-                currentTask.subject.subject.id +
+                currentTask.subjectId +
                 currentTask.type +
                 currentTask.numberOfErrors
               }
@@ -527,6 +470,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
                   currentTaskStyle,
                 ]}>
                 <CardView
+                  active={true}
                   task={currentTask}
                   textInputRef={currentInputRef}
                   onSubmit={() => nextInputRef.current?.focus()}

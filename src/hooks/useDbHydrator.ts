@@ -264,6 +264,8 @@ export const useDbHydrator = (enabled: boolean) => {
       !apiReviewStatisticsData?.hasMore &&
       !apiStudyMaterialsData?.hasMore
     ) {
+      // TODO: do not set lastUpdate if there was an error (network/saving to
+      // local db)
       setManualTrigger(false)
       asyncStorageHelper.setLastUpdateTime(updateStart.toISOString())
       setUpdateStart(undefined)

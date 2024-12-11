@@ -41,3 +41,5 @@ plugin/**/.DS_Store
 # Widgets
 !widget/**
 widget/**/.DS_Store
+
+todo.md

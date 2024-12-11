@@ -18,6 +18,7 @@ const initialState: SubjectsSlice = {
 }
 
 export const subjectsSlice = createSlice({
+  reducerPath: 'subjectsSlice',
   name: 'subjects',
   initialState,
   reducers: {
