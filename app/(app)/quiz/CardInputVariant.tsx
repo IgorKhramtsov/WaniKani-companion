@@ -9,7 +9,6 @@ import {
   ReactNode,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -150,13 +149,7 @@ export const CardInputVariant = ({
     [setInput, task.type],
   )
 
-  const { data: subjectData, isLoading: subjectIsLoading } = useGetSubjectQuery(
-    task.subjectId,
-  )
-  const subject = useMemo(() => {
-    if (subjectData === undefined) return undefined
-    return subjectData
-  }, [subjectData])
+  const { data: subject } = useGetSubjectQuery(task.subjectId)
 
   if (subject === undefined) {
     return undefined

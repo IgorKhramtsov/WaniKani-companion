@@ -36,7 +36,6 @@ import {
 import { CreateReviewParams } from '@/src/types/createReviewParams'
 import { MenuAction, MenuView } from '@react-native-menu/menu'
 import { AntDesign, FontAwesome6 } from '@expo/vector-icons'
-import { useSettings } from '@/src/hooks/useSettings'
 import { clamp } from 'lodash'
 import { appStyles } from '@/src/constants/styles'
 import { SafeAreaView } from 'react-native-safe-area-context'

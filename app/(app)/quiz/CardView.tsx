@@ -99,7 +99,7 @@ export const CardView = ({
   const [cardState, setCardState] = useState<CardState>('input')
   const rotateY = useSharedValue(0)
   const { settings } = useSettings()
-  const { enrichedSubject, isLoading } = useFetchEnrichedSubject(task.subjectId)
+  const { enrichedSubject } = useFetchEnrichedSubject(task.subjectId)
   const subject = useMemo(() => enrichedSubject?.subject, [enrichedSubject])
   const pronunciationAudio = useMemo(() => {
     if (SubjectUtils.isVocabulary(subject)) {
