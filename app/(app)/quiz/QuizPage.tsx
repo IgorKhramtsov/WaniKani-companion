@@ -6,7 +6,6 @@ import {
   QuizInitElement,
   init,
   markTaskPairAsReported,
-  selectAllTasksDebug,
   selectCurrentTask,
   selectNextTask,
   selectProgress,
@@ -17,7 +16,7 @@ import {
 } from '@/src/redux/quizSlice'
 import { Link, router, useNavigation } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, Keyboard, Pressable, Text, View } from 'react-native'
+import { Keyboard, Pressable, Text, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 import Animated, {
   interpolate,
@@ -159,13 +158,11 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
   const taskPairsForReport = useAppSelector(selectTaskPairsForReport)
-  const allTasksDebug = useAppSelector(selectAllTasksDebug)
   const [startAssignment] = useStartAssignmentMutation()
   const [createReview] = useCreateReviewMutation()
   // Prevent old slice state from being used before we hydrated it with new
   // data.
   const [initiated, setInitiated] = useState(false)
-  const [debugViewEnabled, setDebugViewEnabled] = useState(false)
 
   const isLoading = useMemo(() => {
     console.log(
@@ -209,19 +206,8 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
         ? 'Cancel Wrap Up'
         : `Wrap Up (${wrapUpRemaningTasks.length})`,
     })
-    if (settings.debug_mode_enabled) {
-      actions.push({
-        id: 'debug-view-all',
-        title: debugViewEnabled ? 'Disable Debug View' : 'Enable Debug View',
-      })
-    }
     return actions
-  }, [
-    debugViewEnabled,
-    settings.debug_mode_enabled,
-    wrapUpEnabled,
-    wrapUpRemaningTasks.length,
-  ])
+  }, [wrapUpEnabled, wrapUpRemaningTasks.length])
 
   useEffect(() => {
     navigation.setOptions({
@@ -230,8 +216,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
           onPressAction={({ nativeEvent }) => {
             if (nativeEvent.event === 'wrap-up') {
               dispatch(toggleWrapUp())
-            } else if (nativeEvent.event === 'debug-view-all') {
-              setDebugViewEnabled(!debugViewEnabled)
             }
           }}
           actions={menuActions}>
@@ -241,8 +225,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     })
   }, [
     menuActions,
-    settings.debug_mode_enabled,
-    debugViewEnabled,
     dispatch,
     navigation,
     wrapUpEnabled,
@@ -395,54 +377,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
     return <FullPageLoading />
   }
 
-  if (settings.debug_mode_enabled && debugViewEnabled) {
-    return (
-      <SafeAreaView edges={['top']}>
-        <View style={styles.pageContainerDebug}>
-          <View style={appStyles.rowSpaceBetween}>
-            <View />
-            <Pressable onPress={() => setDebugViewEnabled(false)}>
-              <View style={(styles.topBarCloseButton, [{ marginRight: 16 }])}>
-                <AntDesign name='close' size={32} color={Colors.gray55} />
-              </View>
-            </Pressable>
-          </View>
-          <FlatList
-            contentContainerStyle={{
-              marginHorizontal: 16,
-              paddingBottom: 82,
-            }}
-            data={allTasksDebug}
-            ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
-            renderItem={el => {
-              const typeStyle =
-                el.item.type === 'meaning'
-                  ? { color: 'black' }
-                  : { color: 'blue' }
-              return (
-                <View>
-                  <Text style={typography.body}>
-                    <Text>{el.item.completed ? '✅' : '❌'} </Text>
-                    <Text style={typeStyle}>
-                      {el.item.type === 'meaning' ? 'M' : 'R'}:{' '}
-                    </Text>
-                    <Text>{el.item.subjectId}</Text>
-                    <Text>
-                      {el.item.numberOfErrors > 0
-                        ? `(${el.item.numberOfErrors})`
-                        : ''}
-                    </Text>
-                    <Text>{el.item.reported ? '📝' : ''}</Text>
-                  </Text>
-                </View>
-              )
-            }}
-          />
-        </View>
-      </SafeAreaView>
-    )
-  }
-
   return (
     <SafeAreaView edges={['top']}>
       <Pressable
@@ -476,8 +410,6 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
               onPressAction={({ nativeEvent }) => {
                 if (nativeEvent.event === 'wrap-up') {
                   dispatch(toggleWrapUp())
-                } else if (nativeEvent.event === 'debug-view-all') {
-                  setDebugViewEnabled(!debugViewEnabled)
                 }
               }}
               actions={menuActions}>

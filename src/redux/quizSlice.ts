@@ -244,15 +244,6 @@ export const selectWrapUpRemainingTasks = createSelector(
   },
 )
 
-// TODO: FIX
-export const selectAllTasksDebug = createSelector(
-  (state: RootState) => state.quizSlice.completedTasks,
-  (state: RootState) => state.quizSlice.completedTasks,
-  (completedTasks: QuizTask[], remainingTasks: QuizTask[]) => [
-    ...completedTasks,
-  ],
-)
-
 const selectRemainingTasks = createSelector(
   selectActiveQueueState,
   (queueState: QueueState) => {
