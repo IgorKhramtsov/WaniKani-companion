@@ -184,6 +184,7 @@ describe('QueueManagerHelpers', () => {
     it('re-inserts the current reading task further down the reading queue', () => {
       state.currentQueue = 'reading'
       state.readingIndex = 0
+      state.meaningIndex = 1
       const currentTask = QueueManagerHelpers.getCurrentTask(state)
       expect(currentTask?.subjectId).toBe(1)
 
@@ -200,6 +201,7 @@ describe('QueueManagerHelpers', () => {
 
     it('re-inserts the current meaning task further down the meaning queue', () => {
       state.currentQueue = 'meaning'
+      state.readingIndex = 1
       state.meaningIndex = 0
       const currentTask = QueueManagerHelpers.getCurrentTask(state)
       expect(currentTask?.subjectId).toBe(1)

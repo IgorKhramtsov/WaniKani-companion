@@ -60,8 +60,8 @@ export const QueueManagerHelpers = {
     const index =
       state.currentQueue === 'reading' ? state.readingIndex : state.meaningIndex
 
-    queue.splice(state.readingIndex, 1)
-    const newIndex = Math.max(index + PUSH_DISTANCE, queue.length - 1)
+    queue.splice(index, 1)
+    const newIndex = Math.min(index + PUSH_DISTANCE, queue.length)
     queue.splice(newIndex, 0, task)
 
     state.tasksInARow++
