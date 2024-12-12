@@ -130,6 +130,7 @@ export const quizSlice = createSlice({
         return
       }
       currentTask.completed = true
+      state.completedTasks.push(currentTask)
       QueueManagerHelpers.move(queueState)
     },
     answeredIncorrectly(
