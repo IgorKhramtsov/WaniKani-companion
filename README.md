@@ -1,14 +1,14 @@
 <p align="center">
-<img src="https://user-images.githubusercontent.com/10214025/166145969-d8f5d3a8-e2b4-4f6d-a1e9-f9f0a3b2f7f4.png" width="300" alt="WaniKani logo">
+<img src="assets/images/wanikani-companion.png" width="300" alt="WaniKani-companion logo">
 </p>
-
-<h3><p align="center">WaniKani companion</p></h3>
 
 <p align="center">
-    An (unofficial) mobile app for the [WaniKani](https://www.wanikani.com) - Japanese kanji learning platform.
+    An (unofficial) mobile app for <a href="https://www.wanikani.com">WaniKani</a> - Japanese kanji learning platform.
 </p>
 
-![](docs/preview.gif)
+<div align="center">
+<img src="docs/preview.gif" width="300" alt="WaniKani-companion app preview">
+</div>
 
 Features:
 
