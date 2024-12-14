@@ -8,6 +8,8 @@ import {
 } from './checkAnswerUtils'
 import { plugins } from './checkAnswerPlugin'
 import { EnrichedSubject } from './types/enrichedSubject'
+import { SubjectUtils } from '@/src/types/subject'
+import _ from 'lodash'
 
 type CheckAnswerParams = {
   taskType: TaskType
@@ -15,11 +17,32 @@ type CheckAnswerParams = {
   subject: EnrichedSubject
 }
 
+/// A workaround for the fact that the API doesn't return the correct value
+/// for the accepted_answer field for secondary readings.
+const patchReadings = (subject: EnrichedSubject): EnrichedSubject => {
+  subject = _.cloneDeep(subject)
+  const subjectObject = subject.subject
+  if (SubjectUtils.hasReading(subjectObject)) {
+    const accepted_reading = subjectObject.readings.find(e => e.accepted_answer)
+    if (!!accepted_reading) {
+      for (const reading of subjectObject.readings) {
+        reading.accepted_answer =
+          reading.type === accepted_reading.type
+            ? accepted_reading.accepted_answer
+            : reading.accepted_answer
+      }
+    }
+  }
+  return subject
+}
+
 export const checkAnswer = ({
   taskType,
   input,
   subject,
 }: CheckAnswerParams): AnswerCheckResult => {
+  subject = patchReadings(subject)
+
   let normalizedInput = normalizeString(input)
   const userSynonyms = subject.studyMaterial?.meaning_synonyms ?? []
   const checkResult =
