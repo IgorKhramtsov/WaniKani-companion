@@ -29,6 +29,7 @@ export const Colors = {
   gray88: '#88888C', // ios settings value
   grayEA: '#EAEAEA',
   grayDA: '#DADADA',
+  grayDF: '#DFDFDF',
   correctGreen: '#88CC01',
   green: '#5BA733',
   statisticsGreen: '#AFEC70',

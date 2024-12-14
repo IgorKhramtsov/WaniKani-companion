@@ -157,7 +157,7 @@ export default function Index() {
           <View style={{ height: 16 }} />
           <Card
             // https://knowledge.wanikani.com/getting-started/extra-study/
-            backgroundColor={Colors.grayEA}
+            backgroundColor={Colors.grayDF}
             textColor={Colors.gray55}
             layoutAnimationDuration={duration * 0.6}
             title='Extra Study'
