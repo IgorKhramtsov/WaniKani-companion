@@ -132,7 +132,7 @@ export default function Index() {
                     params: { assignmentIds: lessonIdsBatch },
                   }}
                 />
-                <View key={'spacer'} style={{ height: 16 }} />
+                <View key={'spacer'} style={{ height: 12 }} />
                 <CardButton
                   animationDirection='right'
                   animationDuration={duration}
@@ -364,7 +364,11 @@ const Card = ({
         {suptitle && (
           <Text style={[styles.text, { color: textColor }]}>{suptitle}</Text>
         )}
-        <View style={appStyles.row}>
+        {
+          // Additional spacer to compensate lack of badge
+          !badge && <View style={{ height: 4 }} />
+        }
+        <View style={styles.titleRow}>
           <Text style={[styles.textHeading, { color: textColor }]}>
             {title}
           </Text>
@@ -376,7 +380,7 @@ const Card = ({
           )}
         </View>
       </View>
-      <View style={{ height: 16 }} />
+      <View style={{ height: 12 }} />
       <Text style={[styles.text, { color: textColor }]}>{message}</Text>
       <View style={{ height: 12 }} />
       {actions}
@@ -387,18 +391,23 @@ const Card = ({
 const cardStylesheet = createStyleSheet({
   view: {
     marginHorizontal: 20,
-    padding: 20,
+    padding: 16,
     borderRadius: 4,
     borderBottomWidth: 2,
+  },
+  titleRow: {
+    ...appStyles.row,
+    alignItems: 'flex-end',
   },
   text: {
     ...typography.body,
     color: 'white',
-    lineHeight: typography.body.fontSize * 1.15,
+    lineHeight: typography.body.fontSize,
   },
   textHeading: {
     ...typography.titleC,
     color: 'white',
+    lineHeight: typography.titleC.fontSize,
   },
 })
 
@@ -406,7 +415,7 @@ type CardButtonProps = {
   animationDirection: 'left' | 'right'
   animationDuration: number
   textColor: ColorValue
-  href: Href<string | object>
+  href: Href
   label: string
   labelPrefix?: React.ReactNode
   labelPostfix?: React.ReactNode
