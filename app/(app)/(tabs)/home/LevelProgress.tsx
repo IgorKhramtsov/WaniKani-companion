@@ -152,7 +152,7 @@ const stylesheet = createStyleSheet({
     left: -2,
     height: PROGRESS_BAR_HEIGHT,
     borderRadius: 40,
-    borderColor: Colors.getDarker(Colors.white, 35),
+    borderColor: Colors.getDarker(Colors.white, 20),
     borderLeftWidth: SHADOW_OFFSET,
     borderTopWidth: SHADOW_OFFSET,
   },
