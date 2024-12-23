@@ -100,6 +100,7 @@ export const quizSlice = createSlice({
       newState.queueState = Object.assign({}, initialQueueState, {
         readingTasks,
         meaningTasks,
+        currentQueue: readingTasks.length > 0 ? 'reading' : 'meaning',
       })
       newState.status = 'idle'
       return newState

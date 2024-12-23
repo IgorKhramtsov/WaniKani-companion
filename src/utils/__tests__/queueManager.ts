@@ -84,8 +84,17 @@ describe('QueueManagerHelpers', () => {
     it('returns undefined if there is no next task', () => {
       state.currentQueue = 'reading'
       state.readingIndex = 9
+      state.meaningIndex = 10
       const task = QueueManagerHelpers.peekNextTask(state)
       expect(task).toBeUndefined()
+    })
+
+    it('returns the next meaning task when currentQueue is reading and it we are on the last task', () => {
+      state.currentQueue = 'reading'
+      state.readingIndex = 9
+      const task = QueueManagerHelpers.peekNextTask(state)
+      const expected = state.meaningTasks[state.meaningIndex]
+      expect(task).toBe(expected)
     })
   })
 
@@ -201,13 +210,42 @@ describe('QueueManagerHelpers', () => {
       ])
       expect(state.tasksInARow).toBe(1)
     })
+
+    it('re-inserts the current meaning task at the end of meaning queue when is only one task and switches the queue', () => {
+      state.currentQueue = 'meaning'
+      state.meaningIndex = 9
+      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      expect(currentTask?.subjectId).toBe(10)
+
+      QueueManagerHelpers.push(state)
+      expect(state.meaningTasks.map(t => t.subjectId)).toEqual([
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      ])
+      expect(state.tasksInARow).toBe(0)
+      expect(state.currentQueue).toBe('reading')
+    })
+
+    it('re-inserts the current meaning task at the end of meaning queue when is only one task and does not switch the queue to the empty one', () => {
+      state.currentQueue = 'meaning'
+      state.meaningIndex = 9
+      state.readingIndex = readingTasks.length
+      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      expect(currentTask?.subjectId).toBe(10)
+
+      QueueManagerHelpers.push(state)
+      expect(state.meaningTasks.map(t => t.subjectId)).toEqual([
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      ])
+      expect(state.currentQueue).toBe('meaning')
+    })
   })
 
-  describe('switchQueueIfNeeded', () => {
+  describe('shouldSwitchQueue and switchQueue', () => {
     it('switches from reading to meaning if reading tasks are completed', () => {
       state.currentQueue = 'reading'
       state.readingIndex = readingTasks.length
-      QueueManagerHelpers.switchQueueIfNeeded(state)
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeTruthy()
+      QueueManagerHelpers.switchQueue(state)
       expect(state.currentQueue).toBe('meaning')
       expect(state.tasksInARow).toBe(0)
     })
@@ -215,7 +253,8 @@ describe('QueueManagerHelpers', () => {
     it('switches from meaning to reading if meaning tasks are completed', () => {
       state.currentQueue = 'meaning'
       state.meaningIndex = meaningTasks.length
-      QueueManagerHelpers.switchQueueIfNeeded(state)
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeTruthy()
+      QueueManagerHelpers.switchQueue(state)
       expect(state.currentQueue).toBe('reading')
       expect(state.tasksInARow).toBe(0)
     })
@@ -223,17 +262,33 @@ describe('QueueManagerHelpers', () => {
     it('switches if tasksInARow > TASKS_IN_A_ROW_THRESHOLD', () => {
       state.tasksInARow = TASKS_IN_A_ROW_THRESHOLD + 1
       state.currentQueue = 'reading'
-      QueueManagerHelpers.switchQueueIfNeeded(state)
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeTruthy()
+      QueueManagerHelpers.switchQueue(state)
       expect(state.currentQueue).toBe('meaning')
       expect(state.tasksInARow).toBe(0)
     })
 
-    it('does not switch if conditions are not met', () => {
+    it('does not switch if tasks in a row is less than the threshold', () => {
       state.currentQueue = 'reading'
       state.tasksInARow = 1
-      QueueManagerHelpers.switchQueueIfNeeded(state)
-      expect(state.currentQueue).toBe('reading')
-      expect(state.tasksInARow).toBe(1)
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeFalsy()
+    })
+
+    it('does not switch after switching ones on queue completion', () => {
+      state.currentQueue = 'reading'
+      state.tasksInARow = readingTasks.length
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeTruthy()
+      QueueManagerHelpers.switchQueue(state)
+      expect(state.currentQueue).toBe('meaning')
+      expect(state.tasksInARow).toBe(0)
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeFalsy()
+    })
+
+    it('does not switch if there are no elements in other queue', () => {
+      state.currentQueue = 'reading'
+      state.meaningIndex = meaningTasks.length
+      state.tasksInARow = readingTasks.length
+      expect(QueueManagerHelpers.shouldSwitchQueue(state)).toBeFalsy()
     })
   })
 })
