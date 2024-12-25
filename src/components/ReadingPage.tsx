@@ -194,7 +194,7 @@ const stylesheet = createStyleSheet({
     flexGrow: 0,
   },
   flatListSeparator: {
-    width: 24,
+    height: 16,
   },
   readingsRow: {
     ...appStyles.row,
