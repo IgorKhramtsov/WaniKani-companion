@@ -5,7 +5,7 @@ on:
     branches:
       - "dev"
       - "prod"
-
+  workflow_dispatch:
 concurrency:
   group: ${{ github.ref }}-ci  # Unique group per branch (dev-ci, prod-ci, etc.)
   cancel-in-progress: true  # This cancels previous workflow if a new one starts
