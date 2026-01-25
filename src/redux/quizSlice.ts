@@ -15,13 +15,16 @@ import {
   initialQueueState,
 } from '@/src/utils/QueueManager'
 import { filterNotUndefined } from '../utils/arrayUtils'
-import { QuizTask } from '../types/quizTask'
+import { QuizTask, QuizTaskHandle } from '../types/quizTask'
 
 export interface QuizInitElement {
   assignmentId?: number
   subjectId: number
   subjectType: SubjectType
 }
+
+const getKey = (element: QuizTaskHandle) =>
+  `${element.subjectId}-${element.type}`
 
 const createTask = (element: QuizInitElement, type: TaskType): QuizTask => ({
   subjectId: element.subjectId,
@@ -36,6 +39,7 @@ const createTask = (element: QuizInitElement, type: TaskType): QuizTask => ({
 export interface QuizSlice {
   queueState: QueueState
   wrapUpQueueState: QueueState
+  tasks: Record<string, QuizTask>
   completedTasks: QuizTask[]
   mode: QuizMode
   status: 'idle' | 'loading' | 'failed'
@@ -46,6 +50,7 @@ export interface QuizSlice {
 const initialState: QuizSlice = {
   queueState: initialQueueState,
   wrapUpQueueState: initialQueueState,
+  tasks: {},
   completedTasks: [],
   status: 'loading',
   mode: 'quiz',
@@ -97,9 +102,18 @@ export const quizSlice = createSlice({
       const newState = Object.assign({}, initialState)
       // TODO: Respect user's setting of review ordering
       newState.mode = action.payload.mode
+      newState.tasks = Object.fromEntries(
+        meaningTasks.concat(readingTasks).map(t => [getKey(t), t]),
+      )
       newState.queueState = Object.assign({}, initialQueueState, {
-        readingTasks,
-        meaningTasks,
+        readingTasks: readingTasks.map(t => ({
+          subjectId: t.subjectId,
+          type: t.type,
+        })),
+        meaningTasks: meaningTasks.map(t => ({
+          subjectId: t.subjectId,
+          type: t.type,
+        })),
         currentQueue: readingTasks.length > 0 ? 'reading' : 'meaning',
       })
       newState.status = 'idle'
@@ -109,7 +123,8 @@ export const quizSlice = createSlice({
       state.wrapUpEnabled = !state.wrapUpEnabled
       if (!state.wrapUpEnabled) return
 
-      const { wrapUpMeaningTasks, wrapUpReadingTasks } = getWrapUpTasks(
+      const { wrapUpMeaningTasks, wrapUpReadingTasks } = getWrapUpTaskHandles(
+        state.tasks,
         state.completedTasks,
         state.queueState,
       )
@@ -125,7 +140,9 @@ export const quizSlice = createSlice({
       const queueState = state.wrapUpEnabled
         ? state.wrapUpQueueState
         : state.queueState
-      const currentTask = QueueManagerHelpers.getCurrentTask(queueState)
+      const currentTaskHanlde =
+        QueueManagerHelpers.getCurrentTaskHandle(queueState)
+      const currentTask = getTask(state.tasks, currentTaskHanlde)
       if (currentTask === undefined) {
         console.error('currentTask is undefined')
         return
@@ -141,7 +158,9 @@ export const quizSlice = createSlice({
       const queueState = state.wrapUpEnabled
         ? state.wrapUpQueueState
         : state.queueState
-      const currentTask = QueueManagerHelpers.getCurrentTask(queueState)
+      const currentTaskHanlde =
+        QueueManagerHelpers.getCurrentTaskHandle(queueState)
+      const currentTask = getTask(state.tasks, currentTaskHanlde)
       if (currentTask === undefined) {
         console.error('currentTask is undefined')
         return
@@ -176,16 +195,26 @@ export const {
   markTaskPairAsReported,
 } = quizSlice.actions
 
-const getWrapUpTasks = (completedTasks: QuizTask[], queueState: QueueState) => {
+const getTask = (
+  tasks: Record<string, QuizTask>,
+  handle: QuizTaskHandle | undefined,
+) => (handle ? tasks[getKey(handle)] : undefined)
+
+const getWrapUpTaskHandles = (
+  tasks: Record<string, QuizTask>,
+  completedTasks: QuizTask[],
+  queueState: QueueState,
+) => {
   const completedSubjectIds = completedTasks.map(task => task.subjectId)
   const remainingReadingTasks =
-    QueueManagerHelpers.getRemainingReadingTasks(queueState)
+    QueueManagerHelpers.getRemainingReadingTaskHandles(queueState)
   const remainingMeaningTasks =
-    QueueManagerHelpers.getRemainingMeaningTasks(queueState)
+    QueueManagerHelpers.getRemainingMeaningTaskHandles(queueState)
   const remainingTasks = remainingReadingTasks.concat(remainingMeaningTasks)
   const incorrectlyAnsweredSubjectIds = remainingTasks
-    .filter(e => e.numberOfErrors > 0)
-    .map(e => e.subjectId)
+    .map(e => getTask(tasks, e))
+    .filter(e => (e?.numberOfErrors ?? 0) > 0)
+    .map(e => e?.subjectId)
   const wrapUpMeaningTasks = remainingMeaningTasks.filter(
     task =>
       completedSubjectIds.includes(task.subjectId) ||
@@ -215,21 +244,27 @@ const selectActiveQueueState = createSelector(
   },
 )
 
-export const selectWrapUpRemainingTasks = createSelector(
+export const selectWrapUpRemainingTaskHandles = createSelector(
+  (state: RootState) => state.quizSlice.tasks,
   (state: RootState) => state.quizSlice.completedTasks,
   (state: RootState) => state.quizSlice.queueState,
   (state: RootState) => state.quizSlice.wrapUpQueueState,
   (state: RootState) => state.quizSlice.wrapUpEnabled,
   (
+    tasks: Record<string, QuizTask>,
     completedTasks: QuizTask[],
     queueState: QueueState,
     wrapUpQueueState: QueueState,
     wrapUpEnabled: boolean,
   ) => {
     if (wrapUpEnabled) {
-      return QueueManagerHelpers.getRemainingMeaningTasks(wrapUpQueueState)
+      // Why we retrieve only meaning tasks here?
+      return QueueManagerHelpers.getRemainingMeaningTaskHandles(
+        wrapUpQueueState,
+      )
     }
-    const { wrapUpMeaningTasks, wrapUpReadingTasks } = getWrapUpTasks(
+    const { wrapUpMeaningTasks, wrapUpReadingTasks } = getWrapUpTaskHandles(
+      tasks,
       completedTasks,
       queueState,
     )
@@ -237,12 +272,12 @@ export const selectWrapUpRemainingTasks = createSelector(
   },
 )
 
-const selectRemainingTasks = createSelector(
+const selectRemainingTaskHandles = createSelector(
   selectActiveQueueState,
   (queueState: QueueState) => {
-    return QueueManagerHelpers.getRemainingMeaningTasks(queueState).concat(
-      QueueManagerHelpers.getRemainingReadingTasks(queueState),
-    )
+    return QueueManagerHelpers.getRemainingMeaningTaskHandles(
+      queueState,
+    ).concat(QueueManagerHelpers.getRemainingReadingTaskHandles(queueState))
   },
 )
 
@@ -250,12 +285,12 @@ export const selectWrapUpEnabled = (state: RootState) =>
   state.quizSlice.wrapUpEnabled
 export const selectStatus = (state: RootState) => state.quizSlice.status
 export const selectProgress = createSelector(
-  selectRemainingTasks,
+  selectRemainingTaskHandles,
   (state: RootState) => state.quizSlice.completedTasks,
   (state: RootState) => state.quizSlice.wrapUpEnabled,
-  (remainingTasks, completedTasks) => {
+  (remainingTaskHandles, completedTasks) => {
     const completed = completedTasks.length
-    const remaining = remainingTasks.length
+    const remaining = remainingTaskHandles.length
     const total = remaining + completed
     if (total === 0) return 0
 
@@ -263,12 +298,16 @@ export const selectProgress = createSelector(
   },
 )
 export const selectCurrentTask = createSelector(
+  (state: RootState) => state.quizSlice.tasks,
   selectActiveQueueState,
-  queueState => QueueManagerHelpers.getCurrentTask(queueState),
+  (tasks, queueState): QuizTask | undefined =>
+    getTask(tasks, QueueManagerHelpers.getCurrentTaskHandle(queueState)),
 )
 export const selectNextTask = createSelector(
+  (state: RootState) => state.quizSlice.tasks,
   selectActiveQueueState,
-  queueState => QueueManagerHelpers.peekNextTask(queueState),
+  (tasks, queueState): QuizTask | undefined =>
+    getTask(tasks, QueueManagerHelpers.peekNextTaskHandle(queueState)),
 )
 export const selectTaskPairsForReport = createSelector(
   (state: RootState) => state.quizSlice.completedTasks,

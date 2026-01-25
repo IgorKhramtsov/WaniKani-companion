@@ -1,12 +1,12 @@
-import { QuizTask } from '../types/quizTask'
+import { QuizTaskHandle } from '../types/quizTask'
 import { TaskType } from '../types/quizTaskType'
 
 export const PUSH_DISTANCE = 5
 export const TASKS_IN_A_ROW_THRESHOLD = 8
 
 export interface QueueState {
-  readingTasks: QuizTask[]
-  meaningTasks: QuizTask[]
+  readingTasks: QuizTaskHandle[]
+  meaningTasks: QuizTaskHandle[]
   currentQueue: TaskType
   readingIndex: number
   meaningIndex: number
@@ -23,7 +23,7 @@ export const initialQueueState = Object.freeze({
 })
 
 export const QueueManagerHelpers = {
-  getCurrentTask(state: QueueState): QuizTask | undefined {
+  getCurrentTaskHandle(state: QueueState): QuizTaskHandle | undefined {
     return state.currentQueue === 'reading'
       ? state.readingTasks[state.readingIndex]
       : state.meaningTasks[state.meaningIndex]
@@ -33,12 +33,12 @@ export const QueueManagerHelpers = {
       ? state.readingIndex
       : state.meaningIndex
   },
-  getCurrentQueue(state: QueueState): QuizTask[] {
+  getCurrentQueue(state: QueueState): QuizTaskHandle[] {
     return state.currentQueue === 'reading'
       ? state.readingTasks
       : state.meaningTasks
   },
-  peekNextTask(state: QueueState): QuizTask | undefined {
+  peekNextTaskHandle(state: QueueState): QuizTaskHandle | undefined {
     const currentIndex = this.getCurrentIndex(state)
     const currentQueue = this.getCurrentQueue(state)
     const otherIndex =
@@ -50,10 +50,10 @@ export const QueueManagerHelpers = {
     }
     return currentQueue[currentIndex + 1] ?? otherQueue[otherIndex]
   },
-  getRemainingReadingTasks(state: QueueState): QuizTask[] {
+  getRemainingReadingTaskHandles(state: QueueState): QuizTaskHandle[] {
     return state.readingTasks.slice(state.readingIndex)
   },
-  getRemainingMeaningTasks(state: QueueState): QuizTask[] {
+  getRemainingMeaningTaskHandles(state: QueueState): QuizTaskHandle[] {
     return state.meaningTasks.slice(state.meaningIndex)
   },
   move(state: QueueState) {
@@ -69,7 +69,7 @@ export const QueueManagerHelpers = {
     }
   },
   push(state: QueueState) {
-    const task = this.getCurrentTask(state)
+    const task = this.getCurrentTaskHandle(state)
     if (task === undefined) {
       console.error('getCurrentTask returned undefined')
       return

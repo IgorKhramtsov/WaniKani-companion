@@ -44,7 +44,7 @@ describe('QueueManagerHelpers', () => {
   describe('getCurrentTask', () => {
     it('returns the current reading task when currentQueue is reading', () => {
       state.currentQueue = 'reading'
-      const task = QueueManagerHelpers.getCurrentTask(state)
+      const task = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(task).toBeDefined()
       expect(task).toBe(state.readingTasks[1])
       expect(task?.type).toBe('reading')
@@ -52,7 +52,7 @@ describe('QueueManagerHelpers', () => {
 
     it('returns the current meaning task when currentQueue is meaning', () => {
       state.currentQueue = 'meaning'
-      const task = QueueManagerHelpers.getCurrentTask(state)
+      const task = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(task).toBeDefined()
       expect(task).toBe(state.meaningTasks[3])
       expect(task?.type).toBe('meaning')
@@ -61,7 +61,7 @@ describe('QueueManagerHelpers', () => {
     it('returns undefined if no tasks are available for the current queue', () => {
       state.currentQueue = 'reading'
       state.readingTasks = []
-      const task = QueueManagerHelpers.getCurrentTask(state)
+      const task = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(task).toBeUndefined()
     })
   })
@@ -69,14 +69,14 @@ describe('QueueManagerHelpers', () => {
   describe('peekNextTask', () => {
     it('returns the next reading task when currentQueue is reading', () => {
       state.currentQueue = 'reading'
-      const task = QueueManagerHelpers.peekNextTask(state)
+      const task = QueueManagerHelpers.peekNextTaskHandle(state)
       expect(task).toBeDefined()
       expect(task).toBe(state.readingTasks[2])
     })
 
     it('returns the next meaning task when currentQueue is meaning', () => {
       state.currentQueue = 'meaning'
-      const task = QueueManagerHelpers.peekNextTask(state)
+      const task = QueueManagerHelpers.peekNextTaskHandle(state)
       expect(task).toBeDefined()
       expect(task).toBe(state.meaningTasks[4])
     })
@@ -85,14 +85,14 @@ describe('QueueManagerHelpers', () => {
       state.currentQueue = 'reading'
       state.readingIndex = 9
       state.meaningIndex = 10
-      const task = QueueManagerHelpers.peekNextTask(state)
+      const task = QueueManagerHelpers.peekNextTaskHandle(state)
       expect(task).toBeUndefined()
     })
 
     it('returns the next meaning task when currentQueue is reading and it we are on the last task', () => {
       state.currentQueue = 'reading'
       state.readingIndex = 9
-      const task = QueueManagerHelpers.peekNextTask(state)
+      const task = QueueManagerHelpers.peekNextTaskHandle(state)
       const expected = state.meaningTasks[state.meaningIndex]
       expect(task).toBe(expected)
     })
@@ -101,7 +101,8 @@ describe('QueueManagerHelpers', () => {
   describe('getRemainingReadingTasks', () => {
     it('returns the slice of reading tasks from the current readingIndex', () => {
       state.currentQueue = 'reading'
-      const remaining = QueueManagerHelpers.getRemainingReadingTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingReadingTaskHandles(state)
       expect(remaining.length).toBe(9)
       expect(remaining[0]).toBe(state.readingTasks[1])
       expect(remaining[8]).toBe(state.readingTasks[9])
@@ -110,14 +111,16 @@ describe('QueueManagerHelpers', () => {
     it('returns all reading tasks if readingIndex is 0', () => {
       state.readingIndex = 0
       state.currentQueue = 'reading'
-      const remaining = QueueManagerHelpers.getRemainingReadingTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingReadingTaskHandles(state)
       expect(remaining.length).toBe(10)
     })
 
     it('returns an empty array if readingIndex is beyond the number of tasks', () => {
       state.readingIndex = 10
       state.currentQueue = 'reading'
-      const remaining = QueueManagerHelpers.getRemainingReadingTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingReadingTaskHandles(state)
       expect(remaining.length).toBe(0)
     })
   })
@@ -125,7 +128,8 @@ describe('QueueManagerHelpers', () => {
   describe('getRemainingMeaningTasks', () => {
     it('returns the slice of meaning tasks from the current meaningIndex', () => {
       state.currentQueue = 'meaning'
-      const remaining = QueueManagerHelpers.getRemainingMeaningTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingMeaningTaskHandles(state)
       expect(remaining.length).toBe(7)
       expect(remaining[0].subjectId).toBe(state.meaningTasks[3].subjectId)
       expect(remaining[6].subjectId).toBe(state.meaningTasks[9].subjectId)
@@ -134,14 +138,16 @@ describe('QueueManagerHelpers', () => {
     it('returns all meaning tasks if meaningIndex is 0', () => {
       state.meaningIndex = 0
       state.currentQueue = 'meaning'
-      const remaining = QueueManagerHelpers.getRemainingMeaningTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingMeaningTaskHandles(state)
       expect(remaining.length).toBe(10)
     })
 
     it('returns an empty array if meaningIndex is beyond the number of tasks', () => {
       state.meaningIndex = 10
       state.currentQueue = 'meaning'
-      const remaining = QueueManagerHelpers.getRemainingMeaningTasks(state)
+      const remaining =
+        QueueManagerHelpers.getRemainingMeaningTaskHandles(state)
       expect(remaining.length).toBe(0)
     })
   })
@@ -176,7 +182,7 @@ describe('QueueManagerHelpers', () => {
   describe('push', () => {
     it('re-inserts the current reading task further down the reading queue', () => {
       state.currentQueue = 'reading'
-      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      const currentTask = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(currentTask?.subjectId).toBe(2)
 
       QueueManagerHelpers.push(state)
@@ -188,7 +194,7 @@ describe('QueueManagerHelpers', () => {
 
     it('re-inserts the current meaning task further down the meaning queue', () => {
       state.currentQueue = 'meaning'
-      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      const currentTask = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(currentTask?.subjectId).toBe(4)
 
       QueueManagerHelpers.push(state)
@@ -201,7 +207,7 @@ describe('QueueManagerHelpers', () => {
     it('re-inserts the current meaning task at the end of meaning queue when there are less than PUSH_DISTANCE tasks left', () => {
       state.currentQueue = 'meaning'
       state.meaningIndex = 7
-      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      const currentTask = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(currentTask?.subjectId).toBe(8)
 
       QueueManagerHelpers.push(state)
@@ -214,7 +220,7 @@ describe('QueueManagerHelpers', () => {
     it('re-inserts the current meaning task at the end of meaning queue when is only one task and switches the queue', () => {
       state.currentQueue = 'meaning'
       state.meaningIndex = 9
-      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      const currentTask = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(currentTask?.subjectId).toBe(10)
 
       QueueManagerHelpers.push(state)
@@ -229,7 +235,7 @@ describe('QueueManagerHelpers', () => {
       state.currentQueue = 'meaning'
       state.meaningIndex = 9
       state.readingIndex = readingTasks.length
-      const currentTask = QueueManagerHelpers.getCurrentTask(state)
+      const currentTask = QueueManagerHelpers.getCurrentTaskHandle(state)
       expect(currentTask?.subjectId).toBe(10)
 
       QueueManagerHelpers.push(state)

@@ -11,7 +11,7 @@ import {
   selectProgress,
   selectTaskPairsForReport,
   selectWrapUpEnabled,
-  selectWrapUpRemainingTasks,
+  selectWrapUpRemainingTaskHandles,
   toggleWrapUp,
 } from '@/src/redux/quizSlice'
 import { Link, router, useNavigation } from 'expo-router'
@@ -151,7 +151,7 @@ export const QuizPage = (props: SubjectProps | AssignmentProps) => {
   }, [subjects, assignments])
 
   const wrapUpEnabled = useAppSelector(selectWrapUpEnabled)
-  const wrapUpRemaningTasks = useAppSelector(selectWrapUpRemainingTasks)
+  const wrapUpRemaningTasks = useAppSelector(selectWrapUpRemainingTaskHandles)
   const currentTask = useAppSelector(selectCurrentTask)
   const nextTask = useAppSelector(selectNextTask)
   const progress = useAppSelector(selectProgress)
