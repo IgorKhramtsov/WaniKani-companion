@@ -22,6 +22,12 @@ Features:
 1. `yarn ios` - to run on iOS simulator
 2. `yarn drizzle-kit generate` - generate drizzle migrations from schema change
 
+## Troubleshooting
+
+1. There might be an error with failed source maps uploading to sentry. The fix
+   is to either use `SENTRY_ALLOW_FAILURE=true yarn ios` or skip
+   'sentry-xcode.sh' in xcode 'Bundle React Native code and images' build phase.
+
 ## Check out user scripts
 https://community.wanikani.com/t/my-journey-of-368-days-the-ultimate-guide-for-wk/31318/2
 

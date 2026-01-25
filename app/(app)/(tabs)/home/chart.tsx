@@ -5,7 +5,6 @@ import React, {
   useMemo,
   useState,
 } from 'react'
-import { LayoutChangeEvent } from 'react-native'
 import {
   Canvas,
   Path,
@@ -20,6 +19,7 @@ import {
   SkParagraph,
   Group,
   Paint,
+  useCanvasSize,
 } from '@shopify/react-native-skia'
 import {
   useSharedValue,
@@ -70,10 +70,12 @@ const Chart: React.FC<ChartProps> = ({
   const paddingTop = 30
   const paddingBottom = 20
   const horizontalPadding = 20
-  const [width, setWidth] = useState(0)
+  const { ref, size } = useCanvasSize()
+  const width = size.width
+  const canvasHeight = size.height > 0 ? size.height : height
   const innerWidth = useMemo(() => width - horizontalPadding * 2, [width])
   const rInnerWidth = useSharedValue(width)
-  const innerHeight = height - labelSize - paddingTop - paddingBottom
+  const innerHeight = canvasHeight - labelSize - paddingTop - paddingBottom
   const touchedPoint = useSharedValue<{ x: number; y: number } | null>(null)
   const hasTouch = useSharedValue(false)
 
@@ -394,16 +396,9 @@ const Chart: React.FC<ChartProps> = ({
     [hasTouch],
   )
 
-  const handleLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      setWidth(event.nativeEvent.layout.width)
-    },
-    [setWidth],
-  )
-
   return (
     <GestureDetector gesture={gesture}>
-      <Canvas style={{ flex: 1, minHeight: height }} onLayout={handleLayout}>
+      <Canvas ref={ref} style={{ flex: 1, minHeight: height }}>
         <Path key='fillpath' path={fillPath}>
           <LinearGradient
             start={vec(0, 0)}

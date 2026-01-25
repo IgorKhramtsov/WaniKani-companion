@@ -65,7 +65,8 @@
             "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
           }
         ]
-      }
+      },
+      "appleTeamId": "TN2XMHU5RV"
     },
     "android": {
       "adaptiveIcon": {
@@ -93,7 +94,8 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "15.1",
+            "newArchEnabled": true
           }
         }
       ],
@@ -106,6 +108,17 @@
             "assets/fonts/NotoSansJP-VariableFont_wght.ttf",
             "assets/fonts/NotoSansSC-VariableFont_wght.ttf"
           ]
+        }
+      ],
+      "expo-sqlite",
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "note": "Use SENTRY_AUTH_TOKEN env to authenticate with Sentry.",
+          "project": "wanikani-rn",
+          "organization": "wanikani-us"
         }
       ]
     ],
