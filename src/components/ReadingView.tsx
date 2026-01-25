@@ -1,7 +1,7 @@
 import { PronunciationAudio } from '@/src/types/pronunciationAudio'
 import { Reading } from '@/src/types/reading'
 import { FlatList, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { PronunciationAudioView } from './PronunciationAudioView'
 import typography from '@/src/constants/typography'
 import { Fragment } from 'react'
@@ -17,7 +17,6 @@ export const ReadingView = ({
   showType = false,
   pronunciation_audios,
 }: Props) => {
-  const { styles } = useStyles(stylesheet)
   const pronunciation_audios_supported = pronunciation_audios.filter(
     el => el.content_type !== 'audio/webm',
   )
@@ -44,7 +43,7 @@ export const ReadingView = ({
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   readingText: {
     ...typography.titleC,
   },

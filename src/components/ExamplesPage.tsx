@@ -1,5 +1,5 @@
 import { View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import typography from '@/src/constants/typography'
 import { Kanji } from '@/src/types/kanji'
@@ -34,7 +34,6 @@ export const ExamplesPage = ({
 }
 
 export const ExamplesSection = ({ subject, variant = 'minimal' }: Props) => {
-  const { styles } = useStyles(stylesheet)
   const subjectIdsToShow = useMemo(() => {
     const source = subject.amalgamation_subject_ids
     if (variant === 'minimal') {
@@ -64,7 +63,7 @@ export const ExamplesSection = ({ subject, variant = 'minimal' }: Props) => {
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   wrapList: {
     ...appStyles.row,
     justifyContent: 'flex-start',

@@ -3,8 +3,9 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'react-native-reanimated/plugin',
+      ['react-native-unistyles/plugin', { root: 'src' }],
       ['inline-import', { extensions: ['.sql'] }],
+      'react-native-reanimated/plugin',
     ],
   }
 }

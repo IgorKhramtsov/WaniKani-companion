@@ -2,7 +2,7 @@ import { Colors } from '@/src/constants/Colors'
 import typography from '@/src/constants/typography'
 import { PropsWithChildren } from 'react'
 import { ScrollView, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 
 interface Props extends PropsWithChildren {
   topContent?: React.ReactNode
@@ -13,7 +13,7 @@ interface Props extends PropsWithChildren {
  * Use [PageSection] for adding sections to the page.
  */
 export const Page = ({ children, topContent, bottomContent }: Props) => {
-  const { styles } = useStyles(pageStylesheet)
+  const styles = pageStylesheet
 
   return (
     <ScrollView contentContainerStyle={styles.pageView}>
@@ -29,7 +29,7 @@ type PageSectionProps = PropsWithChildren<{
 }>
 
 export const PageSection = ({ children, title }: PageSectionProps) => {
-  const { styles } = useStyles(pageStylesheet)
+  const styles = pageStylesheet
 
   return (
     <View>
@@ -41,7 +41,7 @@ export const PageSection = ({ children, title }: PageSectionProps) => {
   )
 }
 
-const pageStylesheet = createStyleSheet({
+const pageStylesheet = StyleSheet.create({
   pageView: {
     padding: 20,
   },

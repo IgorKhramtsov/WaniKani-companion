@@ -32,7 +32,7 @@ import {
   TextInputSubmitEditingEventData,
   View,
 } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 
 type Props = {
   subjectId: number
@@ -50,7 +50,6 @@ export const SubjectMeaningsAndSynonyms = forwardRef<
     { subjectId, location },
     ref: ForwardedRef<SubjectMeaningsAndSynonymsRef>,
   ) => {
-    const { styles } = useStyles(stylesheet)
     const synonymInputRef = useRef<TextInput>(null)
 
     useImperativeHandle(ref, () => ({
@@ -258,7 +257,7 @@ export const SubjectMeaningsAndSynonyms = forwardRef<
 
 SubjectMeaningsAndSynonyms.displayName = 'SubjectMeaningsAndSynonyms'
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   subjectOtherMeanings: {
     ...typography.body,
     color: Colors.gray55,

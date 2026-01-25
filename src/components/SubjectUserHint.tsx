@@ -29,7 +29,7 @@ import {
   TextInputSubmitEditingEventData,
   View,
 } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 
 type Props = {
   subjectId: number
@@ -70,7 +70,6 @@ SubjectUserReadingHint.displayName = 'SubjectUserReadingHint'
 
 const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
   ({ subjectId, propName: key }, ref: ForwardedRef<SubjectUserHintRef>) => {
-    const { styles } = useStyles(stylesheet)
     const inputRef = useRef<TextInput>(null)
 
     useImperativeHandle(ref, () => ({
@@ -201,7 +200,7 @@ const SubjectUserHint = forwardRef<SubjectUserHintRef, GenericProps>(
 
 SubjectUserHint.displayName = 'SubjectUserHint'
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   title: {
     ...typography.titleC,
     fontWeight: '300',

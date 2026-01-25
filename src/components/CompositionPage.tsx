@@ -3,7 +3,7 @@ import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { StringUtils } from '@/src/utils/stringUtils'
 import { FlatList, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { SubjectTile } from '@/src/components/SubjectTile'
 import { Page, PageSection } from './Page'
 import { Fragment, useMemo } from 'react'
@@ -32,7 +32,7 @@ export const CompositionPage = ({
 }
 
 export const CompositionSection = ({ subject }: CompositionPageProps) => {
-  const { styles } = useStyles(compositionPageStylesheet)
+  const styles = compositionPageStylesheet
   const subjectIdsToShow = useMemo(() => {
     return subject.component_subject_ids
   }, [subject])
@@ -79,7 +79,7 @@ export const CompositionSection = ({ subject }: CompositionPageProps) => {
   )
 }
 
-const compositionPageStylesheet = createStyleSheet({
+const compositionPageStylesheet = StyleSheet.create({
   flatList: {
     flexGrow: 0,
   },

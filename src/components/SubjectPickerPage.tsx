@@ -6,7 +6,7 @@ import { Subject } from '@/src/types/subject'
 import { Fragment, useCallback, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeArea } from 'react-native-safe-area-context'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { BlurView } from 'expo-blur'
 import Collapsible from './Collapsible'
 import React from 'react'
@@ -39,7 +39,6 @@ export const SubjectPickerPage = ({
   bottomBarBuilder,
   expandable = false,
 }: SubjectPickerPageProps) => {
-  const { styles } = useStyles(stylesheet)
   const { bottom: bottomSafePadding } = useSafeArea()
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [bottomBarHeight, setBottomBarHeight] = useState(0)
@@ -152,7 +151,7 @@ export const SubjectPickerPage = ({
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   pageView: {
     flex: 1,
   },

@@ -1,6 +1,6 @@
 import { Vocabulary } from '@/src/types/vocabulary'
 import { FlatList, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import typography from '@/src/constants/typography'
 import { KanaVocabulary } from '@/src/types/kanaVocabulary'
@@ -28,8 +28,6 @@ export const ContextPage = ({
 }
 
 export const ContextSection = ({ subject }: Props) => {
-  const { styles } = useStyles(stylesheet)
-
   return (
     <Fragment>
       <PageSection title='Context Sentences'>
@@ -52,7 +50,7 @@ export const ContextSection = ({ subject }: Props) => {
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   flatList: {
     flexGrow: 0,
   },

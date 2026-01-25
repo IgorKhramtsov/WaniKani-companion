@@ -7,7 +7,7 @@ import { Subject, SubjectUtils } from '@/src/types/subject'
 import { useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { SubjectSymbol } from './SubjectSymbol'
 
 type IdProps = {
@@ -27,7 +27,7 @@ export const SubjectTile = ({
   variant = 'normal',
   ...props
 }: Props) => {
-  const { styles } = useStyles(glyphTileStylesheet)
+  const styles = glyphTileStylesheet
   const router = useRouter()
 
   const id = 'id' in props ? props.id : undefined
@@ -113,7 +113,7 @@ export const SubjectTile = ({
       disabled={!isPressable}
       onPress={() =>
         router.push({
-          pathname: '/(tabs)/library/subject',
+          pathname: '/(app)/(tabs)/library/subject',
           params: { id: subject.id },
         })
       }>
@@ -122,7 +122,7 @@ export const SubjectTile = ({
   )
 }
 
-const glyphTileStylesheet = createStyleSheet({
+const glyphTileStylesheet = StyleSheet.create({
   extendedView: {
     ...appStyles.rowSpaceBetween,
     borderRadius: 3,

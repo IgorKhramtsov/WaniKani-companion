@@ -1,7 +1,7 @@
 import { PropsWithChildren } from 'react'
 import { Barrier } from './Barrier'
 import { Pressable, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import typography from '../constants/typography'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -11,8 +11,6 @@ type Props = PropsWithChildren<{
 }>
 
 export const ErrorWithRetry = ({ children, error, onRetry }: Props) => {
-  const { styles } = useStyles(stylesheet)
-
   return (
     <View>
       {error !== undefined && (
@@ -30,7 +28,7 @@ export const ErrorWithRetry = ({ children, error, onRetry }: Props) => {
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   retryText: {
     ...typography.body,
     color: 'white',

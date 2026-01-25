@@ -2,7 +2,7 @@ import { Kanji } from '@/src/types/kanji'
 import { SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { FlatList, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
 import typography from '@/src/constants/typography'
@@ -60,8 +60,6 @@ type VocabularyProps = BaseProps & {
 }
 
 export const VocabularySection = ({ subject }: VocabularyProps) => {
-  const { styles } = useStyles(stylesheet)
-
   const getAudio = (reading: Reading) =>
     SubjectUtils.getPrononciationAudioForReading(subject, reading)
   // Sort readings in such way so that katakana twin (if present) is shown
@@ -112,8 +110,6 @@ type KanjiProps = BaseProps & {
 }
 
 export const KanjiSection = ({ subject, variant }: KanjiProps) => {
-  const { styles } = useStyles(stylesheet)
-
   const primaryReadings = SubjectUtils.getPrimaryReadings(subject)
   const primaryReadingType = primaryReadings[0].type
   const readingsByType = SubjectUtils.getReadingsByType(subject)
@@ -189,7 +185,7 @@ export const KanjiSection = ({ subject, variant }: KanjiProps) => {
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   flatList: {
     flexGrow: 0,
   },

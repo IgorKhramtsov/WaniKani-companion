@@ -4,7 +4,7 @@ import typography from '@/src/constants/typography'
 import { PronunciationAudio } from '@/src/types/pronunciationAudio'
 import { AntDesign } from '@expo/vector-icons'
 import { Image, Pressable, Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import Waveform from '@/assets/images/waveform_short.svg'
 import { usePronunciationAudio } from '../hooks/usePronunciationAudio'
 
@@ -13,7 +13,6 @@ export const PronunciationAudioView = ({
 }: {
   pronunciation_audio: PronunciationAudio
 }) => {
-  const { styles } = useStyles(stylesheet)
   const { playSound } = usePronunciationAudio(pronunciation_audio)
 
   const image =
@@ -38,7 +37,7 @@ export const PronunciationAudioView = ({
         </View>
         <View style={{ height: 4 }} />
         <Pressable onPress={playSound} style={styles.voicePlayer}>
-          <AntDesign name='playcircleo' size={24} color='black' />
+          <AntDesign name='play-circle' size={24} color='black' />
           <View style={{ width: 8 }} />
           <Waveform width={140} height={30} />
         </Pressable>
@@ -47,7 +46,7 @@ export const PronunciationAudioView = ({
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   flatList: {
     flexGrow: 0,
     alignItems: 'flex-start',

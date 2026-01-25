@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import typography from '@/src/constants/typography'
 import { AntDesign } from '@expo/vector-icons'
 import { PropsWithChildren } from 'react'
@@ -8,11 +8,10 @@ import { Colors } from '@/src/constants/Colors'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
 
 export const Hint = ({ children }: PropsWithChildren) => {
-  const { styles } = useStyles(stylesheet)
   return (
     <View style={styles.container}>
       <View style={appStyles.row}>
-        <AntDesign name='questioncircleo' size={16} color='black' />
+        <AntDesign name='question-circle' size={16} color='black' />
         <View style={{ width: 8 }} />
         <Text style={styles.hintTitle}>HINT</Text>
       </View>
@@ -22,7 +21,7 @@ export const Hint = ({ children }: PropsWithChildren) => {
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.grayEA,
     padding: 16,

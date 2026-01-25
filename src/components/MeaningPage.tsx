@@ -2,7 +2,7 @@ import { Kanji } from '@/src/types/kanji'
 import { Subject, SubjectUtils } from '@/src/types/subject'
 import { Vocabulary } from '@/src/types/vocabulary'
 import { Text, View } from 'react-native'
-import { createStyleSheet, useStyles } from 'react-native-unistyles'
+import { StyleSheet } from 'react-native-unistyles'
 import { Page, PageSection } from './Page'
 import CustomTagRenderer from '@/src/components/CustomRenderer/Index'
 import typography from '@/src/constants/typography'
@@ -67,8 +67,6 @@ export const VocabularySection = ({
   showMeaning,
   showOtherMeanings = true,
 }: VocabularyProps) => {
-  const { styles } = useStyles(stylesheet)
-
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
   return (
@@ -118,7 +116,6 @@ export const KanjiSection = ({
   showMeaning,
   showOtherMeanings = true,
 }: KanjiProps) => {
-  const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
   return (
@@ -168,7 +165,6 @@ export const RadicalSection = ({
   showMeaning,
   showOtherMeanings = true,
 }: RadicalProps) => {
-  const { styles } = useStyles(stylesheet)
   const primaryMeaning = SubjectUtils.getPrimaryMeaning(subject)?.meaning
 
   return (
@@ -203,7 +199,7 @@ export const RadicalSection = ({
   )
 }
 
-const stylesheet = createStyleSheet({
+const styles = StyleSheet.create({
   flatList: {
     flexGrow: 0,
   },
