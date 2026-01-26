@@ -1,14 +1,14 @@
 name: Build and Submit to App Store via EAS local
 
-on: 
+on:
   push:
     branches:
-      - "dev"
-      - "prod"
+      - 'dev'
+      - 'prod'
   workflow_dispatch:
 concurrency:
-  group: ${{ github.ref }}-ci  # Unique group per branch (dev-ci, prod-ci, etc.)
-  cancel-in-progress: true  # This cancels previous workflow if a new one starts
+  group: ${{ github.ref }}-ci # Unique group per branch (dev-ci, prod-ci, etc.)
+  cancel-in-progress: true # This cancels previous workflow if a new one starts
 
 jobs:
   build:
@@ -37,6 +37,8 @@ jobs:
         run: yarn
 
       - name: Build iOS
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           eas build --local \
             --non-interactive \
