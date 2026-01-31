@@ -15,6 +15,13 @@
       "when": 1729782036635,
       "tag": "0001_dusty_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1769894028270,
+      "tag": "0002_dedupe_assignments",
+      "breakpoints": true
     }
   ]
 }

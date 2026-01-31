@@ -1,4 +1,4 @@
-import { text, int, sqliteTable } from 'drizzle-orm/sqlite-core'
+import { text, int, sqliteTable, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { AuxiliaryMeaning } from '../types/auxiliaryMeaning'
 import { Meaning } from '../types/meaning'
 import { CharacterImage } from '../types/characterImage'
@@ -49,21 +49,29 @@ export const subjectsTable = sqliteTable('subjects', {
     .default([]),
 })
 
-export const assignmentsTable = sqliteTable('assignments', {
-  id: int().primaryKey(),
-  updated_at: int().notNull(),
-  available_at: int(),
-  burned_at: int(),
-  created_at: int().notNull(),
-  hidden: int({ mode: 'boolean' }).notNull(),
-  passed_at: int(),
-  resurrected_at: int(),
-  srs_stage: int().notNull(),
-  started_at: int(),
-  subject_id: int().notNull(),
-  subject_type: text().notNull(),
-  unlocked_at: int(),
-})
+export const assignmentsTable = sqliteTable(
+  'assignments',
+  {
+    id: int().primaryKey(),
+    updated_at: int().notNull(),
+    available_at: int(),
+    burned_at: int(),
+    created_at: int().notNull(),
+    hidden: int({ mode: 'boolean' }).notNull(),
+    passed_at: int(),
+    resurrected_at: int(),
+    srs_stage: int().notNull(),
+    started_at: int(),
+    subject_id: int().notNull(),
+    subject_type: text().notNull(),
+    unlocked_at: int(),
+  },
+  table => ({
+    subjectIdUnique: uniqueIndex('assignments_subject_id_unique').on(
+      table.subject_id,
+    ),
+  }),
+)
 
 export const reviewStatisticsTable = sqliteTable('review_statistics', {
   id: int().primaryKey(),
