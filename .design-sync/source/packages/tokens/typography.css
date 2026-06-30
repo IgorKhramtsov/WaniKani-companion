@@ -1,0 +1,17 @@
+/* WaniKani design tokens — typography
+   extracted verbatim from application.css (assets.wanikani.com) */
+:root {
+  --font-family-default: "Noto Sans", "Noto Sans JP", "Noto Sans SC", sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 350;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --font-weight-heavy: 700;
+  --font-size-xxsmall: 11px;
+  --font-size-xsmall: 14px;
+  --font-size-small: 16px;
+  --font-size-medium: 18px;
+  --font-size-large: 24px;
+  --font-size-xlarge: 28px;
+  --font-size-xxlarge: 38px;
+}

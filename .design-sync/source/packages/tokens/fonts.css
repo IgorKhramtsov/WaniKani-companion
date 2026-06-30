@@ -1,0 +1,8 @@
+/* WaniKani type families. WaniKani self-hosts ~100 Noto Sans JP subset files for
+   performance; for the design system we load the same families from the public
+   Google Fonts host (font-host @import — loaded at runtime, [FONT_REMOTE]). */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;350;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap");
+
+:root {
+  --font-family-default: "Noto Sans", "Noto Sans JP", "Noto Sans SC", sans-serif;
+}

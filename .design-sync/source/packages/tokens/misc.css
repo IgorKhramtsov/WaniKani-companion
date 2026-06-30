@@ -1,0 +1,6 @@
+/* WaniKani design tokens — misc
+   extracted verbatim from application.css (assets.wanikani.com) */
+:root {
+  --title-line-height: 1.4;
+  --grouped-navigation-item-padding: var(--spacing-xtight) var(--spacing-xxtight);
+}

@@ -1,0 +1,8 @@
+/* WaniKani design tokens — radii
+   extracted verbatim from application.css (assets.wanikani.com) */
+:root {
+  --border-radius-tight: 4px;
+  --border-radius-normal: 8px;
+  --border-radius-widget: 16px;
+  --border-radius-pill: 9999px;
+}

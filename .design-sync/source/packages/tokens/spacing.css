@@ -1,0 +1,13 @@
+/* WaniKani design tokens — spacing
+   extracted verbatim from application.css (assets.wanikani.com) */
+:root {
+  --spacing-xxtight: 4px;
+  --spacing-xtight: 8px;
+  --spacing-tight: 12px;
+  --spacing-normal: 16px;
+  --spacing-loose: 24px;
+  --spacing-xloose: 32px;
+  --spacing-xxloose: 40px;
+  --spacing-xxxloose: 64px;
+  --spacing-xxxxloose: 80px;
+}

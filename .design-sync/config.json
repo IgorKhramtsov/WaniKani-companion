@@ -1,0 +1,11 @@
+{
+  "shape": "package",
+  "projectId": "e90cee8f-7ede-4307-bf03-29844b7707ef",
+  "pkg": "wanikani-ds",
+  "globalName": "WaniKaniDS",
+  "cssEntry": "src/styles/wk.css",
+  "tokensPkg": "wanikani-tokens",
+  "tokensGlob": "*.css",
+  "docsDir": "docs",
+  "readmeHeader": ".design-sync/conventions.md"
+}

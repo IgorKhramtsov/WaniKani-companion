@@ -1,0 +1,8 @@
+/* WaniKani design tokens — shadows
+   extracted verbatim from application.css (assets.wanikani.com) */
+:root {
+  --text-shadow-light: 0 1px 0 var(--color-text-shadow-light);
+  --text-shadow-dark: 0 1px 0 var(--color-text-shadow-dark);
+  --text-highlight-box-shadow: 0 -2px 0 rgba(0, 0, 0, 0.2) inset;
+  --text-highlight-text-shadow: var(--text-shadow-dark);
+}

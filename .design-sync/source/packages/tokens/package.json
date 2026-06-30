@@ -1,0 +1,6 @@
+{
+  "name": "wanikani-tokens",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WaniKani design tokens (colors, type, spacing, radii) extracted from wanikani.com"
+}
